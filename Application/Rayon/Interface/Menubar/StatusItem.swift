@@ -104,6 +104,10 @@ class MenubarStatusItem: NSObject, Identifiable {
 
     func showPopover(_: AnyObject) {
         if let statusBarButton = statusItem.button {
+            // A menu bar popover takes the menu bar's appearance, which follows
+            // the wallpaper; use Rayon's Light / Dark / System choice instead so
+            // the cards look as they do in the window.
+            popover.appearance = NSApp.appearance ?? NSApp.effectiveAppearance
             popover.show(relativeTo: statusBarButton.bounds, of: statusBarButton, preferredEdge: NSRectEdge.maxY)
             eventMonitor?.start()
         }
@@ -168,6 +172,9 @@ struct MenubarPopoverView: View {
             .frame(height: 560)
         }
         .frame(width: Self.width)
+        // The window's material, not the popover's, so the cards sit on the same
+        // backdrop as in the main window.
+        .background(RXWindowBackground().ignoresSafeArea())
     }
 
     /// Name and system facts on the left; the server's tools as symbols on the right.
