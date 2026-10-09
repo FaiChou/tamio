@@ -5,7 +5,7 @@
 //  Created by Lakr Aream on 2022/2/12.
 //
 
-#if canImport(AppKit)
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
     import AppKit
 
     public class CodeEditorView: NSView, CodeEditor {

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-#if canImport(AppKit)
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
     import AppKit
 #elseif canImport(UIKit)
     import UIKit
@@ -48,7 +48,7 @@ public enum RX {
 extension Color {
     /// Builds an appearance-aware color from `0xRRGGBBAA` literals.
     init(rxLight light: UInt32, dark: UInt32) {
-        #if canImport(AppKit)
+        #if canImport(AppKit) && !targetEnvironment(macCatalyst)
             let color = NSColor(name: nil) { appearance in
                 let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
                 return NSColor(rxRGBA: isDark ? dark : light)
@@ -63,7 +63,7 @@ extension Color {
     }
 }
 
-#if canImport(AppKit)
+#if canImport(AppKit) && !targetEnvironment(macCatalyst)
     extension NSColor {
         convenience init(rxRGBA value: UInt32) {
             self.init(
