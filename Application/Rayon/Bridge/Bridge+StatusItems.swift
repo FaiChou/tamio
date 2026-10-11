@@ -6,7 +6,7 @@
 import AppKit
 
 extension Bridge {
-    func addStatusItem(_ id: String, toolTip: String, frames: [String], idleFrame: String, onClick: @escaping () -> Void) {
+    func addStatusItem(_ id: String, toolTip: String, frames: [AnyObject], idleFrame: AnyObject?, onClick: @escaping () -> Void) {
         statusItems[id]?.remove()
         let item = StatusItem(toolTip: toolTip, frames: frames, idleFrame: idleFrame, onClick: onClick)
         // The popover's hidden window must not keep the keyboard once it closes.

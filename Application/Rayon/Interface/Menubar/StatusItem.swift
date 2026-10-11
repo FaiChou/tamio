@@ -44,8 +44,8 @@ class MenubarStatusItem: NSObject, Identifiable {
         Mac.bridge?.addStatusItem(
             key,
             toolTip: machine.name,
-            frames: Self.frames,
-            idleFrame: Self.crashFrame
+            frames: Self.frames.compactMap { UIImage(named: $0)?.cgImage },
+            idleFrame: UIImage(named: Self.crashFrame)?.cgImage
         ) { [weak self] in
             MainActor.assumeIsolated { self?.togglePopover() }
         }

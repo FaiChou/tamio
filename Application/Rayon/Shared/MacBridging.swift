@@ -78,9 +78,10 @@ import Foundation
 
     // MARK: Menu bar
 
-    /// Adds a menu bar item that plays `frames` (image names in the app's asset
-    /// catalog); `idleFrame` shows when the interval is zero or less.
-    func addStatusItem(_ id: String, toolTip: String, frames: [String], idleFrame: String, onClick: @escaping () -> Void)
+    /// Adds a menu bar item that plays `frames` (`CGImage`s at 2x, drawn as
+    /// templates); `idleFrame` shows when the interval is zero or less. AppKit
+    /// cannot read a Catalyst app's asset catalog, so the app loads them.
+    func addStatusItem(_ id: String, toolTip: String, frames: [AnyObject], idleFrame: AnyObject?, onClick: @escaping () -> Void)
     func updateStatusItem(_ id: String, title: String, frameInterval: Double)
     func removeStatusItem(_ id: String)
     /// Called by "Open Rayon" in a menu bar item's right-click menu.

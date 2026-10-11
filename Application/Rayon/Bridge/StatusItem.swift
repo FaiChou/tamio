@@ -29,9 +29,9 @@ final class StatusItem: NSObject, NSPopoverDelegate {
     private var interval: Double = 0
     private var timer: Timer?
 
-    init(toolTip: String, frames: [String], idleFrame: String, onClick: @escaping () -> Void) {
-        self.frames = frames.compactMap { NSImage(named: $0) }
-        self.idleFrame = NSImage(named: idleFrame)
+    init(toolTip: String, frames: [AnyObject], idleFrame: AnyObject?, onClick: @escaping () -> Void) {
+        self.frames = frames.compactMap(Self.templateImage)
+        self.idleFrame = idleFrame.flatMap(Self.templateImage)
         self.onClick = onClick
         super.init()
         item.button?.target = self
@@ -40,6 +40,14 @@ final class StatusItem: NSObject, NSPopoverDelegate {
         item.button?.imagePosition = .imageLeading
         item.button?.toolTip = toolTip
         item.button?.image = self.idleFrame
+    }
+
+    private static func templateImage(_ object: AnyObject) -> NSImage? {
+        guard CFGetTypeID(object) == CGImage.typeID else { return nil }
+        let cgImage = object as! CGImage
+        let image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width / 2, height: cgImage.height / 2))
+        image.isTemplate = true
+        return image
     }
 
     @objc private func clicked() {
