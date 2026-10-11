@@ -66,7 +66,7 @@ private struct RXButtonBody: View {
             .opacity(isEnabled ? 1 : 0.4)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
-            #if os(macOS)
+            #if os(macOS) || targetEnvironment(macCatalyst)
             .onHover { hovered = $0 }
             #endif
     }

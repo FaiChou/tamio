@@ -92,7 +92,7 @@ public struct SwitchRow: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .tint(.rxAccent)
-                #if os(macOS)
+                #if os(macOS) || targetEnvironment(macCatalyst)
                 .controlSize(.small)
                 #endif
         }
@@ -173,7 +173,7 @@ public struct RXSlider: View {
             .labelsHidden()
             .tint(.rxAccent)
             .frame(width: 180)
-            #if os(macOS)
+            #if os(macOS) || targetEnvironment(macCatalyst)
             .controlSize(.small)
             #endif
             TextField("Value", text: $text)

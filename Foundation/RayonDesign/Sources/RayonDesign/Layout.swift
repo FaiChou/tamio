@@ -43,6 +43,58 @@ import SwiftUI
         public func makeNSView(context _: Context) -> NSView { DragView() }
         public func updateNSView(_: NSView, context _: Context) {}
     }
+
+#elseif targetEnvironment(macCatalyst)
+    import UIKit
+
+    /// The translucent window backdrop on Mac Catalyst. UIKit cannot draw the
+    /// window material, so this view is clear, keeps the UIKit views it sits in
+    /// clear, and hands its window to `install`, where the app puts the AppKit
+    /// material underneath.
+    public struct RXWindowBackground: UIViewRepresentable {
+        /// Called with every window a backdrop appears in.
+        @MainActor public static var install: ((UIWindow) -> Void)?
+
+        public init() {}
+
+        public final class ClearView: UIView {
+            override public func didMoveToWindow() {
+                super.didMoveToWindow()
+                clearAncestors()
+                if let window { RXWindowBackground.install?(window) }
+            }
+
+            override public func layoutSubviews() {
+                super.layoutSubviews()
+                clearAncestors()
+            }
+
+            override public func traitCollectionDidChange(_ previous: UITraitCollection?) {
+                super.traitCollectionDidChange(previous)
+                // Hosting views take their background colour back on a change
+                // of appearance.
+                DispatchQueue.main.async { [weak self] in self?.clearAncestors() }
+            }
+
+            private func clearAncestors() {
+                var next = superview
+                while let view = next {
+                    if view.backgroundColor != .clear { view.backgroundColor = .clear }
+                    view.isOpaque = false
+                    next = view.superview
+                }
+            }
+        }
+
+        public func makeUIView(context _: Context) -> ClearView {
+            let view = ClearView()
+            view.backgroundColor = .clear
+            view.isUserInteractionEnabled = false
+            return view
+        }
+
+        public func updateUIView(_: ClearView, context _: Context) {}
+    }
 #endif
 
 /// Wraps children onto new lines (toggle chips, tags).
@@ -165,13 +217,13 @@ public struct RXSectionHeader: View {
     }
 }
 
-/// The page backdrop: the translucent window on macOS; on iOS, where the desktop
+/// The page backdrop: the translucent window on the Mac; on iOS, where the desktop
 /// cannot show through, a soft tinted gradient that the frosted cards blur.
 public struct RXBackdrop: View {
     public init() {}
 
     public var body: some View {
-        #if os(macOS)
+        #if os(macOS) || targetEnvironment(macCatalyst)
             RXWindowBackground()
         #else
             ZStack {
