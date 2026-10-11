@@ -16,6 +16,13 @@ struct FileTransferView: View {
 
     @State var openFilePicker: Bool = false
     @State var searchKey: String = ""
+    /// The remote file open in the editor.
+    @State var editing: EditedFile?
+
+    struct EditedFile: Identifiable {
+        let path: String
+        var id: String { path }
+    }
 
     var fileList: [FileTransferContext.RemoteFile] {
         if searchKey.isEmpty {
@@ -58,6 +65,9 @@ struct FileTransferView: View {
         .animation(.interactiveSpring(), value: context.processConnection)
         .navigationTitle(context.machine.name)
         .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(item: $editing) { file in
+            RemoteFileEditorView(context: context, remotePath: file.path)
+        }
     }
 
     var mainView: some View {
@@ -125,7 +135,9 @@ struct FileTransferView: View {
                             .padding(.leading, RX.Space.s2)
                         RXDividedStack {
                             ForEach(fileList) { file in
-                                RemoteFileElement(file: file, context: context)
+                                RemoteFileElement(file: file, context: context) { path in
+                                    editing = EditedFile(path: path)
+                                }
                             }
                         }
                         .rxCard(padding: RX.Space.s2)
@@ -258,9 +270,24 @@ struct FileTransferView: View {
     struct RemoteFileElement: View {
         let file: FileTransferContext.RemoteFile
         @StateObject var context: FileTransferContext
+        let edit: (String) -> Void
+
+        private var tooLargeToEdit: Bool {
+            (file.fstat.size?.int64Value ?? 0) > FileTransferContext.editableSizeLimit
+        }
 
         var body: some View {
             Menu {
+                if !file.fstat.isDirectory {
+                    Section {
+                        Button {
+                            edit(context.currentUrl.appendingPathComponent(file.name).path)
+                        } label: {
+                            Label(tooLargeToEdit ? "Too Large to Edit" : "Edit", systemImage: "square.and.pencil")
+                        }
+                        .disabled(tooLargeToEdit)
+                    }
+                }
                 if file.fstat.isDirectory {
                     Section {
                         Button {
