@@ -142,8 +142,12 @@ final class StatusItem: NSObject, NSPopoverDelegate {
         window.contentView = NSView()
         content.frame = holder.bounds
         content.autoresizingMask = [.width, .height]
+        // The backdrop put in while this was an ordinary window draws the
+        // window material; the popover's own goes below the content instead.
+        content.subviews.filter { $0 is NSVisualEffectView }.forEach { $0.removeFromSuperview() }
         holder.addSubview(content)
         self.holder = holder
+        installBackdrop()
 
         let controller = NSViewController()
         controller.view = holder
@@ -158,7 +162,11 @@ final class StatusItem: NSObject, NSPopoverDelegate {
     /// The window material behind the popover's content, as in Rayon's windows.
     func installBackdrop() {
         guard let holder, !holder.subviews.contains(where: { $0 is NSVisualEffectView }) else { return }
-        holder.addSubview(Bridge.makeBackdrop(frame: holder.bounds), positioned: .below, relativeTo: nil)
+        let backdrop = Bridge.makeBackdrop(frame: holder.bounds)
+        // As in an AppKit popover, whose window is never the main one: the
+        // material at rest, whichever app is in front.
+        backdrop.state = .inactive
+        holder.addSubview(backdrop, positioned: .below, relativeTo: nil)
     }
 
     func toggle() {
