@@ -65,7 +65,8 @@ private struct RXButtonBody: View {
             .contentShape(Capsule())
             .opacity(isEnabled ? 1 : 0.4)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .animation(.rxQuick, value: configuration.isPressed)
+            .animation(.rxQuick, value: hovered)
             #if os(macOS) || targetEnvironment(macCatalyst)
             .onHover { hovered = $0 }
             #endif
@@ -193,6 +194,7 @@ public struct RXSegmented<Value: Hashable>: View {
 
     #if targetEnvironment(macCatalyst)
         @Environment(\.rxControlsAtRest) private var atRest
+        @Namespace private var pill
 
         // UIKit's segmented control is a full-width grey capsule; the Mac one is
         // a compact track of equal segments with the selection in the accent colour.
@@ -208,6 +210,8 @@ public struct RXSegmented<Value: Hashable>: View {
             )
             .fixedSize()
             .frame(maxWidth: fullWidth ? .infinity : nil)
+            // The selection slides to the segment that was clicked.
+            .animation(.rxMove, value: selection)
             .accessibilityElement(children: .contain)
         }
 
@@ -231,6 +235,7 @@ public struct RXSegmented<Value: Hashable>: View {
                 if isSelected {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(atRest ? Color.primary.opacity(0.142) : Color.rxAccent)
+                        .matchedGeometryEffect(id: "selection", in: pill)
                 }
             }
             .overlay(alignment: .trailing) {

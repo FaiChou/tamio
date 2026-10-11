@@ -68,6 +68,7 @@ public struct EmptyStateView: View {
                 .font(.system(size: 28, weight: .regular))
                 .foregroundStyle(.rxInkSecondary)
                 .frame(height: 36)
+                .rxPop()
             Text(title)
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(.rxInk)
@@ -169,6 +170,8 @@ public extension View {
         background(
             RoundedRectangle(cornerRadius: RX.Radius.lg, style: .continuous)
                 .fill(selected ? Color.rxRowSelected : (hovered ? Color.rxRowHover : Color.clear))
+                .animation(.rxQuick, value: hovered)
+                .animation(.rxQuick, value: selected)
         )
     }
 }

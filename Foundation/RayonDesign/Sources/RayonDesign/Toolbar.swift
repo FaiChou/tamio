@@ -187,6 +187,9 @@
         let selection: Value
         let options: [Option]
         let select: (Value) -> Void
+        /// Where the selection is drawn: it trails `selection` by the slide.
+        @State private var drawn: Value?
+        @Namespace private var pill
 
         public init(selection: Value, options: [Option], select: @escaping (Value) -> Void) {
             self.selection = selection
@@ -194,11 +197,17 @@
             self.select = select
         }
 
+        private var memoryKey: AnyHashable { AnyHashable(options.map(\.value)) }
+
         public var body: some View {
+            // A toolbar that has just replaced another starts where that one's
+            // selection was, and slides from there.
+            let drawn = drawn ?? (RXSegmentedMemory.last[memoryKey]?.base as? Value) ?? selection
             RXEqualWidths {
                 ForEach(options.indices, id: \.self) { index in
                     let option = options[index]
                     let isSelected = option.value == selection
+                    let isDrawn = option.value == drawn
                     Text(option.title)
                         .font(.system(size: 13))
                         .foregroundStyle(Color.primary.opacity(0.92))
@@ -206,9 +215,10 @@
                         .padding(.horizontal, 10.6)
                         .frame(maxWidth: .infinity, minHeight: RXToolbar.height, maxHeight: RXToolbar.height)
                         .background {
-                            if isSelected {
+                            if isDrawn {
                                 Capsule()
                                     .fill(Color.primary.opacity(0.12))
+                                    .matchedGeometryEffect(id: "selection", in: pill)
                                     .padding(.vertical, 4)
                                     .padding(.leading, index == 0 ? 4 : 3)
                                     .padding(.trailing, index == options.count - 1 ? 4 : 2.3)
@@ -223,6 +233,13 @@
             .fixedSize()
             .glassEffect(.regular.interactive(), in: Capsule())
             .accessibilityElement(children: .contain)
+            .onAppear { slide(to: selection) }
+            .onChange(of: selection) { slide(to: $0) }
+        }
+
+        private func slide(to value: Value) {
+            RXSegmentedMemory.last[memoryKey] = AnyHashable(value)
+            withAnimation(.rxMove) { drawn = value }
         }
     }
 
