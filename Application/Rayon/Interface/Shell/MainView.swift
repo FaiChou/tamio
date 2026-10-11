@@ -122,12 +122,13 @@ private struct SessionPages: View {
 private extension View {
     func sessionPage(active: Bool) -> some View {
         opacity(active ? 1 : 0)
+            // The page coming in fades up quickly; the one going out leaves at
+            // once, so two layouts never mix on screen.
+            .animation(active ? .easeOut(duration: 0.16) : nil, value: active)
             .allowsHitTesting(active)
             .accessibilityHidden(!active)
             .zIndex(active ? 1 : 0)
             .environment(\.isActivePage, active)
-            // No fade between a server's tools: two different layouts mixing for
-            // a moment reads as lag, while an instant change feels immediate.
     }
 }
 
