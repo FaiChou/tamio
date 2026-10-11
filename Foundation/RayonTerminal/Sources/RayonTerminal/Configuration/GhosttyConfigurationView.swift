@@ -176,7 +176,7 @@ public struct GhosttyConfigurationView: View {
                 }
             }
         }))
-        .searchable(text: $search, placement: .toolbar, prompt: "Search settings")
+        .configSearch(text: $search)
         .onAppear {
             installApplyHandler()
             if category == nil { selection = categories.first?.id ?? "text" }
@@ -560,6 +560,17 @@ public struct GhosttyConfigurationView: View {
 #endif
 
 #if os(macOS) || targetEnvironment(macCatalyst)
+private extension View {
+    @ViewBuilder
+    func configSearch(text: Binding<String>) -> some View {
+        #if targetEnvironment(macCatalyst)
+            rxToolbarSearch(text: text, prompt: "Search settings")
+        #else
+            searchable(text: text, placement: .toolbar, prompt: "Search settings")
+        #endif
+    }
+}
+
 /// Navigation at the leading edge, actions at the trailing edge of the window toolbar.
 private struct ConfigToolbar<Leading: View, Trailing: View>: ViewModifier {
     let leading: Leading
@@ -571,18 +582,38 @@ private struct ConfigToolbar<Leading: View, Trailing: View>: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        if #available(macOS 26.0, iOS 26.0, *) {
-            content.toolbar {
-                ToolbarItemGroup(placement: .navigation) { leading }
-                ToolbarSpacer(.flexible)
-                ToolbarItemGroup(placement: .automatic) { trailing }
+        #if targetEnvironment(macCatalyst)
+            if #available(iOS 26.0, *) {
+                // UIKit gives each button a circle of its own; AppKit's back and
+                // forward share a capsule (see RayonDesign's Toolbar.swift).
+                content.toolbar {
+                    ToolbarItem(placement: .navigation) {
+                        RXToolbarCapsule(spacing: 13, minSlot: 32) { leading }
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+                    ToolbarSpacer(.flexible)
+                    ToolbarItemGroup(placement: .automatic) { trailing }
+                }
+            } else {
+                content.toolbar {
+                    ToolbarItemGroup(placement: .navigation) { leading }
+                    ToolbarItemGroup(placement: .automatic) { trailing }
+                }
             }
-        } else {
-            content.toolbar {
-                ToolbarItemGroup(placement: .navigation) { leading }
-                ToolbarItemGroup(placement: .automatic) { trailing }
+        #else
+            if #available(macOS 26.0, iOS 26.0, *) {
+                content.toolbar {
+                    ToolbarItemGroup(placement: .navigation) { leading }
+                    ToolbarSpacer(.flexible)
+                    ToolbarItemGroup(placement: .automatic) { trailing }
+                }
+            } else {
+                content.toolbar {
+                    ToolbarItemGroup(placement: .navigation) { leading }
+                    ToolbarItemGroup(placement: .automatic) { trailing }
+                }
             }
-        }
+        #endif
     }
 }
 #endif
