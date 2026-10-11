@@ -35,7 +35,11 @@ struct SnippetsView: View {
     }
 
     var body: some View {
-        PageScaffold(search: $searchText, searchPrompt: "Search snippets") {
+        PageScaffold(
+            search: $searchText,
+            searchPrompt: "Search snippets",
+            primary: ToolbarAction("New Snippet", systemImage: "plus", primary: true) { creating = true }
+        ) {
             if !groupNames.isEmpty {
                 Picker("Group", selection: $groupFilter) {
                     Text("All Groups").tag(Self.allGroups)
@@ -45,7 +49,6 @@ struct SnippetsView: View {
                 .help("Filter by group")
             }
         } trailing: {
-            ToolbarAction("New Snippet", systemImage: "plus", primary: true) { creating = true }
         } header: {
             PageTitle("Snippets")
         } content: {

@@ -34,7 +34,14 @@ struct PortForwardView: View {
     }
 
     var body: some View {
-        PageScaffold(search: $searchText, searchPrompt: "Search forwards") {
+        PageScaffold(
+            search: $searchText,
+            searchPrompt: "Search forwards",
+            primary: ToolbarAction("New Port Forward", systemImage: "plus", primary: true) {
+                editor = EditorTarget(forward: nil)
+            },
+            trailingMetrics: .single
+        ) {
         } trailing: {
             ToolbarAction("Stop All", systemImage: "stop.circle") {
                 for context in backend.container {
@@ -42,9 +49,6 @@ struct PortForwardView: View {
                 }
             }
             .disabled(backend.container.isEmpty)
-            ToolbarAction("New Port Forward", systemImage: "plus", primary: true) {
-                editor = EditorTarget(forward: nil)
-            }
         } header: {
             PageTitle("Port Forward")
         } content: {
@@ -149,7 +153,7 @@ private struct PortForwardRow: View {
                 }
             }))
             .labelsHidden()
-            .toggleStyle(.switch)
+            .rxSwitchToggle()
             .controlSize(.small)
             .tint(.rxAccent)
             .disabled(!forward.isValid())

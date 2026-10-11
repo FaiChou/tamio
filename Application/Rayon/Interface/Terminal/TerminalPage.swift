@@ -40,34 +40,32 @@ struct TerminalPage: View {
         }
         .padding(.top, RX.Space.s3)
         .pageChrome()
-        .pageToolbar {
+        // Closing is the tab's close button; no second one here.
+        .pageToolbar(
+            primary: context.closed
+                ? ToolbarAction("Reconnect", systemImage: "arrow.clockwise", primary: true) { context.reconnect() }
+                : nil,
+            trailingMetrics: .controlGroup
+        ) {
             SessionTabs(current: context)
         } trailing: {
             Group {
-                ControlGroup {
-                    Button {
-                        store.terminalFontSize -= 1
-                    } label: {
-                        Label("Smaller Text", systemImage: "textformat.size.smaller")
-                    }
-                    .disabled(store.terminalFontSize <= 4)
-                    .keyboardShortcut("-", modifiers: .command)
-                    Button {
-                        store.terminalFontSize += 1
-                    } label: {
-                        Label("Larger Text", systemImage: "textformat.size.larger")
-                    }
-                    .disabled(store.terminalFontSize >= 30)
-                    .keyboardShortcut("+", modifiers: .command)
+                Button {
+                    store.terminalFontSize -= 1
+                } label: {
+                    Label("Smaller Text", systemImage: "textformat.size.smaller")
                 }
-                .help("Text Size")
-                // Closing is the tab's close button; no second one here.
-                if context.closed {
-                    ToolbarAction("Reconnect", systemImage: "arrow.clockwise", primary: true) {
-                        context.reconnect()
-                    }
+                .disabled(store.terminalFontSize <= 4)
+                .keyboardShortcut("-", modifiers: .command)
+                Button {
+                    store.terminalFontSize += 1
+                } label: {
+                    Label("Larger Text", systemImage: "textformat.size.larger")
                 }
+                .disabled(store.terminalFontSize >= 30)
+                .keyboardShortcut("+", modifiers: .command)
             }
+            .help("Text Size")
         }
         .serverToolSwitcher(
             machine: context.remoteType == .machine && context.machine.isNotPlaceholder() ? context.machine.id : nil,
@@ -143,6 +141,7 @@ struct SessionTabs: View {
                     }
                 } label: {
                     Image(systemName: "plus")
+                        .font(.system(size: 13))
                         .frame(width: 24, height: 24)
                         .contentShape(Rectangle())
                 }
@@ -151,7 +150,8 @@ struct SessionTabs: View {
                 .help("New Terminal")
                 .accessibilityLabel("New Terminal")
             }
-            .padding(.horizontal, 4)
+            // With the toolbar capsule's own inset, 4pt from its ends.
+            .padding(.horizontal, 2.25)
         }
         .frame(maxWidth: 520)
         .fixedSize(horizontal: false, vertical: true)
@@ -159,6 +159,13 @@ struct SessionTabs: View {
 }
 
 private struct SessionTab: View {
+    /// UIKit draws a bold xmark larger than AppKit does at the same size.
+    #if targetEnvironment(macCatalyst)
+        private static let closeGlyphSize: CGFloat = 7
+    #else
+        private static let closeGlyphSize: CGFloat = 9
+    #endif
+
     @ObservedObject var context: TerminalManager.Context
     let selected: Bool
     /// Position among the server's terminals, when there is more than one.
@@ -184,7 +191,7 @@ private struct SessionTab: View {
                 TerminalSessionActions.close(context)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.system(size: Self.closeGlyphSize, weight: .bold))
                     .foregroundStyle(.rxInkSecondary)
                     .frame(width: 16, height: 16)
                     .contentShape(Rectangle())

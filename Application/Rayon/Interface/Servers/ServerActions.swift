@@ -6,6 +6,7 @@
 //
 
 import MachineStatusView
+import RayonDesign
 import RayonModule
 import SwiftUI
 
@@ -235,39 +236,49 @@ struct ServerToolSwitcher: View {
     let current: ServerTool
 
     var body: some View {
-        Picker("View", selection: Binding(get: { current }, set: { $0.show(machine) })) {
-            ForEach(ServerTool.allCases) { tool in
-                Text(tool.title)
-                    .help(tool.help)
-                    .tag(tool)
+        if #available(iOS 26.0, *) {
+            RXToolbarSegmented(
+                selection: current,
+                options: ServerTool.allCases.map { .init($0, $0.title, help: $0.help) }
+            ) { $0.show(machine) }
+        } else {
+            Picker("View", selection: Binding(get: { current }, set: { $0.show(machine) })) {
+                ForEach(ServerTool.allCases) { tool in
+                    Text(tool.title)
+                        .help(tool.help)
+                        .tag(tool)
+                }
             }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .help("Switch between this server's terminal, files and monitor")
         }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .fixedSize()
-        .help("Switch between this server's terminal, files and monitor")
+    }
+}
+
+/// The server and tool a session page shows, for the switcher in its toolbar.
+struct ServerToolSwitch: Equatable {
+    let machine: RDMachine.ID
+    let current: ServerTool
+}
+
+private struct ServerToolSwitchKey: EnvironmentKey {
+    static let defaultValue: ServerToolSwitch? = nil
+}
+
+extension EnvironmentValues {
+    var serverToolSwitch: ServerToolSwitch? {
+        get { self[ServerToolSwitchKey.self] }
+        set { self[ServerToolSwitchKey.self] = newValue }
     }
 }
 
 extension View {
-    /// Places the `ServerToolSwitcher` in the centre of the window toolbar.
+    /// Places the `ServerToolSwitcher` in the centre of the window toolbar. The
+    /// page's toolbar (`pageToolbar`) lays it out with the rest, so this goes
+    /// outside it.
     func serverToolSwitcher(machine: RDMachine.ID?, current: ServerTool) -> some View {
-        modifier(ServerToolSwitcherItem(machine: machine, current: current))
-    }
-}
-
-private struct ServerToolSwitcherItem: ViewModifier {
-    let machine: RDMachine.ID?
-    let current: ServerTool
-    @Environment(\.isActivePage) private var isActive
-
-    func body(content: Content) -> some View {
-        content.toolbar {
-            if isActive, let machine {
-                ToolbarItem(placement: .principal) {
-                    ServerToolSwitcher(machine: machine, current: current)
-                }
-            }
-        }
+        environment(\.serverToolSwitch, machine.map { ServerToolSwitch(machine: $0, current: current) })
     }
 }

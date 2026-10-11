@@ -6,6 +6,7 @@
 //
 
 import MachineStatusView
+import RayonDesign
 import RayonModule
 import SwiftUI
 
@@ -35,17 +36,20 @@ struct ServersView: View {
     }
 
     var body: some View {
-        PageScaffold(search: $searchText, searchPrompt: "Search servers") {
+        PageScaffold(
+            search: $searchText,
+            searchPrompt: "Search servers",
+            primary: ToolbarAction("New Server", systemImage: "plus", primary: true) {
+                router.presentNewServer = true
+            }
+        ) {
         } trailing: {
             RedactionMenu()
             Button { router.openTerminals() } label: {
                 Label("Open Terminals…", systemImage: "rectangle.stack.badge.plus")
             }
             .help("Pick several servers and open a terminal on each")
-                .disabled(store.machineGroup.machines.isEmpty)
-            ToolbarAction("New Server", systemImage: "plus", primary: true) {
-                router.presentNewServer = true
-            }
+            .disabled(store.machineGroup.machines.isEmpty)
         } header: {
             VStack(alignment: .leading, spacing: RX.Space.s3) {
                 PageTitle("Servers")
@@ -88,20 +92,22 @@ struct RedactionMenu: View {
     @EnvironmentObject var store: RayonStore
 
     var body: some View {
-        Menu {
-            Picker("Redaction", selection: $store.machineRedacted) {
-                Label("Show Everything", systemImage: "eye").tag(RDMachine.RedactedLevel.none)
-                Label("Hide Addresses", systemImage: "eye.slash").tag(RDMachine.RedactedLevel.sensitive)
-                Label("Hide Names and Addresses", systemImage: "eye.slash.fill").tag(RDMachine.RedactedLevel.all)
-            }
-            .pickerStyle(.inline)
-            .labelsHidden()
-        } label: {
-            Label("Privacy", systemImage: store.machineRedacted == .none ? "eye" : "eye.slash")
-        }
-        .menuIndicator(.hidden)
+        RXToolbarMenu(
+            "Privacy",
+            systemImage: store.machineRedacted == .none ? "eye" : "eye.slash",
+            items: [
+                item("Show Everything", systemImage: "eye", level: .none),
+                item("Hide Addresses", systemImage: "eye.slash", level: .sensitive),
+                item("Hide Names and Addresses", systemImage: "eye.slash.fill", level: .all),
+            ]
+        )
         .help(store.machineRedacted.tooltip)
-        .keyboardShortcut("h", modifiers: .option)
+    }
+
+    private func item(_ title: String, systemImage: String, level: RDMachine.RedactedLevel) -> RXToolbarMenuItem {
+        RXToolbarMenuItem(title, systemImage: systemImage, isOn: store.machineRedacted == level) {
+            store.machineRedacted = level
+        }
     }
 }
 
