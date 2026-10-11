@@ -203,6 +203,7 @@ struct FileTransferPage: View {
             } else {
                 FileTable(
                     files: files,
+                    folder: context.currentDir,
                     revision: revision,
                     selection: selection,
                     select: { selection = $0 },
@@ -369,6 +370,8 @@ private struct FileTable: UIViewRepresentable {
     typealias File = FileTransferContext.RemoteFile
 
     let files: [File]
+    /// The folder `files` came from once `revision` has moved on.
+    let folder: String
     let revision: Int
     let selection: File?
     let select: (File) -> Void
@@ -399,10 +402,20 @@ private struct FileTable: UIViewRepresentable {
         coordinator.parent = self
         table.isUserInteractionEnabled = context.environment.isEnabled
         if old.revision != revision {
-            table.reloadData()
+            if coordinator.shownFolder != folder, coordinator.shownFolder != nil, !UIAccessibility.isReduceMotionEnabled {
+                // Another folder fades in from its top; a reload or the filter
+                // changes the rows in place.
+                UIView.transition(with: table, duration: 0.18, options: [.transitionCrossDissolve, .allowUserInteraction]) {
+                    table.reloadData()
+                    table.contentOffset = .zero
+                }
+            } else {
+                table.reloadData()
+            }
+            coordinator.shownFolder = folder
         } else if old.selection != selection {
             for case let cell as FileCell in table.visibleCells {
-                cell.isChosen = cell.file == selection
+                cell.setChosen(cell.file == selection, animated: true)
             }
         }
     }
@@ -410,6 +423,7 @@ private struct FileTable: UIViewRepresentable {
     final class Coordinator: NSObject, UITableViewDataSource, UITableViewDelegate {
         static var reuse: String { "file" }
         var parent: FileTable
+        var shownFolder: String?
 
         init(_ parent: FileTable) {
             self.parent = parent
@@ -494,8 +508,8 @@ private final class FileCell: UITableViewCell {
     var onClick: (() -> Void)?
     var onDoubleClick: (() -> Void)?
 
-    var isChosen = false { didSet { if isChosen != oldValue { refreshBackground() } } }
-    private var isHovered = false { didSet { if isHovered != oldValue { refreshBackground() } } }
+    private var isChosen = false
+    private var isHovered = false
 
     private let row = UIView()
     private let icon = UIImageView()
@@ -586,12 +600,14 @@ private final class FileCell: UITableViewCell {
         owner.text = Self.ownerFormatter.string(from: NSNumber(value: stat.ownerUID))
         isHovered = false
         isChosen = chosen
+        refreshBackground(animated: false)
         setNeedsLayout()
     }
 
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        isHovered = false
+    func setChosen(_ chosen: Bool, animated: Bool) {
+        guard chosen != isChosen else { return }
+        isChosen = chosen
+        refreshBackground(animated: animated)
     }
 
     override func layoutSubviews() {
@@ -613,18 +629,22 @@ private final class FileCell: UITableViewCell {
         name.frame = CGRect(x: nameLeading, y: 0, width: max(0, trailing - nameLeading), height: height)
     }
 
-    private func refreshBackground() {
-        row.backgroundColor = isChosen ? Self.rowSelected : (isHovered ? Self.rowHover : .clear)
+    private func refreshBackground(animated: Bool) {
+        let color = isChosen ? Self.rowSelected : (isHovered ? Self.rowHover : .clear)
+        guard animated else { return row.backgroundColor = color }
+        UIView.animate(withDuration: 0.12, delay: 0, options: [.curveEaseOut, .allowUserInteraction, .beginFromCurrentState]) {
+            self.row.backgroundColor = color
+        }
     }
 
     @objc private func clicked() { onClick?() }
     @objc private func doubleClicked() { onDoubleClick?() }
 
     @objc private func hovered(_ recognizer: UIHoverGestureRecognizer) {
-        switch recognizer.state {
-        case .began, .changed: isHovered = true
-        default: isHovered = false
-        }
+        let hovering = recognizer.state == .began || recognizer.state == .changed
+        guard hovering != isHovered else { return }
+        isHovered = hovering
+        refreshBackground(animated: true)
     }
 
     override func gestureRecognizer(_: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith _: UIGestureRecognizer) -> Bool {
