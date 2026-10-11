@@ -146,6 +146,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             if ProcessInfo.processInfo.environment["RAYON_PREVIEW_MENUBAR"] != nil {
                 MenubarTool.shared.showPreview()
             }
+            Bench.runIfRequested()
             if ProcessInfo.processInfo.environment["RAYON_PREVIEW_EDITOR"] != nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1) { AppRouter.shared.showEditorPreview() }
             }

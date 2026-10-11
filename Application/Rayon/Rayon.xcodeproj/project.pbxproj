@@ -39,6 +39,7 @@
 		79A8D37F5321065EC0A9A1EA /* MacBridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7DB52A0A8F903D2B1C42F5 /* MacBridging.swift */; };
 		7E6F0969D5874F9FB79CF3F7 /* MachineStatus in Frameworks */ = {isa = PBXBuildFile; productRef = EBF017679A8CED57F2A003C9 /* MachineStatus */; };
 		81288D417F92BA2EC41F9903 /* Bridge+Dialogs.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C0A0A7C5A7678327CD0358 /* Bridge+Dialogs.swift */; };
+		8246920766C235CC74E193C6 /* Bench.swift in Sources */ = {isa = PBXBuildFile; fileRef = 887A7ACEE9CB0344189F261A /* Bench.swift */; };
 		83685CBE0306BC5DF1E1EF17 /* PortForwardBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC3A70EB202868EEE385F30 /* PortForwardBackend.swift */; };
 		87B23A43BAD077C3738E42D2 /* PortForwardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B7718185E5DAEC967484A09 /* PortForwardView.swift */; };
 		8BCAACD7136B86580D602065 /* FileTransferPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69392C86070B7FB4213CB6A2 /* FileTransferPage.swift */; };
@@ -117,6 +118,7 @@
 		8104E329E7DA28E8E266EF29 /* TerminalPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalPage.swift; sourceTree = "<group>"; };
 		823E9F4D95917328540A0DBD /* Bridge+Windows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+Windows.swift"; sourceTree = "<group>"; };
 		844115EA0A6F503FF8CA2F60 /* DoubleConfirm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoubleConfirm.swift; sourceTree = "<group>"; };
+		887A7ACEE9CB0344189F261A /* Bench.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bench.swift; sourceTree = "<group>"; };
 		88CFA0115704680AA3974979 /* Rayon.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Rayon.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8910D14A56A4A4273BDAE945 /* StatusItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItem.swift; sourceTree = "<group>"; };
 		92382891F3E59CE0442A4616 /* MacBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBridge.swift; sourceTree = "<group>"; };
@@ -221,6 +223,7 @@
 			isa = PBXGroup;
 			children = (
 				E125B54A35FEC716F5D4D843 /* Assets.xcassets */,
+				887A7ACEE9CB0344189F261A /* Bench.swift */,
 				6FF65F88613D8DEBFABCC991 /* RayonApp.swift */,
 			);
 			path = Application;
@@ -544,6 +547,7 @@
 				373BD4C3BBC90C195F9BDCE0 /* AppRouter.swift in Sources */,
 				A965F0DBDA5090CEF905D37A /* BatchRunSheet.swift in Sources */,
 				27396C408C6129B2F14A6B17 /* BatchSnippetExecContext.swift in Sources */,
+				8246920766C235CC74E193C6 /* Bench.swift in Sources */,
 				D6F0B7761A17413C1B3A672F /* DoubleConfirm.swift in Sources */,
 				041F6D2B8B0C4E14112BE969 /* EditorPage.swift in Sources */,
 				49C1EFC0CC91708B2B1CEC72 /* EditorWorkspace.swift in Sources */,
