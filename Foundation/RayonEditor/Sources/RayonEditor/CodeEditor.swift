@@ -123,12 +123,16 @@ public struct CodeEditor: UIViewRepresentable {
         // already put the view's own text in the binding.
         if text != context.coordinator.lastText {
             context.coordinator.load(text, into: view)
+        } else if language != context.coordinator.lastLanguage {
+            // Another syntax for the same text: parse it again.
+            context.coordinator.load(view.text, into: view)
         }
     }
 
     public final class Coordinator: NSObject, TextViewDelegate {
         var parent: CodeEditor
         var lastText = ""
+        var lastLanguage = EditorLanguage.plain
 
         init(_ parent: CodeEditor) {
             self.parent = parent
@@ -137,6 +141,7 @@ public struct CodeEditor: UIViewRepresentable {
         /// Parses on a background queue so a large file doesn't stall the UI.
         func load(_ text: String, into view: TextView) {
             lastText = text
+            lastLanguage = parent.language
             let theme = EditorTheme(size: parent.fontSize)
             let language = parent.language.treeSitter
             nonisolated(unsafe) let weakView = WeakBox(view)
