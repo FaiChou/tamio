@@ -161,3 +161,52 @@ struct RemoteFileEditorView: View {
         }
     }
 }
+
+#if DEBUG
+    /// The editor on a sample file, with no server: launch a debug build with
+    /// RAYON_PREVIEW_EDITOR=1 to check highlighting and layout.
+    struct EditorPreviewScreen: View {
+        @State private var text = """
+        #!/usr/bin/env bash
+        # Rotate logs and restart the service.
+        set -euo pipefail
+
+        LOG_DIR="/var/log/web"
+        KEEP=7
+
+        rotate() {
+            local file="$1"
+            if [[ -s "$file" ]]; then
+                mv "$file" "$file.$(date +%Y%m%d)"
+            fi
+        }
+
+        for log in "$LOG_DIR"/*.log; do
+            rotate "$log"
+        done
+        find "$LOG_DIR" -name '*.log.*' -mtime +"$KEEP" -delete
+        systemctl restart web.service   # pick up new log handles
+        """
+        @State private var caret = EditorCaret(line: 1, column: 1)
+
+        var body: some View {
+            NavigationStack {
+                CodeEditor(text: $text, language: .bash) { caret = $0 }
+                    .navigationTitle("rotate-logs.sh")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        HStack {
+                            Text("Shell")
+                            Text("Ln \(caret.line), Col \(caret.column)").monospacedDigit()
+                            Spacer()
+                        }
+                        .font(.system(size: 12))
+                        .foregroundStyle(.rxInkSecondary)
+                        .padding(.horizontal, RX.Space.s4)
+                        .frame(height: 30)
+                        .background(.bar)
+                    }
+            }
+        }
+    }
+#endif

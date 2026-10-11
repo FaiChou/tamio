@@ -33,6 +33,11 @@ struct mRayonApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(store)
+                #if DEBUG
+                .fullScreenCover(isPresented: .constant(ProcessInfo.processInfo.environment["RAYON_PREVIEW_EDITOR"] != nil)) {
+                    EditorPreviewScreen()
+                }
+                #endif
                 .onAppear {
                     // optimize later on flight exp
                     let editor = SCodeEditor()
