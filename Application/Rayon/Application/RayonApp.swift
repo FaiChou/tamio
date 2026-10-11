@@ -139,6 +139,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         AppearancePreference.applyStored()
         UITextField.drawPlaceholdersAsAppKit()
         Mac.bridge?.setTerminationGuard { AppDelegate.shared.mayTerminate() }
+        Mac.bridge?.setOpenAppHandler { MainActor.assumeIsolated { MainWindow.show() } }
         TraySceneDelegate.discardLeftovers()
         MenubarTool.shared.restore()
         #if DEBUG

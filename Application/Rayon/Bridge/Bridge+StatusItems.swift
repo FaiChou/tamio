@@ -14,7 +14,12 @@ extension Bridge {
             guard let self, NSApp.isActive, NSApp.keyWindow == nil || NSApp.keyWindow === item?.donor else { return }
             self.ordinaryWindows.first { $0.isVisible }?.makeKey()
         }
+        item.onOpenApp = { [weak self] in self?.openApp?() }
         statusItems[id] = item
+    }
+
+    func setOpenAppHandler(_ handler: @escaping () -> Void) {
+        openApp = handler
     }
 
     func updateStatusItem(_ id: String, title: String, frameInterval: Double) {

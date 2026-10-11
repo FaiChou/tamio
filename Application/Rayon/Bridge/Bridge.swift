@@ -13,6 +13,7 @@ import ObjectiveC
 @objc(Bridge) final class Bridge: NSObject, MacBridging {
     var statusItems: [String: StatusItem] = [:]
     var mayTerminate: (() -> Bool)?
+    var openApp: (() -> Void)?
     /// Windows that existed before a popover's window was asked for.
     var windowsBeforePopover: Set<ObjectIdentifier>?
     var updateObserver: NSObjectProtocol?

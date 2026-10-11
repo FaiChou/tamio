@@ -13,6 +13,9 @@ final class StatusItem: NSObject, NSPopoverDelegate {
     let frames: [NSImage]
     let idleFrame: NSImage?
     let onClick: () -> Void
+    /// Shows the main window; the item's menu offers it with Quit, which a
+    /// Rayon that lives only in the menu bar has nowhere else.
+    var onOpenApp: (() -> Void)?
 
     var popover: NSPopover?
     /// The window UIKit made for the popover's content. It stays open, unseen:
@@ -33,13 +36,40 @@ final class StatusItem: NSObject, NSPopoverDelegate {
         super.init()
         item.button?.target = self
         item.button?.action = #selector(clicked)
+        item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
         item.button?.imagePosition = .imageLeading
         item.button?.toolTip = toolTip
         item.button?.image = self.idleFrame
     }
 
     @objc private func clicked() {
-        onClick()
+        if NSApp.currentEvent?.type == .rightMouseUp || NSEvent.modifierFlags.contains(.control) {
+            showMenu()
+        } else {
+            onClick()
+        }
+    }
+
+    private func showMenu() {
+        close()
+        let menu = NSMenu()
+        menu.addItem(withTitle: "Open Rayon", action: #selector(openApp), keyEquivalent: "").target = self
+        menu.addItem(.separator())
+        menu.addItem(withTitle: "Quit Rayon", action: #selector(quit), keyEquivalent: "q").target = self
+        // Shown for this click only, so a left click still opens the popover.
+        item.menu = menu
+        item.button?.performClick(nil)
+        item.menu = nil
+    }
+
+    @objc private func openApp() {
+        onOpenApp?()
+    }
+
+    @objc private func quit() {
+        // The termination guard may ask first; its alert needs Rayon in front.
+        NSApp.activate(ignoringOtherApps: true)
+        NSApp.terminate(nil)
     }
 
     func remove() {
