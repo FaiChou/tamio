@@ -21,13 +21,52 @@ struct FileTransferPage: View {
     @State private var prompt: FilePrompt?
     @State private var dropTargeted = false
 
-    var files: [FileTransferContext.RemoteFile] {
-        let list = context.currentFileList.sorted { lhs, rhs in
-            if lhs.fstat.isDirectory != rhs.fstat.isDirectory { return lhs.fstat.isDirectory }
-            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+    /// The whole folder in the table's order: folders first, then by name.
+    /// Sorted when the folder changes, not on every redraw: a transfer's
+    /// progress redraws the page many times a second.
+    @State private var sorted: [FileTransferContext.RemoteFile] = []
+    /// What the table shows: `sorted`, less what the filter leaves out.
+    @State private var files: [FileTransferContext.RemoteFile] = []
+    /// Counts the changes of `files`, so the table needn't compare lists.
+    @State private var revision = 0
+    /// Counts the folder listings, so a slow sort of an old one is dropped.
+    @State private var listing = 0
+
+    nonisolated static func sort(_ list: [FileTransferContext.RemoteFile]) -> [FileTransferContext.RemoteFile] {
+        // The kind is read once per file, not once per comparison.
+        var keyed = list.map { (isDirectory: $0.fstat.isDirectory, file: $0) }
+        keyed.sort { lhs, rhs in
+            if lhs.isDirectory != rhs.isDirectory { return lhs.isDirectory }
+            return lhs.file.name.localizedStandardCompare(rhs.file.name) == .orderedAscending
         }
-        guard !filter.isEmpty else { return list }
-        return list.filter { $0.name.lowercased().contains(filter.lowercased()) }
+        return keyed.map(\.file)
+    }
+
+    private func show(sorted list: [FileTransferContext.RemoteFile]) {
+        sorted = list
+        applyFilter()
+    }
+
+    /// Filtering keeps the order, so typing in the filter never sorts.
+    private func applyFilter() {
+        let needle = filter.lowercased()
+        files = needle.isEmpty ? sorted : sorted.filter { $0.name.lowercased().contains(needle) }
+        revision += 1
+    }
+
+    private func arrange(_ list: [FileTransferContext.RemoteFile]) {
+        listing += 1
+        // A long folder is sorted off the main thread; a short one takes less
+        // than a frame, and showing it at once avoids a flash of the old one.
+        guard list.count > 1000 else { return show(sorted: Self.sort(list)) }
+        let expected = listing
+        nonisolated(unsafe) let list = list
+        DispatchQueue.global(qos: .userInitiated).async {
+            nonisolated(unsafe) let result = Self.sort(list)
+            DispatchQueue.main.async {
+                if listing == expected { show(sorted: result) }
+            }
+        }
     }
 
     var busy: Bool { context.processConnection || context.isProgressRunning }
@@ -124,6 +163,14 @@ struct FileTransferPage: View {
             FilePromptSheet(prompt: prompt, context: context) { self.prompt = nil }
         }
         .onChange(of: context.currentDir) { _ in selection = nil }
+        .onReceive(context.$currentFileList) { arrange($0) }
+        .onChange(of: filter) { _ in applyFilter() }
+        #if DEBUG
+            .onReceive(NotificationCenter.default.publisher(for: .benchFiles)) { note in
+                if let index = note.userInfo?["select"] as? Int, files.indices.contains(index) { selection = files[index] }
+                if let text = note.userInfo?["filter"] as? String { filter = text }
+            }
+        #endif
         .serverToolSwitcher(machine: context.machine.id, current: .files)
     }
 
@@ -154,16 +201,14 @@ struct FileTransferPage: View {
                 )
                 Spacer(minLength: 0)
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(files) { file in
-                            FileRow(file: file, selected: selection == file)
-                                .onTapGesture(count: 2) { open(file) }
-                                .simultaneousGesture(TapGesture().onEnded { selection = file })
-                                .contextMenu { menu(for: file) }
-                        }
-                    }
-                }
+                FileTable(
+                    files: files,
+                    revision: revision,
+                    selection: selection,
+                    select: { selection = $0 },
+                    open: open,
+                    menu: menu(for:)
+                )
             }
         }
         .padding(RX.Space.s2)
@@ -173,20 +218,26 @@ struct FileTransferPage: View {
         .opacity(busy ? 0.6 : 1)
     }
 
-    @ViewBuilder
-    func menu(for file: FileTransferContext.RemoteFile) -> some View {
-        if file.fstat.isDirectory {
-            Button("Open") { open(file) }
-        } else {
-            Button("Edit") { edit(file) }
+    func menu(for file: FileTransferContext.RemoteFile) -> UIMenu {
+        func group(_ actions: [UIAction]) -> UIMenu {
+            UIMenu(options: .displayInline, children: actions)
         }
-        Button("Download…") { download(file) }
-        Divider()
-        Button("Rename…") { prompt = .rename(file.name) }
-        Button("Copy Name") { UIBridge.sendPasteboard(str: file.name) }
-        Button("Copy Path") { UIBridge.sendPasteboard(str: context.currentUrl.appendingPathComponent(file.name).path) }
-        Divider()
-        Button("Delete…", role: .destructive) { delete(file) }
+        return UIMenu(children: [
+            group([
+                file.fstat.isDirectory
+                    ? UIAction(title: "Open") { _ in open(file) }
+                    : UIAction(title: "Edit") { _ in edit(file) },
+                UIAction(title: "Download…") { _ in download(file) },
+            ]),
+            group([
+                UIAction(title: "Rename…") { _ in prompt = .rename(file.name) },
+                UIAction(title: "Copy Name") { _ in UIBridge.sendPasteboard(str: file.name) },
+                UIAction(title: "Copy Path") { _ in
+                    UIBridge.sendPasteboard(str: context.currentUrl.appendingPathComponent(file.name).path)
+                },
+            ]),
+            group([UIAction(title: "Delete…", attributes: .destructive) { _ in delete(file) }]),
+        ])
     }
 
     // MARK: Transfer card
@@ -311,10 +362,112 @@ struct FileTransferPage: View {
 
 // MARK: - Rows
 
-private struct FileRow: View {
-    let file: FileTransferContext.RemoteFile
-    let selected: Bool
-    @State private var hovered = false
+/// A folder's rows in a UIKit table. Only the rows on screen exist, however long
+/// the folder is, and a redraw of the page costs the table nothing unless the
+/// list or the selection changed.
+private struct FileTable: UIViewRepresentable {
+    typealias File = FileTransferContext.RemoteFile
+
+    let files: [File]
+    let revision: Int
+    let selection: File?
+    let select: (File) -> Void
+    let open: (File) -> Void
+    let menu: (File) -> UIMenu
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIView(context: Context) -> UITableView {
+        let table = UITableView(frame: .zero, style: .plain)
+        table.backgroundColor = .clear
+        table.separatorStyle = .none
+        table.rowHeight = RX.denseRowHeight
+        table.estimatedRowHeight = RX.denseRowHeight
+        table.sectionHeaderTopPadding = 0
+        // Clicks and hover are the rows' own.
+        table.allowsSelection = false
+        table.allowsFocus = false
+        table.dataSource = context.coordinator
+        table.delegate = context.coordinator
+        table.register(FileCell.self, forCellReuseIdentifier: Coordinator.reuse)
+        return table
+    }
+
+    func updateUIView(_ table: UITableView, context: Context) {
+        let coordinator = context.coordinator
+        let old = coordinator.parent
+        coordinator.parent = self
+        table.isUserInteractionEnabled = context.environment.isEnabled
+        if old.revision != revision {
+            table.reloadData()
+        } else if old.selection != selection {
+            for case let cell as FileCell in table.visibleCells {
+                cell.isChosen = cell.file == selection
+            }
+        }
+    }
+
+    final class Coordinator: NSObject, UITableViewDataSource, UITableViewDelegate {
+        static var reuse: String { "file" }
+        var parent: FileTable
+
+        init(_ parent: FileTable) {
+            self.parent = parent
+        }
+
+        func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
+            parent.files.count
+        }
+
+        func tableView(_ table: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+            let cell = table.dequeueReusableCell(withIdentifier: Self.reuse, for: indexPath)
+            guard let cell = cell as? FileCell else { return cell }
+            let file = parent.files[indexPath.row]
+            cell.show(file, chosen: file == parent.selection)
+            cell.onClick = { [weak self] in self?.parent.select(file) }
+            cell.onDoubleClick = { [weak self] in self?.parent.open(file) }
+            return cell
+        }
+
+        func tableView(_: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point _: CGPoint) -> UIContextMenuConfiguration? {
+            guard parent.files.indices.contains(indexPath.row) else { return nil }
+            let file = parent.files[indexPath.row]
+            let menu = parent.menu
+            return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in menu(file) }
+        }
+    }
+}
+
+/// One file: symbol and name, size, date, permissions, owner. Drawn with UIKit
+/// labels to the measurements of the SwiftUI rows elsewhere in the app.
+private final class FileCell: UITableViewCell {
+    private(set) var file: FileTransferContext.RemoteFile?
+    var onClick: (() -> Void)?
+    var onDoubleClick: (() -> Void)?
+
+    var isChosen = false { didSet { if isChosen != oldValue { refreshBackground() } } }
+    private var isHovered = false { didSet { if isHovered != oldValue { refreshBackground() } } }
+
+    private let row = UIView()
+    private let icon = UIImageView()
+    private let name = UILabel()
+    private let size = UILabel()
+    private let modified = UILabel()
+    private let permissions = UILabel()
+    private let owner = UILabel()
+
+    private static let ink = UIColor(Color.rxInk)
+    private static let inkSecondary = UIColor(Color.rxInkSecondary)
+    private static let accent = UIColor(Color.rxAccent)
+    private static let rowSelected = UIColor(Color.rxRowSelected)
+    private static let rowHover = UIColor(Color.rxRowHover)
+    private static let body = UIFont.systemFont(ofSize: 13)
+    private static let digits = UIFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
+    private static let code = UIFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+    private static let symbol = UIImage.SymbolConfiguration(font: .systemFont(ofSize: 14))
+    private static let symbols: [String: UIImage] = ["folder", "link", "doc"].reduce(into: [:]) {
+        $0[$1] = UIImage(systemName: $1, withConfiguration: symbol)
+    }
 
     static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -324,50 +477,110 @@ private struct FileRow: View {
         return formatter
     }()
 
-    var body: some View {
-        HStack(spacing: 0) {
-            HStack(spacing: RX.Space.s2) {
-                Image(systemName: icon)
-                    .font(.system(size: 14))
-                    .foregroundStyle(file.fstat.isDirectory ? Color.rxAccent : Color.rxInkSecondary)
-                    .frame(width: 18)
-                Text(file.name)
-                    .font(.rxBody)
-                    .foregroundStyle(.rxInk)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            Text(file.fstat.isDirectory ? "—" : RXFormat.bytesString(Double(truncating: file.fstat.size ?? 0)))
-                .font(.rxBody.monospacedDigit())
-                .foregroundStyle(file.fstat.isDirectory ? Color.rxInkSecondary : Color.rxInk)
-                .frame(width: 90, alignment: .trailing)
-            Color.clear.frame(width: RX.Space.s4, height: 1)
-            Text(file.fstat.modificationDate.map { Self.dateFormatter.string(from: $0) } ?? "—")
-                .font(.rxBody)
-                .foregroundStyle(.rxInkSecondary)
-                .lineLimit(1)
-                .frame(width: 150, alignment: .leading)
-            Text(file.fstat.permissionDescription)
-                .font(.rxCode)
-                .foregroundStyle(.rxInkSecondary)
-                .frame(width: 110, alignment: .leading)
-            Text("\(file.fstat.ownerUID)")
-                .font(.rxBody.monospacedDigit())
-                .foregroundStyle(.rxInkSecondary)
-                .frame(width: 70, alignment: .leading)
-        }
-        .padding(.horizontal, RX.Space.s3)
-        .frame(height: RX.denseRowHeight)
-        .rxRowBackground(selected: selected, hovered: hovered)
-        .contentShape(Rectangle())
-        .onHover { hovered = $0 }
+    private static let ownerFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter
+    }()
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        selectionStyle = .none
+        backgroundConfiguration = .clear()
+        focusEffect = nil
+
+        row.layer.cornerRadius = RX.Radius.lg
+        row.layer.cornerCurve = .continuous
+        contentView.addSubview(row)
+
+        icon.contentMode = .center
+        name.font = Self.body
+        name.textColor = Self.ink
+        name.lineBreakMode = .byTruncatingMiddle
+        size.font = Self.digits
+        size.textAlignment = .right
+        modified.font = Self.body
+        modified.textColor = Self.inkSecondary
+        permissions.font = Self.code
+        permissions.textColor = Self.inkSecondary
+        owner.font = Self.digits
+        owner.textColor = Self.inkSecondary
+        for view in [icon, name, size, modified, permissions, owner] { row.addSubview(view) }
+
+        let click = UITapGestureRecognizer(target: self, action: #selector(clicked))
+        let doubleClick = UITapGestureRecognizer(target: self, action: #selector(doubleClicked))
+        doubleClick.numberOfTapsRequired = 2
+        // The first click selects at once; it doesn't wait to see whether a
+        // second follows.
+        click.delegate = self
+        doubleClick.delegate = self
+        contentView.addGestureRecognizer(click)
+        contentView.addGestureRecognizer(doubleClick)
+        contentView.addGestureRecognizer(UIHoverGestureRecognizer(target: self, action: #selector(hovered(_:))))
     }
 
-    var icon: String {
-        if file.fstat.isDirectory { return "folder" }
-        if file.fstat.isLink { return "link" }
-        return "doc"
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func show(_ file: FileTransferContext.RemoteFile, chosen: Bool) {
+        self.file = file
+        let stat = file.fstat
+        let isDirectory = stat.isDirectory
+        icon.image = Self.symbols[isDirectory ? "folder" : (stat.isLink ? "link" : "doc")]
+        icon.tintColor = isDirectory ? Self.accent : Self.inkSecondary
+        name.text = file.name
+        size.text = isDirectory ? "—" : RXFormat.bytesString(Double(truncating: stat.size ?? 0))
+        size.textColor = isDirectory ? Self.inkSecondary : Self.ink
+        modified.text = stat.modificationDate.map { Self.dateFormatter.string(from: $0) } ?? "—"
+        permissions.text = stat.permissionDescription
+        owner.text = Self.ownerFormatter.string(from: NSNumber(value: stat.ownerUID))
+        isHovered = false
+        isChosen = chosen
+        setNeedsLayout()
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        isHovered = false
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        row.frame = contentView.bounds
+        let height = row.bounds.height
+        var trailing = row.bounds.width - RX.Space.s3
+        func place(_ view: UIView, width: CGFloat) {
+            trailing -= width
+            view.frame = CGRect(x: trailing, y: 0, width: width, height: height)
+        }
+        place(owner, width: 70)
+        place(permissions, width: 110)
+        place(modified, width: 150)
+        trailing -= RX.Space.s4
+        place(size, width: 90)
+        icon.frame = CGRect(x: RX.Space.s3, y: 0, width: 18, height: height)
+        let nameLeading = icon.frame.maxX + RX.Space.s2
+        name.frame = CGRect(x: nameLeading, y: 0, width: max(0, trailing - nameLeading), height: height)
+    }
+
+    private func refreshBackground() {
+        row.backgroundColor = isChosen ? Self.rowSelected : (isHovered ? Self.rowHover : .clear)
+    }
+
+    @objc private func clicked() { onClick?() }
+    @objc private func doubleClicked() { onDoubleClick?() }
+
+    @objc private func hovered(_ recognizer: UIHoverGestureRecognizer) {
+        switch recognizer.state {
+        case .began, .changed: isHovered = true
+        default: isHovered = false
+        }
+    }
+
+    override func gestureRecognizer(_: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith _: UIGestureRecognizer) -> Bool {
+        true
     }
 }
 
