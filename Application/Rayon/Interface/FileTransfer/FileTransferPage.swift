@@ -438,8 +438,57 @@ private struct FileTable: UIViewRepresentable {
     }
 }
 
+/// A line of text drawn as SwiftUI's `Text` draws it. A label pulls the letters
+/// of a truncated name together and so cuts it a character later, and it
+/// spaces the digits of a size a fraction of a point apart.
+private final class FileCellText: UIView {
+    var text = "" { didSet { if text != oldValue { setNeedsDisplay() } } }
+    var textColor = UIColor.label { didSet { if textColor != oldValue { setNeedsDisplay() } } }
+    var font = UIFont.systemFont(ofSize: 13)
+    var trailing = false
+
+    private static let paragraph: NSParagraphStyle = {
+        let style = NSMutableParagraphStyle()
+        style.lineBreakMode = .byTruncatingMiddle
+        style.allowsDefaultTighteningForTruncation = false
+        return style
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        isOpaque = false
+        contentMode = .redraw
+        isUserInteractionEnabled = false
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func draw(_: CGRect) {
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font, .foregroundColor: textColor, .paragraphStyle: Self.paragraph,
+        ]
+        let string = text as NSString
+        let options: NSStringDrawingOptions = [.usesLineFragmentOrigin, .truncatesLastVisibleLine]
+        let scale = max(traitCollection.displayScale, 1)
+        let fitted = string.boundingRect(
+            with: CGSize(width: bounds.width, height: .greatestFiniteMagnitude),
+            options: options, attributes: attributes, context: nil
+        )
+        let width = min(bounds.width, (fitted.width * scale).rounded(.up) / scale)
+        let height = (fitted.height * scale).rounded(.up) / scale
+        let y = ((bounds.height - height) / 2 * scale).rounded() / scale
+        string.draw(
+            with: CGRect(x: trailing ? bounds.width - width : 0, y: y, width: trailing ? width : bounds.width, height: height),
+            options: options, attributes: attributes, context: nil
+        )
+    }
+}
+
 /// One file: symbol and name, size, date, permissions, owner. Drawn with UIKit
-/// labels to the measurements of the SwiftUI rows elsewhere in the app.
+/// views to the measurements of the SwiftUI rows elsewhere in the app.
 private final class FileCell: UITableViewCell {
     private(set) var file: FileTransferContext.RemoteFile?
     var onClick: (() -> Void)?
@@ -450,8 +499,8 @@ private final class FileCell: UITableViewCell {
 
     private let row = UIView()
     private let icon = UIImageView()
-    private let name = UILabel()
-    private let size = UILabel()
+    private let name = FileCellText()
+    private let size = FileCellText()
     private let modified = UILabel()
     private let permissions = UILabel()
     private let owner = UILabel()
@@ -496,9 +545,8 @@ private final class FileCell: UITableViewCell {
         icon.contentMode = .center
         name.font = Self.body
         name.textColor = Self.ink
-        name.lineBreakMode = .byTruncatingMiddle
         size.font = Self.digits
-        size.textAlignment = .right
+        size.trailing = true
         modified.font = Self.body
         modified.textColor = Self.inkSecondary
         permissions.font = Self.code
