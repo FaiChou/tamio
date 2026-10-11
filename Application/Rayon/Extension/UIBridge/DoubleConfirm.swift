@@ -25,25 +25,23 @@ extension UIBridge {
             confirmation(true)
             return
         }
-        let alert = NSAlert()
-        alert.messageText = message
-        if let informative { alert.informativeText = informative }
-        let confirm = alert.addButton(withTitle: confirmTitle)
-        confirm.hasDestructiveAction = destructive
-        alert.addButton(withTitle: "Cancel")
-        if let keyWindow = NSApplication.shared.keyWindow {
-            let responseHandler: @Sendable (NSApplication.ModalResponse) -> Void = { resp in
-                confirmation(resp == .alertFirstButtonReturn)
-            }
-            alert.beginSheetModal(for: keyWindow, completionHandler: responseHandler)
-        } else {
-            let resp = alert.runModal()
-            confirmation(resp == .alertFirstButtonReturn)
+        guard let bridge = Mac.bridge else {
+            confirmation(false)
+            return
+        }
+        bridge.alert(
+            message: message,
+            informative: informative,
+            buttons: [confirmTitle, "Cancel"],
+            destructiveFirstButton: destructive,
+            textField: nil
+        ) { button, _ in
+            confirmation(button == 0)
         }
     }
 }
 
-/// Bridges RayonModule's shared file-transfer core to AppKit UI.
+/// Bridges RayonModule's shared file-transfer core to the Mac app's UI.
 final class MacFileTransferUIHandler: FileTransferUIHandler {
     func presentError(_ message: String) {
         UIBridge.presentError(with: message)

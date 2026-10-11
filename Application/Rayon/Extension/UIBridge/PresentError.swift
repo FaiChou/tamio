@@ -8,32 +8,25 @@
 import Foundation
 import RayonModule
 
-import AppKit
-
 extension UIBridge {
     static func presentAlert(with message: String) {
-        onMainThread {
-            let alert = NSAlert()
-            alert.messageText = message
-            if let keyWindow = NSApplication.shared.keyWindow {
-                alert.beginSheetModal(for: keyWindow, completionHandler: nil)
-            } else {
-                alert.runModal()
-            }
-        }
+        onMainThread { show(message) }
     }
 
     static func presentError(with message: String, delay: Double = 0) {
         debugPrint("<InterfaceError> \(message)")
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            let alert = NSAlert()
-            // HIG: use caution symbols sparingly; routine errors don't warrant one.
-            alert.messageText = message
-            if let keyWindow = NSApplication.shared.keyWindow {
-                alert.beginSheetModal(for: keyWindow, completionHandler: nil)
-            } else {
-                alert.runModal()
-            }
-        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { show(message) }
+    }
+
+    /// HIG: use caution symbols sparingly; routine errors don't warrant one.
+    private static func show(_ message: String) {
+        Mac.bridge?.alert(
+            message: message,
+            informative: nil,
+            buttons: [],
+            destructiveFirstButton: false,
+            textField: nil,
+            completion: nil
+        )
     }
 }

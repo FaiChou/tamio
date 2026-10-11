@@ -5,27 +5,33 @@
 //  Created by Lakr Aream on 2022/2/8.
 //
 
-import AppKit
 import CodeEditorUI
 import RayonModule
 import RayonTerminal
 import SwiftUI
+import UIKit
 
 @main
 struct RayonApp: App {
     @StateObject private var store = RayonStore.shared
 
-    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     init() {
         #if DEBUG
             NSLog(CommandLine.arguments.joined(separator: "\n"))
         #endif
+        // Before the store: it reads the master key as it loads.
+        Mac.installLegacyKeyStore()
         _ = RayonStore.shared
 
         // Shared file-transfer core lives in RayonModule; register the
         // platform UI handler it delegates to.
         FileTransferInterface.uiHandler = MacFileTransferUIHandler()
+
+        // The window material is AppKit's; the backdrop view reports the
+        // windows it is in.
+        RXWindowBackground.install = { window in MainWindow.prepare(window) }
 
         NSLog("static main completed")
     }
@@ -35,7 +41,6 @@ struct RayonApp: App {
             MainView()
                 .environmentObject(store)
         }
-        .windowToolbarStyle(.unified(showsTitle: false))
         .commands {
             SidebarCommands()
             RayonCommands()
@@ -56,6 +61,12 @@ struct RayonCommands: Commands {
             Button("Open Terminals…") { AppRouter.shared.openTerminals() }
                 .keyboardShortcut("t", modifiers: [.command, .shift])
         }
+        #if targetEnvironment(macCatalyst)
+            CommandGroup(after: .textEditing) {
+                Button("Find") { NotificationCenter.default.post(name: .rxFocusToolbarSearch, object: nil) }
+                    .keyboardShortcut("f", modifiers: .command)
+            }
+        #endif
         CommandGroup(after: .sidebar) {
             Button("Home") { AppRouter.shared.route = .home }
                 .keyboardShortcut("1", modifiers: .command)
@@ -72,7 +83,40 @@ struct RayonCommands: Commands {
     }
 }
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+/// What a main window needs from UIKit and AppKit that SwiftUI does not offer
+/// on Mac Catalyst.
+enum MainWindow {
+    static let minimumSize = CGSize(width: 940, height: 600)
+
+    @MainActor static func prepare(_ window: UIWindow) {
+        if let scene = window.windowScene, !(scene.delegate is TraySceneDelegate) {
+            // The toolbar holds page controls only; the page title is in the content.
+            scene.titlebar?.titleVisibility = .hidden
+            scene.titlebar?.toolbarStyle = .unified
+            scene.sizeRestrictions?.minimumSize = minimumSize
+        }
+        Mac.bridge?.installBackdrop(for: window)
+    }
+
+    /// Brings the main window forward, reopening it if it was closed.
+    @MainActor static func show() {
+        if let scene = RayonUtil.mainScene() {
+            Mac.bridge?.activate(window: scene.windows.first)
+            return
+        }
+        Mac.bridge?.activate(window: nil)
+        let closed = UIApplication.shared.openSessions.first { $0.scene == nil && !TraySceneDelegate.owns($0) }
+        if #available(iOS 17.0, *) {
+            let request = closed.map { UISceneSessionActivationRequest(session: $0) }
+                ?? UISceneSessionActivationRequest(role: .windowApplication)
+            UIApplication.shared.activateSceneSession(for: request)
+        } else {
+            UIApplication.shared.requestSceneSessionActivation(closed, userActivity: nil, options: nil)
+        }
+    }
+}
+
+class AppDelegate: NSObject, UIApplicationDelegate {
     nonisolated(unsafe) private(set) static var shared: AppDelegate!
 
     override init() {
@@ -91,47 +135,58 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         CFRunLoopAddTimer(CFRunLoopGetMain(), timer, .commonModes)
     }
 
-    func applicationDidFinishLaunching(_: Notification) {
+    func application(_: UIApplication, didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         AppearancePreference.applyStored()
+        UITextField.drawPlaceholdersAsAppKit()
+        Mac.bridge?.setTerminationGuard { AppDelegate.shared.mayTerminate() }
+        TraySceneDelegate.discardLeftovers()
         MenubarTool.shared.restore()
         #if DEBUG
             if ProcessInfo.processInfo.environment["RAYON_PREVIEW_MENUBAR"] != nil {
                 MenubarTool.shared.showPreview()
             }
         #endif
+        return true
     }
 
-    func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
-        if !TerminalManager.shared.sessionContexts.isEmpty {
-            UIBridge.requiresConfirmation(
-                message: "Quit Rayon?",
-                informative: "Open terminal sessions will be closed.",
-                confirmTitle: "Quit",
-                destructive: true
-            ) { confirmed in
-                guard confirmed else { return }
-                TerminalManager.shared.closeAll()
-                NSApp.terminate(nil)
-            }
-            return .terminateCancel
+    func application(
+        _: UIApplication,
+        configurationForConnecting session: UISceneSession,
+        options: UIScene.ConnectionOptions
+    ) -> UISceneConfiguration {
+        let configuration = UISceneConfiguration(name: nil, sessionRole: session.role)
+        if TraySceneDelegate.claims(session, options: options) {
+            configuration.delegateClass = TraySceneDelegate.self
         }
-        return .terminateNow
+        return configuration
     }
 
+    /// Asked when the app is about to quit. With terminals open, the answer is
+    /// no for now, and the question goes to the user.
+    @MainActor func mayTerminate() -> Bool {
+        guard !TerminalManager.shared.sessionContexts.isEmpty else { return true }
+        if RayonStore.shared.disableConformation {
+            TerminalManager.shared.closeAll()
+            return true
+        }
+        UIBridge.requiresConfirmation(
+            message: "Quit Rayon?",
+            informative: "Open terminal sessions will be closed.",
+            confirmTitle: "Quit",
+            destructive: true
+        ) { confirmed in
+            guard confirmed else { return }
+            TerminalManager.shared.closeAll()
+            Mac.bridge?.terminate()
+        }
+        return false
+    }
+
+    /// With every window closed and a server in the menu bar, Rayon leaves the
+    /// Dock and stays in the menu bar.
     @objc
     func windowStatusWatcher() {
-        let windows = NSApp.windows
-            .filter { window in
-                guard let readClass = NSClassFromString("NSStatusBarWindow") else {
-                    return true
-                }
-                return !window.isKind(of: readClass.self)
-            }
-            .filter { $0.isVisible }
-        if windows.isEmpty, MenubarTool.shared.hasCat {
-            NSApp.setActivationPolicy(.accessory)
-        } else {
-            NSApp.setActivationPolicy(.regular)
-        }
+        guard let bridge = Mac.bridge else { return }
+        bridge.setAccessory(!bridge.hasVisibleWindow() && MenubarTool.shared.hasCat)
     }
 }

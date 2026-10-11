@@ -10,14 +10,23 @@ import RayonModule
 import SwiftUI
 
 enum RayonUtil {
-    static func findWindow() -> NSWindow? {
-        if let key = NSApp.keyWindow {
-            return key
+    /// The window scene the user is working in: the main window, never a
+    /// menu bar popover's.
+    @MainActor static func mainScene() -> UIWindowScene? {
+        let scenes = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .filter { !($0.delegate is TraySceneDelegate) }
+        return scenes.first { $0.activationState == .foregroundActive } ?? scenes.first
+    }
+
+    /// The view controller a sheet goes on: the topmost one in the main window.
+    @MainActor static func topViewController() -> UIViewController? {
+        let window = mainScene().flatMap { scene in scene.windows.first { $0.isKeyWindow } ?? scene.windows.first }
+        var top = window?.rootViewController
+        while let presented = top?.presentedViewController, !presented.isBeingDismissed {
+            top = presented
         }
-        for window in NSApp.windows where window.isVisible {
-            return window
-        }
-        return nil
+        return top
     }
 }
 
@@ -29,32 +38,20 @@ enum SheetPresenter {
         size: CGSize? = nil,
         @ViewBuilder content: @escaping (_ dismiss: @escaping () -> Void) -> Content
     ) {
-        var panelRef: NSPanel?
-        var windowRef: NSWindow?
+        weak var presented: UIViewController?
         let dismiss = {
-            guard let panel = panelRef else { return }
-            if let window = windowRef {
-                window.endSheet(panel)
-            } else {
-                panel.close()
-            }
-            panelRef = nil
+            presented?.dismiss(animated: true)
+            presented = nil
         }
         let root = content(dismiss)
             .environmentObject(RayonStore.shared)
             .frame(width: size?.width, height: size?.height)
-        let controller = NSHostingController(rootView: root)
-        let panel = NSPanel(contentViewController: controller)
-        panel.title = ""
-        panel.titleVisibility = .hidden
-        panelRef = panel
-        if let window = RayonUtil.findWindow() {
-            windowRef = window
-            window.beginSheet(panel) { _ in }
-        } else {
-            panel.center()
-            panel.makeKeyAndOrderFront(nil)
-        }
+        let controller = UIHostingController(rootView: root)
+        controller.modalPresentationStyle = .formSheet
+        // The sheet is as large as its content, as a SwiftUI sheet is.
+        controller.sizingOptions = .preferredContentSize
+        presented = controller
+        RayonUtil.topViewController()?.present(controller, animated: true)
     }
 }
 

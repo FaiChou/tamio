@@ -175,7 +175,7 @@ struct QuickConnectHero: View {
                     Image(systemName: "exclamationmark.triangle")
                     Text("Quick Connect signs in with identities set to “Authenticate automatically”. You have none yet.")
                     Button("Open Identities") { AppRouter.shared.route = .identities }
-                        .buttonStyle(.link)
+                        .rxLinkButton()
                 }
                 .font(.rxHelp)
                 .foregroundStyle(.rxWarning)

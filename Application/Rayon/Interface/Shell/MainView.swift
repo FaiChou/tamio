@@ -42,7 +42,7 @@ struct MainView: View {
             .animation(.easeOut(duration: 0.2), value: router.route.isSession ? nil : router.route)
             // Set here, outside the page transition, so the toolbar never falls
             // back to its opaque background while one page fades into another.
-            .toolbarBackground(.hidden, for: .windowToolbar)
+            .rxClearToolbar()
         }
         .frame(minWidth: 940, minHeight: 600)
         .modifier(HiddenWindowTitle())
@@ -129,7 +129,7 @@ private extension View {
 /// The window toolbar holds page controls only; the page title is in the content.
 private struct HiddenWindowTitle: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(macOS 15.0, *) {
+        if #available(iOS 18.0, *) {
             content.toolbar(removing: .title)
         } else {
             content.navigationTitle("")

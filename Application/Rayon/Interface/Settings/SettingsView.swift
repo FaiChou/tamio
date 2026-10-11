@@ -61,11 +61,8 @@ enum AppearancePreference: String, CaseIterable {
 
     @MainActor
     func apply() {
-        switch self {
-        case .system: NSApp.appearance = nil
-        case .light: NSApp.appearance = NSAppearance(named: .aqua)
-        case .dark: NSApp.appearance = NSAppearance(named: .darkAqua)
-        }
+        // The app's appearance is AppKit's to set; UIKit follows it.
+        Mac.bridge?.setAppearance(self == .system ? nil : rawValue)
     }
 
     @MainActor
@@ -314,11 +311,11 @@ struct AgreementSheet: View {
                         .strokeBorder(Color.rxHairline, lineWidth: 1)
                 )
                 Toggle("I have read and agree to the license", isOn: $agreed)
-                    .toggleStyle(.checkbox)
+                    .rxCheckboxToggle()
                     .font(.rxBody)
             }
         } footer: {
-            Button("Quit") { NSApp.terminate(nil) }
+            Button("Quit") { Mac.bridge?.terminate() }
                 .buttonStyle(.rx)
             Spacer()
             Button("Continue") {

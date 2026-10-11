@@ -39,9 +39,12 @@ struct IdentitiesView: View {
     }
 
     var body: some View {
-        PageScaffold(search: $searchText, searchPrompt: "Search identities") {
+        PageScaffold(
+            search: $searchText,
+            searchPrompt: "Search identities",
+            primary: ToolbarAction("New Identity", systemImage: "plus", primary: true) { creating = true }
+        ) {
         } trailing: {
-            ToolbarAction("New Identity", systemImage: "plus", primary: true) { creating = true }
         } header: {
             PageTitle("Identities")
         } content: {
@@ -397,14 +400,17 @@ private struct KeyField: View {
     }
 
     func load() {
-        let panel = NSOpenPanel()
-        panel.directoryURL = URL(fileURLWithPath: "\(NSHomeDirectory())/.ssh/")
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.showsHiddenFiles = true
-        let handle: (NSApplication.ModalResponse) -> Void = { response in
-            guard response == .OK, let url = panel.url else { return }
+        Mac.bridge?.openPanel(
+            message: nil,
+            prompt: nil,
+            directory: URL(fileURLWithPath: "\(NSHomeDirectory())/.ssh/"),
+            canChooseFiles: true,
+            canChooseDirectories: false,
+            allowsMultipleSelection: false,
+            canCreateDirectories: false,
+            showsHiddenFiles: true
+        ) { urls in
+            guard let url = urls.first else { return }
             guard let data = try? Data(contentsOf: url), let string = String(data: data, encoding: .utf8) else {
                 UIBridge.presentError(with: "The file could not be read as text.")
                 return
@@ -422,11 +428,6 @@ private struct KeyField: View {
                     }
                 }
             }
-        }
-        if let window = NSApp.keyWindow {
-            panel.beginSheetModal(for: window, completionHandler: handle)
-        } else {
-            handle(panel.runModal())
         }
     }
 }

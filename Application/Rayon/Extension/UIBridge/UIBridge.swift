@@ -6,9 +6,8 @@
 //
 
 import Foundation
-
-import AppKit
 import RayonModule
+import UIKit
 
 // onMainThread(delay:run:) is provided by RayonModule.
 
@@ -30,40 +29,22 @@ enum UIBridge {
 
     static func sendPasteboard(str: String) {
         debugPrint("\(#function) \(str)")
-
-        let pasteboard = NSPasteboard.general
-        pasteboard.declareTypes([.string], owner: nil)
-        pasteboard.setString(str, forType: .string)
+        UIPasteboard.general.string = str
     }
 
-    static func open(url: URL) {
-        NSWorkspace.shared.open(url)
-    }
-
-    static func toggleSidebar() {
-        NSApp.keyWindow?.firstResponder?.tryToPerform(
-            #selector(NSSplitViewController.toggleSidebar(_:)),
-            with: nil
-        )
+    @MainActor static func open(url: URL) {
+        UIApplication.shared.open(url)
     }
 
     @MainActor static func askForInput(title: String, message: String, defaultValue: String, complete: @escaping (String) -> Void) {
-        let msg = NSAlert()
-        msg.addButton(withTitle: "OK") // 1st button
-        msg.addButton(withTitle: "Cancel") // 2nd button
-        msg.messageText = title
-        msg.informativeText = message
-
-        let txt = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-        txt.stringValue = defaultValue
-        msg.window.initialFirstResponder = txt
-
-        msg.accessoryView = txt
-
-        msg.beginSheetModal(for: NSApp.keyWindow ?? NSWindow()) { resp in
-            if resp == .alertFirstButtonReturn {
-                complete(txt.stringValue)
-            }
+        Mac.bridge?.alert(
+            message: title,
+            informative: message,
+            buttons: ["OK", "Cancel"],
+            destructiveFirstButton: false,
+            textField: defaultValue
+        ) { button, text in
+            if button == 0, let text { complete(text) }
         }
     }
 }

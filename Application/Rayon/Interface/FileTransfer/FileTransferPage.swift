@@ -32,7 +32,17 @@ struct FileTransferPage: View {
     var busy: Bool { context.processConnection || context.isProgressRunning }
 
     var body: some View {
-        PageScaffold(scrolls: false) {
+        PageScaffold(
+            scrolls: false,
+            primary: ToolbarAction(
+                "Download",
+                systemImage: "arrow.down.doc",
+                primary: true,
+                isEnabled: selection != nil && !busy && context.connected
+            ) {
+                if let selection { download(selection) }
+            }
+        ) {
             ToolbarAction("Enclosing Folder", systemImage: "arrow.up") { goUp() }
                 .disabled(context.currentUrl.pathComponents.count <= 1 || busy || !context.connected)
                 .keyboardShortcut(.upArrow, modifiers: .command)
@@ -47,10 +57,6 @@ struct FileTransferPage: View {
                 .disabled(busy || !context.connected)
             ToolbarAction("Upload", systemImage: "arrow.up.doc") { upload() }
                 .disabled(busy || !context.connected)
-            ToolbarAction("Download", systemImage: "arrow.down.doc", primary: true) {
-                if let selection { download(selection) }
-            }
-            .disabled(selection == nil || busy || !context.connected)
         } header: {
             VStack(alignment: .leading, spacing: RX.Space.s2) {
                 PageTitle(store.machineRedacted == .all ? "File Transfer" : context.machine.name, subtitle: subtitle)
@@ -81,6 +87,7 @@ struct FileTransferPage: View {
                 } else if context.processConnection, context.currentFileList.isEmpty {
                     VStack(spacing: RX.Space.s3) {
                         ProgressView()
+                            .rxSpinner()
                         Text(context.currentHint.isEmpty ? "Connecting…" : context.currentHint)
                             .font(.rxBody)
                             .foregroundStyle(.rxInkSecondary)
@@ -226,40 +233,33 @@ struct FileTransferPage: View {
     }
 
     func upload() {
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = true
-        panel.allowsMultipleSelection = true
-        panel.prompt = "Upload"
-        panel.message = "Upload to \(context.currentDir)"
-        let handle: (NSApplication.ModalResponse) -> Void = { response in
-            if response == .OK { context.upload(urls: panel.urls) }
-        }
-        if let window = NSApp.keyWindow {
-            panel.beginSheetModal(for: window, completionHandler: handle)
-        } else {
-            handle(panel.runModal())
+        Mac.bridge?.openPanel(
+            message: "Upload to \(context.currentDir)",
+            prompt: "Upload",
+            directory: nil,
+            canChooseFiles: true,
+            canChooseDirectories: true,
+            allowsMultipleSelection: true,
+            canCreateDirectories: false,
+            showsHiddenFiles: false
+        ) { urls in
+            if !urls.isEmpty { context.upload(urls: urls) }
         }
     }
 
     func download(_ file: FileTransferContext.RemoteFile) {
         let remote = context.currentUrl.appendingPathComponent(file.name)
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.canCreateDirectories = true
-        panel.prompt = "Download Here"
-        panel.message = "Choose where to save \(file.name)"
-        let handle: (NSApplication.ModalResponse) -> Void = { response in
-            if response == .OK, let url = panel.url {
-                context.download(from: remote, toDir: url)
-            }
-        }
-        if let window = NSApp.keyWindow {
-            panel.beginSheetModal(for: window, completionHandler: handle)
-        } else {
-            handle(panel.runModal())
+        Mac.bridge?.openPanel(
+            message: "Choose where to save \(file.name)",
+            prompt: "Download Here",
+            directory: nil,
+            canChooseFiles: false,
+            canChooseDirectories: true,
+            allowsMultipleSelection: false,
+            canCreateDirectories: true,
+            showsHiddenFiles: false
+        ) { urls in
+            if let url = urls.first { context.download(from: remote, toDir: url) }
         }
     }
 
