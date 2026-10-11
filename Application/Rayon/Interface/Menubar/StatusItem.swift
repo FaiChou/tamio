@@ -183,6 +183,13 @@ final class TraySceneDelegate: NSObject, UIWindowSceneDelegate {
         window.isHidden = false
         self.window = window
         item.attachPopover(window: window, size: size)
+        // SwiftUI's WindowGroup puts a main window in every scene, this one
+        // too; it would draw behind the cards.
+        DispatchQueue.main.async {
+            for other in scene.windows where other !== window && !(other.rootViewController is UIInputViewController) {
+                if String(describing: type(of: other)) == "UIWindow" { other.isHidden = true }
+            }
+        }
     }
 
     /// Nothing to bring back: the scene is made again from its menu bar item.
