@@ -20,6 +20,8 @@ enum Route: Hashable {
     case terminal(UUID)
     case monitor(UUID)
     case transfer(UUID)
+    /// A server's editor, by the id of the SFTP session it works over.
+    case editor(UUID)
 }
 
 final class AppRouter: ObservableObject {
@@ -67,6 +69,12 @@ final class AppRouter: ObservableObject {
                 if !transfers.contains(where: { $0.id == id }) { self.route = self.lastPlace }
             }
             .store(in: &cancellables)
+        EditorCenter.shared.$workspaces
+            .sink { [weak self] workspaces in
+                guard let self, case let .editor(id) = self.route else { return }
+                if !workspaces.contains(where: { $0.id == id }) { self.route = self.lastPlace }
+            }
+            .store(in: &cancellables)
     }
 
     private var opensAutomatically: Bool {
@@ -109,6 +117,26 @@ final class AppRouter: ObservableObject {
         }
     }
 
+    /// Shows the server's editor, connecting over SFTP if Files isn't open yet.
+    @MainActor
+    func openEditor(machine: RDMachine.ID) {
+        let manager = FileTransferManager.shared
+        if !manager.transfers.contains(where: { $0.machine.id == machine }) {
+            manager.begin(for: machine)
+        }
+        if let context = manager.transfers.first(where: { $0.machine.id == machine }) {
+            openEditor(context: context)
+        }
+    }
+
+    /// Shows the editor of an SFTP session, with the file at `path` in front.
+    @MainActor
+    func openEditor(context: FileTransferContext, path: String? = nil) {
+        let workspace = EditorCenter.shared.workspace(for: context)
+        if let path { workspace.open(path: path) }
+        route = .editor(context.id)
+    }
+
     @MainActor
     func showInMenuBar(machine: RDMachine.ID) {
         MenubarTool.shared.createRuncat(for: machine)
@@ -141,7 +169,7 @@ final class AppRouter: ObservableObject {
         case let .terminal(id):
             guard let context = TerminalManager.shared.sessionContexts.first(where: { $0.id == id }) else { return nil }
             return context.remoteType == .machine ? .server(context.machine.id) : .command(context.id)
-        case let .transfer(id):
+        case let .transfer(id), let .editor(id):
             return FileTransferManager.shared.transfers.first { $0.id == id }.map { .server($0.machine.id) }
         case let .monitor(id):
             return MonitorCenter.shared.session(withID: id).map { .server($0.machine.id) }
@@ -150,10 +178,11 @@ final class AppRouter: ObservableObject {
         }
     }
 
-    /// Every open session page, terminals first, then files, then monitors.
+    /// Every open session page, terminals first, then files, editors and monitors.
     var sessionRoutes: [Route] {
         TerminalManager.shared.sessionContexts.map { .terminal($0.id) }
             + FileTransferManager.shared.transfers.map { .transfer($0.id) }
+            + EditorCenter.shared.workspaces.map { .editor($0.id) }
             + MonitorCenter.shared.sessions.map { .monitor($0.id) }
     }
 
@@ -189,6 +218,8 @@ final class AppRouter: ObservableObject {
                 }
             case let .transfer(id):
                 FileTransferManager.shared.end(for: id)
+            case let .editor(id):
+                EditorCenter.shared.end(id)
             case let .monitor(id):
                 MonitorCenter.shared.end(id)
             default:
@@ -213,7 +244,7 @@ enum SessionOwner: Hashable {
 extension Route {
     var isSession: Bool {
         switch self {
-        case .terminal, .monitor, .transfer: return true
+        case .terminal, .monitor, .transfer, .editor: return true
         default: return false
         }
     }

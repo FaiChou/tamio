@@ -52,6 +52,8 @@ final class MacFileTransferUIHandler: FileTransferUIHandler {
     }
 
     func autoOpenInterface(_ context: FileTransferContext) {
+        // Opened for the editor, the session stays on the editor.
+        if AppRouter.shared.route == .editor(context.id) { return }
         AppRouter.shared.route = .transfer(context.id)
     }
 }

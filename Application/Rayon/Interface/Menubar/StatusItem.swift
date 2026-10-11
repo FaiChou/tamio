@@ -260,7 +260,7 @@ struct MenubarPopoverView: View {
                 }
             }
             Spacer(minLength: RX.Space.s2)
-            ForEach(ServerTool.allCases) { tool in
+            ForEach([ServerTool.terminal, .files, .monitor]) { tool in
                 RXIconButton(tool.help, systemImage: tool.systemImage, kind: .plain) {
                     dismiss()
                     openMainWindow()

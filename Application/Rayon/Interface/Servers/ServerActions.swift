@@ -67,12 +67,13 @@ enum ServerActions {
     }
 }
 
-/// The three ways into a server. Every surface that opens one (tiles, table rows,
+/// The four ways into a server. Every surface that opens one (tiles, table rows,
 /// context menus, the session switcher, the sidebar) uses these names, symbols and
 /// descriptions, so a button means the same thing wherever it appears.
 enum ServerTool: CaseIterable, Identifiable {
     case terminal
     case files
+    case editor
     case monitor
 
     var id: Self { self }
@@ -81,6 +82,7 @@ enum ServerTool: CaseIterable, Identifiable {
         switch self {
         case .terminal: return "Terminal"
         case .files: return "Files"
+        case .editor: return "Editor"
         case .monitor: return "Monitor"
         }
     }
@@ -89,6 +91,7 @@ enum ServerTool: CaseIterable, Identifiable {
         switch self {
         case .terminal: return "terminal"
         case .files: return "folder"
+        case .editor: return "square.and.pencil"
         case .monitor: return "gauge.with.dots.needle.33percent"
         }
     }
@@ -98,6 +101,7 @@ enum ServerTool: CaseIterable, Identifiable {
         switch self {
         case .terminal: return "Open an SSH terminal on this server"
         case .files: return "Browse, upload and download files over SFTP"
+        case .editor: return "Edit text files on this server"
         case .monitor: return "Watch CPU, memory, disk and network usage"
         }
     }
@@ -114,6 +118,7 @@ enum ServerTool: CaseIterable, Identifiable {
                 router.openTerminal(machine: machine)
             }
         case .files: router.openFileTransfer(machine: machine)
+        case .editor: router.openEditor(machine: machine)
         case .monitor: router.openMonitor(machine: machine)
         }
     }
@@ -139,6 +144,11 @@ struct ServerContextMenu: View {
                     ServerTool.files.show(machine)
                 } label: {
                     Label("Open Files", systemImage: ServerTool.files.systemImage)
+                }
+                Button {
+                    ServerTool.editor.show(machine)
+                } label: {
+                    Label("Open Editor", systemImage: ServerTool.editor.systemImage)
                 }
                 Button {
                     ServerTool.monitor.show(machine)
@@ -229,8 +239,8 @@ struct ServerLiveReader<Content: View>: View {
     }
 }
 
-/// Terminal · Files · Monitor for one server, centred in a session page's toolbar,
-/// so moving between the three views of a server is one click from any of them.
+/// Terminal · Files · Editor · Monitor for one server, centred in a session page's toolbar,
+/// so moving between the four views of a server is one click from any of them.
 struct ServerToolSwitcher: View {
     let machine: RDMachine.ID
     let current: ServerTool
@@ -252,7 +262,7 @@ struct ServerToolSwitcher: View {
             .pickerStyle(.segmented)
             .labelsHidden()
             .fixedSize()
-            .help("Switch between this server's terminal, files and monitor")
+            .help("Switch between this server's terminal, files, editor and monitor")
         }
     }
 }

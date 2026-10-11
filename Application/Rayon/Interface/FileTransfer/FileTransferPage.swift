@@ -4,7 +4,8 @@
 //
 //  SFTP inside the main window: Up, breadcrumb, Go to Folder, filter, Reload,
 //  New Folder, Upload, Download. Table: name, size, modified, permissions, owner.
-//  Transfer card with speed and Cancel. Drag files in to upload.
+//  Transfer card with speed and Cancel. Drag files in to upload. Double-click a
+//  file to edit it.
 //
 
 import RayonModule
@@ -176,6 +177,8 @@ struct FileTransferPage: View {
     func menu(for file: FileTransferContext.RemoteFile) -> some View {
         if file.fstat.isDirectory {
             Button("Open") { open(file) }
+        } else {
+            Button("Edit") { edit(file) }
         }
         Button("Download…") { download(file) }
         Divider()
@@ -227,9 +230,15 @@ struct FileTransferPage: View {
     func open(_ file: FileTransferContext.RemoteFile) {
         if file.fstat.isDirectory {
             context.navigate(path: context.currentUrl.appendingPathComponent(file.name).path)
+        } else if Int64(truncating: file.fstat.size ?? 0) <= FileTransferContext.editableSizeLimit {
+            edit(file)
         } else {
             download(file)
         }
+    }
+
+    func edit(_ file: FileTransferContext.RemoteFile) {
+        AppRouter.shared.openEditor(context: context, path: context.currentUrl.appendingPathComponent(file.name).path)
     }
 
     func upload() {
@@ -532,12 +541,17 @@ private extension FilePrompt {
 }
 
 enum FileTransferSessionActions {
+    /// Closes a server's SFTP session, and with it the editor that works over it.
+    @MainActor
     static func close(_ context: FileTransferContext) {
-        if context.isProgressRunning {
+        let unsaved = EditorCenter.shared.workspaces.first { $0.id == context.id }?.hasUnsavedChanges == true
+        if context.isProgressRunning || unsaved {
             UIBridge.requiresConfirmation(
                 message: "Close the file transfer on \(context.machine.name)?",
-                informative: "A transfer is still running and will be interrupted.",
-                confirmTitle: "Close",
+                informative: unsaved
+                    ? "Files open in the editor have changes that are not saved. They are lost if you close."
+                    : "A transfer is still running and will be interrupted.",
+                confirmTitle: unsaved ? "Discard Changes" : "Close",
                 destructive: true
             ) { confirmed in
                 if confirmed { FileTransferManager.shared.end(for: context.id) }

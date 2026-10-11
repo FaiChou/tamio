@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		01B3BB8C084B19623AA6156B /* MachineStatusView in Frameworks */ = {isa = PBXBuildFile; productRef = BACEAFD2486E184D130E727E /* MachineStatusView */; };
+		041F6D2B8B0C4E14112BE969 /* EditorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92D71AB2843EF76D0EBF6148 /* EditorPage.swift */; };
 		087DB198CE12C28798ABEBD7 /* Bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2E3DDA3CD1EAD35220A9E5 /* Bridge.swift */; };
 		0883D2322B0D1E0744DCBD89 /* MacBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92382891F3E59CE0442A4616 /* MacBridge.swift */; };
 		09A7C5BF9FBDC7E29755C158 /* PlaceholderColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990D6756E38ADF4441878125 /* PlaceholderColor.swift */; };
@@ -26,6 +27,7 @@
 		424A4C14F97EC8EBBC3C7CFC /* TerminalPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8104E329E7DA28E8E266EF29 /* TerminalPage.swift */; };
 		4445C9E14412AE2048D09AF9 /* MacBridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7DB52A0A8F903D2B1C42F5 /* MacBridging.swift */; };
 		498967250BE6622994DC5F2B /* SnippetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFA2E0275C2CD7A7A7E52231 /* SnippetsView.swift */; };
+		49C1EFC0CC91708B2B1CEC72 /* EditorWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CFC7EDD1B82602B3EB434CE /* EditorWorkspace.swift */; };
 		4B09F5A6618A89977E04E845 /* PresentError.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE8B70BDB60E79CAA7141860 /* PresentError.swift */; };
 		5140F9924EF4C311F8E9A2DE /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 355C84F7C595E456E988F3AF /* MainView.swift */; };
 		58FB423B8D35371FB4369399 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF976BD9CB2E2407F0E7AACC /* SettingsView.swift */; };
@@ -105,6 +107,7 @@
 		43BEDD24A016BBDEECA941DE /* RayonEditor */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RayonEditor; path = ../../Foundation/RayonEditor; sourceTree = SOURCE_ROOT; };
 		4BC3A70EB202868EEE385F30 /* PortForwardBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortForwardBackend.swift; sourceTree = "<group>"; };
 		5040999EA7140DCDE990E310 /* ServerActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerActions.swift; sourceTree = "<group>"; };
+		5CFC7EDD1B82602B3EB434CE /* EditorWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorWorkspace.swift; sourceTree = "<group>"; };
 		6536341CB6765519E7D119A9 /* ServersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServersView.swift; sourceTree = "<group>"; };
 		69392C86070B7FB4213CB6A2 /* FileTransferPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTransferPage.swift; sourceTree = "<group>"; };
 		6A7DB52A0A8F903D2B1C42F5 /* MacBridging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBridging.swift; sourceTree = "<group>"; };
@@ -118,6 +121,7 @@
 		8910D14A56A4A4273BDAE945 /* StatusItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItem.swift; sourceTree = "<group>"; };
 		92382891F3E59CE0442A4616 /* MacBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBridge.swift; sourceTree = "<group>"; };
 		9254634FB92A5B3CB8322692 /* UIBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIBridge.swift; sourceTree = "<group>"; };
+		92D71AB2843EF76D0EBF6148 /* EditorPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorPage.swift; sourceTree = "<group>"; };
 		990D6756E38ADF4441878125 /* PlaceholderColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderColor.swift; sourceTree = "<group>"; };
 		9C7BAE723B2CB2B8B1BC38E0 /* StatusItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItem.swift; sourceTree = "<group>"; };
 		9E4C9F1FC10FFF0E6D098960 /* Bridge+Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+Keychain.swift"; sourceTree = "<group>"; };
@@ -226,6 +230,7 @@
 			isa = PBXGroup;
 			children = (
 				BDE66FE544E53054C823232E /* Common */,
+				B8DDD79AF1CECD160BC27BB2 /* Editor */,
 				61F9645888758F98B513FDE8 /* FileTransfer */,
 				36B36F10784E127846D5F14B /* Home */,
 				9DD5892448CE555CEBA098BE /* Identities */,
@@ -343,6 +348,15 @@
 				8910D14A56A4A4273BDAE945 /* StatusItem.swift */,
 			);
 			path = Bridge;
+			sourceTree = "<group>";
+		};
+		B8DDD79AF1CECD160BC27BB2 /* Editor */ = {
+			isa = PBXGroup;
+			children = (
+				92D71AB2843EF76D0EBF6148 /* EditorPage.swift */,
+				5CFC7EDD1B82602B3EB434CE /* EditorWorkspace.swift */,
+			);
+			path = Editor;
 			sourceTree = "<group>";
 		};
 		BDE66FE544E53054C823232E /* Common */ = {
@@ -531,6 +545,8 @@
 				A965F0DBDA5090CEF905D37A /* BatchRunSheet.swift in Sources */,
 				27396C408C6129B2F14A6B17 /* BatchSnippetExecContext.swift in Sources */,
 				D6F0B7761A17413C1B3A672F /* DoubleConfirm.swift in Sources */,
+				041F6D2B8B0C4E14112BE969 /* EditorPage.swift in Sources */,
+				49C1EFC0CC91708B2B1CEC72 /* EditorWorkspace.swift in Sources */,
 				8BCAACD7136B86580D602065 /* FileTransferPage.swift in Sources */,
 				9DD7959D5A757D58F918C4C2 /* Generic.swift in Sources */,
 				F704F34E5CF708E76924887E /* GenericComparator.swift in Sources */,

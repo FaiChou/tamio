@@ -239,6 +239,7 @@ private struct OwnerSidebarRow: View {
     @EnvironmentObject var store: RayonStore
     @ObservedObject var terminals = TerminalManager.shared
     @ObservedObject var transfers = FileTransferManager.shared
+    @ObservedObject var editors = EditorCenter.shared
     @ObservedObject var monitors = MonitorCenter.shared
 
     private var routes: [Route] { AppRouter.shared.routes(of: owner) }
@@ -256,7 +257,7 @@ private struct OwnerSidebarRow: View {
         ServerTool.allCases.filter { tool in
             routes.contains { route in
                 switch (tool, route) {
-                case (.terminal, .terminal), (.files, .transfer), (.monitor, .monitor): return true
+                case (.terminal, .terminal), (.files, .transfer), (.editor, .editor), (.monitor, .monitor): return true
                 default: return false
                 }
             }
@@ -296,6 +297,10 @@ private struct OwnerSidebarRow: View {
             case let .transfer(id):
                 if let context = transfers.transfers.first(where: { $0.id == id }) {
                     Button("Close Files") { FileTransferSessionActions.close(context) }
+                }
+            case let .editor(id):
+                if let workspace = editors.workspaces.first(where: { $0.id == id }) {
+                    Button("Close Editor") { EditorSessionActions.close(workspace) }
                 }
             case let .monitor(id):
                 Button("Close Monitor") { MonitorCenter.shared.end(id) }
