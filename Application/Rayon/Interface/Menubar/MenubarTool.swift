@@ -5,7 +5,7 @@
 //  Created by Lakr Aream on 2022/3/1.
 //
 
-import AppKit
+import Foundation
 import RayonModule
 
 class MenubarTool {
@@ -112,9 +112,15 @@ class MenubarTool {
             bootstrapLock.lock()
             statusItem.append(item)
             bootstrapLock.unlock()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { item.showPopover(item) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { item.togglePopover() }
         }
     #endif
+
+    func item(withKey key: String) -> MenubarStatusItem? {
+        bootstrapLock.lock()
+        defer { bootstrapLock.unlock() }
+        return statusItem.first { $0.key == key }
+    }
 
     func remove(menubarItem: MenubarStatusItem.ID) {
         bootstrapLock.lock()

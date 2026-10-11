@@ -9,80 +9,55 @@
 //  Disks, then Terminal, Monitor and Open Rayon.
 //
 
-import AppKit
 import Combine
 import MachineStatus
 import MachineStatusView
 import RayonModule
 import SwiftUI
+import UIKit
 
+/// The menu bar item itself is AppKit's, kept by the bridge under `key`; this
+/// is its model, and the owner of the popover's content.
 class MenubarStatusItem: NSObject, Identifiable {
     let id: UUID = .init()
+    var key: String { id.uuidString }
 
     let machine: RDMachine
     let identity: RDIdentity
-    var eventMonitor: EventMonitor?
-    var popover: NSPopover
     let session: MonitorSession
 
-    var loopContinue: Bool = true
     var cancellables = Set<AnyCancellable>()
+    /// The scene whose window holds the popover's content.
+    weak var trayScene: UIWindowScene?
+    private var waitingForPopover = false
+
+    static let frames = (0 ... 4).map { "cat_frame_\($0)" }
+    static let crashFrame = "cat_frame_crash"
 
     @MainActor init(machine: RDMachine, identity: RDIdentity, session: MonitorSession? = nil) {
         self.machine = machine
         self.identity = identity
         self.session = session ?? MonitorSession(machine: machine, identity: identity)
 
-        let buildPopover = NSPopover()
-        buildPopover.behavior = .transient
-        popover = buildPopover
-
         super.init()
 
-        let contentView = MenubarPopoverView(session: self.session) { [weak self] in
-            self?.closeThisItem()
-        } dismiss: { [weak self] in
-            self?.popover.performClose(nil)
+        Mac.bridge?.addStatusItem(
+            key,
+            toolTip: machine.name,
+            frames: Self.frames,
+            idleFrame: Self.crashFrame
+        ) { [weak self] in
+            MainActor.assumeIsolated { self?.togglePopover() }
         }
-        .environmentObject(RayonStore.shared)
-        buildPopover.contentViewController = NSHostingController(rootView: contentView)
-
-        eventMonitor = EventMonitor(mask: [.leftMouseDown, .rightMouseDown], handler: { [self] event in
-            // AppKit delivers global event-monitor callbacks on the main thread.
-            MainActor.assumeIsolated { mouseEventHandler(event) }
-        })
 
         observeSession()
-        beginFrameLoop()
-
-        statusItem.button?.target = self
-        statusItem.button?.action = #selector(togglePopover(sender:))
-        statusItem.button?.imagePosition = .imageLeading
-        statusItem.button?.toolTip = machine.name
     }
 
     deinit {
         debugPrint("\(self) \(#function)")
     }
 
-    let accessLock = NSLock()
-
-    let statusItem: NSStatusItem = NSStatusBar
-        .system
-        .statusItem(withLength: NSStatusItem.variableLength)
-
-    let frames: [NSImage] = {
-        [
-            NSImage(named: "cat_frame_0"),
-            NSImage(named: "cat_frame_1"),
-            NSImage(named: "cat_frame_2"),
-            NSImage(named: "cat_frame_3"),
-            NSImage(named: "cat_frame_4"),
-        ]
-        .compactMap { $0 }
-    }()
-
-    var currentImageIndex: Int = 0
+    /// How often the cat changes frame: the busier the server, the faster.
     enum CatSpeed: TimeInterval {
         case light = 0.05
         case fast = 0.1
@@ -92,47 +67,126 @@ class MenubarStatusItem: NSObject, Identifiable {
         case broken = -1
     }
 
-    var catSpeed = CatSpeed.broken
+    /// The popover's content is made on the first click: it lives in a window
+    /// scene of its own, which the bridge turns into the popover.
+    @MainActor func togglePopover() {
+        guard let bridge = Mac.bridge else { return }
+        if bridge.hasPopover(key) {
+            bridge.togglePopover(key)
+            return
+        }
+        guard !waitingForPopover else { return }
+        waitingForPopover = true
+        bridge.prepareForPopoverWindow()
+        TraySceneDelegate.open(for: self)
+    }
 
-    @MainActor @objc func togglePopover(sender: AnyObject) {
-        if popover.isShown {
-            hidePopover(sender)
+    @MainActor var popoverContent: some View {
+        MenubarPopoverView(session: session) { [weak self] in
+            self?.closeThisItem()
+        } dismiss: { [weak self] in
+            guard let self else { return }
+            Mac.bridge?.closePopover(self.key)
+        }
+        .environmentObject(RayonStore.shared)
+    }
+
+    /// Called by the popover's scene once its window is up.
+    @MainActor func attachPopover(window: UIWindow, size: CGSize, attempt: Int = 0) {
+        guard let bridge = Mac.bridge else { return }
+        if bridge.attachPopover(key, window: window, width: size.width, height: size.height) {
+            waitingForPopover = false
+            bridge.togglePopover(key)
+        } else if attempt < 200 {
+            // UIKit makes the AppKit window a moment after the UIWindow.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { [weak self] in
+                self?.attachPopover(window: window, size: size, attempt: attempt + 1)
+            }
         } else {
-            showPopover(sender)
+            waitingForPopover = false
         }
     }
 
-    func showPopover(_: AnyObject) {
-        if let statusBarButton = statusItem.button {
-            // A menu bar popover takes the menu bar's appearance, which follows
-            // the wallpaper; use Rayon's Light / Dark / System choice instead so
-            // the cards look as they do in the window.
-            popover.appearance = NSApp.appearance ?? NSApp.effectiveAppearance
-            popover.show(relativeTo: statusBarButton.bounds, of: statusBarButton, preferredEdge: NSRectEdge.maxY)
-            eventMonitor?.start()
+    @MainActor func closeThisItem() {
+        Mac.bridge?.removeStatusItem(key)
+        if let session = trayScene?.session {
+            UIApplication.shared.requestSceneSessionDestruction(session, options: nil)
         }
-    }
-
-    @MainActor func hidePopover(_ sender: AnyObject) {
-        popover.performClose(sender)
-        eventMonitor?.stop()
-    }
-
-    @MainActor func mouseEventHandler(_ event: NSEvent?) {
-        if popover.isShown, let event = event {
-            hidePopover(event)
-        }
-    }
-
-    func closeThisItem() {
-        popover.close()
         session.shutdown()
-        loopContinue = false
-        eventMonitor = nil
         cancellables.removeAll()
-        NSStatusBar.system.removeStatusItem(statusItem)
         MenubarTool.shared.remove(menubarItem: id)
     }
+}
+
+/// The window scene behind a menu bar popover. UIKit gives the scene a window
+/// of its own; the bridge moves that window's content into the popover and
+/// keeps the window out of sight.
+final class TraySceneDelegate: NSObject, UIWindowSceneDelegate {
+    static let activityType = "wiki.qaq.rayon.menubar-popover"
+    private static let itemKey = "item"
+    private static let marker = "wiki.qaq.rayon.menubar-popover"
+
+    var window: UIWindow?
+
+    @MainActor static func open(for item: MenubarStatusItem) {
+        let activity = NSUserActivity(activityType: activityType)
+        activity.userInfo = [itemKey: item.key]
+        if #available(iOS 17.0, *) {
+            let request = UISceneSessionActivationRequest(role: .windowApplication, userActivity: activity)
+            UIApplication.shared.activateSceneSession(for: request)
+        } else {
+            UIApplication.shared.requestSceneSessionActivation(nil, userActivity: activity, options: nil)
+        }
+    }
+
+    static func owns(_ session: UISceneSession) -> Bool {
+        session.userInfo?[marker] != nil
+    }
+
+    /// Whether a connecting session is a popover's: one just asked for, or one
+    /// the system kept from an earlier run.
+    static func claims(_ session: UISceneSession, options: UIScene.ConnectionOptions) -> Bool {
+        owns(session) || options.userActivities.contains { $0.activityType == activityType }
+    }
+
+    /// A popover's scene does not outlive the run it was made in.
+    @MainActor static func discardLeftovers() {
+        for session in UIApplication.shared.openSessions where owns(session) {
+            UIApplication.shared.requestSceneSessionDestruction(session, options: nil)
+        }
+    }
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options: UIScene.ConnectionOptions) {
+        let key = options.userActivities
+            .first { $0.activityType == Self.activityType }?
+            .userInfo?[Self.itemKey] as? String
+        guard let scene = scene as? UIWindowScene,
+              let key, let item = MenubarTool.shared.item(withKey: key)
+        else {
+            UIApplication.shared.requestSceneSessionDestruction(session, options: nil)
+            return
+        }
+        session.userInfo = [Self.marker: key]
+        item.trayScene = scene
+
+        let host = UIHostingController(rootView: item.popoverContent)
+        host.view.backgroundColor = .clear
+        let size = host.sizeThatFits(in: CGSize(width: MenubarPopoverView.width, height: .greatestFiniteMagnitude))
+        scene.sizeRestrictions?.minimumSize = size
+        scene.sizeRestrictions?.maximumSize = size
+        scene.titlebar?.titleVisibility = .hidden
+        scene.titlebar?.toolbar = nil
+
+        let window = UIWindow(windowScene: scene)
+        window.backgroundColor = .clear
+        window.rootViewController = host
+        window.isHidden = false
+        self.window = window
+        item.attachPopover(window: window, size: size)
+    }
+
+    /// Nothing to bring back: the scene is made again from its menu bar item.
+    func stateRestorationActivity(for _: UIScene) -> NSUserActivity? { nil }
 }
 
 /// The popover for one server: the same cards as its Monitor page, in one column.
@@ -212,10 +266,6 @@ struct MenubarPopoverView: View {
     }
 
     func openMainWindow() {
-        NSApp.setActivationPolicy(.regular)
-        NSApp.activate(ignoringOtherApps: true)
-        if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
-            window.makeKeyAndOrderFront(nil)
-        }
+        MainWindow.show()
     }
 }

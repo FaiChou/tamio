@@ -5,43 +5,35 @@
 //  Created by Lakr Aream on 2022/3/1.
 //
 
-import AppKit
+import Combine
 import MachineStatusView
 import RayonModule
 import SwiftUI
 
 extension MenubarStatusItem {
-    func beginFrameLoop() {
-        let thread = Thread { [weak self] in
-            while self?.loopContinue ?? false {
-                usleep(100)
-                guard let self = self else {
-                    return
-                }
-                self.switchNextFrame()
-                self.accessLock.lock()
-                let interval = self.catSpeed.rawValue
-                self.accessLock.unlock()
-                var sleepInterval = (UInt32(exactly: interval * 1_000_000) ?? 1_000_000)
-                if sleepInterval < 1000 { sleepInterval = 1000 }
-                usleep(sleepInterval)
-            }
-            debugPrint("\(#function) end")
-        }
-        thread.start()
-    }
-
     /// The cat's pace follows CPU load; the title shows upload and download speed.
-    func observeSession() {
+    @MainActor func observeSession() {
         // objectWillChange fires before the change lands; the short debounce on
         // the main run loop reads the new values.
         session.objectWillChange
             .debounce(for: .milliseconds(50), scheduler: RunLoop.main)
-            .sink { [weak self] _ in self?.refreshFromSession() }
+            .sink { [weak self] _ in MainActor.assumeIsolated { self?.refreshFromSession() } }
+            .store(in: &cancellables)
+
+        // A deleted server leaves the menu bar.
+        RayonStore.shared.$machineGroup
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] group in
+                MainActor.assumeIsolated {
+                    guard let self, !group[self.machine.id].isNotPlaceholder() else { return }
+                    self.closeThisItem()
+                }
+            }
             .store(in: &cancellables)
     }
 
-    func refreshFromSession() {
+    @MainActor func refreshFromSession() {
         let speed: CatSpeed
         if session.phase != .connected || !session.status.hasData {
             speed = .broken
@@ -55,61 +47,13 @@ extension MenubarStatusItem {
             default: speed = .light
             }
         }
-        accessLock.lock()
-        catSpeed = speed
-        accessLock.unlock()
 
-        guard let button = statusItem.button else { return }
+        var title = ""
         if session.phase == .connected, session.status.hasData {
             let up = RXFormat.rateString(Double(session.status.totalTransmitPerSecond))
             let down = RXFormat.rateString(Double(session.status.totalReceivePerSecond))
-            let paragraph = NSMutableParagraphStyle()
-            paragraph.alignment = .right
-            paragraph.maximumLineHeight = 10
-            paragraph.minimumLineHeight = 10
-            button.attributedTitle = NSAttributedString(
-                string: "↑ \(up)\n↓ \(down)",
-                attributes: [
-                    .font: NSFont.monospacedDigitSystemFont(ofSize: 9, weight: .medium),
-                    .paragraphStyle: paragraph,
-                    .baselineOffset: -5,
-                ]
-            )
-        } else {
-            button.attributedTitle = NSAttributedString(string: "")
+            title = "↑ \(up)\n↓ \(down)"
         }
-    }
-
-    func switchNextFrame() {
-        guard accessLock.try() else {
-            return
-        }
-        defer { accessLock.unlock() }
-
-        guard !frames.isEmpty else {
-            return
-        }
-        let interval = catSpeed.rawValue
-        if interval <= 0 {
-            onMainThread { [self] in
-                statusItem.button?.image = NSImage(named: "cat_frame_crash")
-            }
-            return
-        }
-        defer { currentImageIndex += 1 }
-        if currentImageIndex > frames.count - 1 {
-            currentImageIndex = 0
-        }
-        let image = frames[currentImageIndex]
-        onMainThread { [self] in
-            statusItem.button?.image = image
-
-            // check if already deleted
-            let check = RayonStore.shared.machineGroup[machine.id]
-            guard check.isNotPlaceholder() else {
-                closeThisItem()
-                return
-            }
-        }
+        Mac.bridge?.updateStatusItem(key, title: title, frameInterval: speed.rawValue)
     }
 }
