@@ -147,7 +147,7 @@ private final class TerminalPresentation: NSObject, TerminalSurfaceTitleDelegate
         view.controller = RayonTerminalConfiguration.controller
         // Never use the default .exec backend: SSH remains owned by Rayon.
         view.configuration = TerminalSurfaceOptions(
-            backend: .inMemory(session.backend), fontSize: Float(RayonTerminalConfiguration.appliedFontSize ?? Double(callbacks.fontSize))
+            backend: .inMemory(session.backend), fontSize: Float(Self.surfaceFontSize(RayonTerminalConfiguration.appliedFontSize ?? Double(callbacks.fontSize)))
         )
     }
 
@@ -157,7 +157,18 @@ private final class TerminalPresentation: NSObject, TerminalSurfaceTitleDelegate
         if preferConfigured { applyConfiguredFontSize(); return }
         // Changing configuration.fontSize would recreate the surface and erase
         // scrollback. A binding action updates the existing surface in place.
-        _ = view.performBindingAction("set_font_size:\(callbacks.fontSize)")
+        _ = view.performBindingAction("set_font_size:\(Self.surfaceFontSize(Double(callbacks.fontSize)))")
+    }
+
+    /// The size to give the surface for a font size in points. Ghostty's UIKit
+    /// surface converts points at 96 dpi, as on iOS; on the Mac, Catalyst
+    /// included, a point is 1/72 inch, as the AppKit surface takes it.
+    static func surfaceFontSize(_ points: Double) -> Double {
+        #if targetEnvironment(macCatalyst)
+            points * 72 / 96
+        #else
+            points
+        #endif
     }
 
     @objc private func configurationDidApply() {
@@ -167,7 +178,7 @@ private final class TerminalPresentation: NSObject, TerminalSurfaceTitleDelegate
 
     private func applyConfiguredFontSize() {
         let size = RayonTerminalConfiguration.appliedFontSize ?? Double(callbacks.fontSize)
-        _ = view.performBindingAction("set_font_size:\(size)")
+        _ = view.performBindingAction("set_font_size:\(Self.surfaceFontSize(size))")
     }
 
     func terminalDidAttachSurface(_ surface: TerminalSurface) {
