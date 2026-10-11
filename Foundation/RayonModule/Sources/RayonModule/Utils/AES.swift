@@ -9,16 +9,49 @@ import CommonCrypto
 import Foundation
 import Keychain
 
+#if os(macOS) || targetEnvironment(macCatalyst)
+    import IOKit
+#endif
+
+/// A keychain the app cannot reach through `SecItem`. A Mac Catalyst process
+/// only sees the data-protection keychain, while the AppKit builds of Rayon kept
+/// the master key in the login keychain; the app supplies this to carry the key
+/// over. Set it before `AES.shared` (and so `RayonStore.shared`) is first used.
+public struct LegacyKeyStore: Sendable {
+    public enum ReadResult: Sendable {
+        case found(String)
+        /// There is no key: nothing was ever stored.
+        case absent
+        /// There may be a key, but it could not be read (access was denied).
+        case unavailable
+    }
+
+    public let read: @Sendable () -> ReadResult
+    public let write: @Sendable (String) -> Bool
+
+    public init(read: @escaping @Sendable () -> ReadResult, write: @escaping @Sendable (String) -> Bool) {
+        self.read = read
+        self.write = write
+    }
+}
+
 public struct AES: Sendable {
     private let key: Data
     private let iv: Data
 
+    /// The key could not be read or saved, so it lasts for this run only.
+    /// Nothing is written with such a key: it would replace data that the real
+    /// key can still read.
+    public private(set) var isEphemeral = false
+
+    nonisolated(unsafe) public static var legacyKeyStore: LegacyKeyStore?
+
     public static let shared: AES = {
         #if DEBUG
             var keyBuilder = "fdaisohfiuhfq34hifgraskhfiarhfgui34hibrfiuef"
-            #if os(macOS)
+            #if os(macOS) || targetEnvironment(macCatalyst)
                 let platformExpert = IOServiceGetMatchingService(
-                    kIOMasterPortDefault,
+                    kIOMainPortDefault,
                     IOServiceMatching("IOPlatformExpertDevice")
                 )
                 if platformExpert > 0,
@@ -41,45 +74,80 @@ public struct AES: Sendable {
             let keychainServiceID = "wiki.qaq.rayon.kcAccess"
             let masterKeyID = "wiki.qaq.rayon.MasterCrypto"
             let keychain = Keychain(service: keychainServiceID)
-            var key: String?
-            for _ in 0 ..< 3 where key == nil {
+                .label("Rayon Master Crypto Key")
+                .comment("Rayon requires a master crypto key to access your encrypted data on disk and protects your accounts")
+
+            func stored() throws -> String? {
+                guard let master = try keychain.getString(masterKeyID), master.count > 2 else { return nil }
+                return master
+            }
+            func store(_ new: String) -> Bool {
                 do {
-                    if let master = try keychain.getString(masterKeyID), master.count > 2 {
-                        key = master
-                    } else {
-                        try keychain.remove(masterKeyID)
-                        let new = UUID().uuidString
-                        // Persist before activating: assigning the key ahead of
-                        // a successful write would encrypt data under a key that
-                        // is lost on the next launch.
-                        try keychain
-                            .label("Rayon Master Crypto Key")
-                            .comment("Rayon requires a master crypto key to access your encrypted data on disk and protects your accounts")
-                            .set(new, key: masterKeyID)
-                        key = new
-                    }
+                    try keychain.remove(masterKeyID)
+                    try keychain.set(new, key: masterKeyID)
+                    return true
                 } catch {
+                    debugPrint("AES: keychain write failed: \(error.localizedDescription)")
+                    return false
+                }
+            }
+
+            // A read that fails is not a missing key: the key may be there and
+            // refused (the login keychain asks before handing it to a new build).
+            var key: String?
+            var readFailed = false
+            for _ in 0 ..< 3 {
+                do {
+                    key = try stored()
+                    readFailed = false
+                    break
+                } catch {
+                    readFailed = true
                     debugPrint("AES: keychain access failed: \(error.localizedDescription)")
                 }
             }
-            guard let key = key else {
-                // Without the persisted key, previously stored data is
-                // unreadable either way; crashing would also take the app
-                // down. Stay usable with an ephemeral key; data saved in
-                // this state will not survive a restart.
-                debugPrint("AES: no persisted master key, falling back to an ephemeral key")
-                return makeEngine(key: UUID().uuidString)
+            if let key { return makeEngine(key: key) }
+
+            // The key of an earlier build, kept where this one cannot look.
+            if let legacy = legacyKeyStore {
+                switch legacy.read() {
+                case let .found(master) where master.count > 2:
+                    // Copied so later launches need not ask for it again. If the
+                    // copy fails the key is still good, and is fetched again.
+                    if !readFailed { _ = store(master) }
+                    return makeEngine(key: master)
+                case .unavailable:
+                    // A key exists and was not handed over. Making a new one
+                    // would orphan everything saved under the old one.
+                    debugPrint("AES: the stored master key is unavailable, using an ephemeral key")
+                    return makeEngine(key: UUID().uuidString, ephemeral: true)
+                case .found, .absent:
+                    break
+                }
+            } else if readFailed {
+                debugPrint("AES: the master key could not be read, using an ephemeral key")
+                return makeEngine(key: UUID().uuidString, ephemeral: true)
             }
-            return makeEngine(key: key)
+
+            // Persist before activating: a key that was never written is lost
+            // on the next launch, with the data encrypted under it.
+            let new = UUID().uuidString
+            if (!readFailed && store(new)) || legacyKeyStore?.write(new) == true {
+                return makeEngine(key: new)
+            }
+            // Without a persisted key, stay usable for this run only.
+            debugPrint("AES: no persisted master key, falling back to an ephemeral key")
+            return makeEngine(key: UUID().uuidString, ephemeral: true)
         #endif
     }()
 
     /// Builds an engine whose key doubles as IV. The initializer pads inputs
     /// to the required sizes, so any string of 16+ characters succeeds.
-    private static func makeEngine(key: String) -> AES {
-        guard let engine = AES(key: key, iv: key) else {
+    private static func makeEngine(key: String, ephemeral: Bool = false) -> AES {
+        guard var engine = AES(key: key, iv: key) else {
             preconditionFailure("unreachable: key length is sufficient")
         }
+        engine.isEphemeral = ephemeral
         return engine
     }
 

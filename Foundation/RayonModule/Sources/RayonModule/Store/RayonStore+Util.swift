@@ -43,7 +43,12 @@ public extension RayonStore {
             .set(data, forKey: key.rawValue)
     }
 
+    /// Whether changes are being saved. False when the master key could not be
+    /// read: the data on disk is left as it is until the key is available again.
+    static var savesChanges: Bool { !crypto.isEphemeral }
+
     func storeEncryptedDefault<T: Codable>(to key: UserDefaultKey, with data: T) {
+        guard !crypto.isEphemeral else { return }
         storeQueue.async {
             guard let data = try? documentEncoder.encode(data),
                   let encrypt = crypto.encrypt(data: data)
@@ -130,7 +135,8 @@ public extension RayonStore {
         print("sending payload")
 
         func storeEncryptedDefault<T: Codable>(to key: UserDefaultKey, with data: T) {
-            guard let data = try? documentEncoder.encode(data),
+            guard !crypto.isEphemeral,
+                  let data = try? documentEncoder.encode(data),
                   let encrypt = crypto.encrypt(data: data)
             else {
                 return
