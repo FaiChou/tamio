@@ -90,12 +90,16 @@ struct IdentitiesView: View {
             }
             ForEach(groups, id: \.name) { group in
                 TableGroupRow(group.name.isEmpty ? "Default" : group.name)
-                ForEach(group.identities) { identity in
+                    .transition(.opacity)
+                ForEach(Array(group.identities.enumerated()), id: \.element.id) { index, identity in
                     IdentityRow(identity: identity, selected: selection == identity.id)
                         .onTapGesture { selection = identity.id }
+                        .rxRise(index)
+                        .transition(.opacity)
                 }
             }
         }
+        .animation(.rxMove, value: groups.flatMap { $0.identities.map(\.id) })
         .rxCard(padding: RX.Space.s2)
     }
 }

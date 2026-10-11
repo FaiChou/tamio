@@ -70,10 +70,13 @@ struct SnippetsView: View {
                     alignment: .leading,
                     spacing: RX.Space.s4
                 ) {
-                    ForEach(filtered) { snippet in
+                    ForEach(Array(filtered.enumerated()), id: \.element.id) { index, snippet in
                         SnippetTile(snippet: snippet) { editing = snippet.id }
+                            .rxRise(index)
+                            .transition(.scale(scale: 0.96).combined(with: .opacity))
                     }
                 }
+                .animation(.rxMove, value: filtered.map(\.id))
             }
         }
         .onChange(of: groupNames) { names in

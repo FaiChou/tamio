@@ -145,11 +145,16 @@ private struct ServersTable: View {
             Hairline()
             ForEach(groups, id: \.name) { group in
                 TableGroupRow(group.name.isEmpty ? "Default" : group.name, trailing: "\(group.machines.count)")
-                ForEach(group.machines) { machine in
+                    .transition(.opacity)
+                ForEach(Array(group.machines.enumerated()), id: \.element.id) { index, machine in
                     ServerRow(machine: machine.id, columns: columns, selection: $selection)
+                        .rxRise(index)
+                        .transition(.opacity)
                 }
             }
         }
+        // Rows make room for a new server and close up after a deleted one.
+        .animation(.rxMove, value: groups.flatMap { $0.machines.map(\.id) })
         .readWidth($width)
         .rxCard(padding: RX.Space.s2)
     }

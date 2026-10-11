@@ -54,8 +54,9 @@ struct HomeView: View {
                     columns: [GridItem(.adaptive(minimum: 310), spacing: RX.Space.s4)],
                     spacing: RX.Space.s4
                 ) {
-                    ForEach(store.machineGroup.machines) { machine in
+                    ForEach(Array(store.machineGroup.machines.enumerated()), id: \.element.id) { index, machine in
                         ServerTile(machine: machine.id)
+                            .rxRise(index)
                             .transition(.scale(scale: 0.96).combined(with: .opacity))
                     }
                     NewServerTile()

@@ -33,10 +33,11 @@ public struct MonitorDashboard: View {
 
     var leftColumn: some View {
         VStack(spacing: RX.Space.s4) {
-            SystemCard(session: session)
-            ProcessorCard(session: session)
-            MemoryCard(session: session)
-            DiskCard(session: session)
+            // The cards arrive one after another, across both columns.
+            SystemCard(session: session).rxRise(0)
+            ProcessorCard(session: session).rxRise(2)
+            MemoryCard(session: session).rxRise(4)
+            DiskCard(session: session).rxRise(6)
         }
         .frame(maxWidth: .infinity)
     }
@@ -47,8 +48,9 @@ public struct MonitorDashboard: View {
                 ThroughputCard(session: session, direction: .receive)
                 ThroughputCard(session: session, direction: .transmit)
             }
-            NetworkCard(session: session)
-            GraphicsCard(session: session)
+            .rxRise(1)
+            NetworkCard(session: session).rxRise(3)
+            GraphicsCard(session: session).rxRise(5)
         }
         .frame(maxWidth: .infinity)
     }

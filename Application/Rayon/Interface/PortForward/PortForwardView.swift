@@ -96,14 +96,17 @@ struct PortForwardView: View {
             .padding(.horizontal, RX.Space.s3)
             .frame(height: RX.tableHeaderHeight)
             Hairline()
-            ForEach(filtered) { forward in
+            ForEach(Array(filtered.enumerated()), id: \.element.id) { index, forward in
                 PortForwardRow(forward: forward, selected: selection == forward.id) {
                     selection = forward.id
                 } edit: {
                     editor = EditorTarget(forward: forward.id)
                 }
+                .rxRise(index)
+                .transition(.opacity)
             }
         }
+        .animation(.rxMove, value: filtered.map(\.id))
         .rxCard(padding: RX.Space.s2)
     }
 }
