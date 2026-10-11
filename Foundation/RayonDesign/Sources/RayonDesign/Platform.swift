@@ -73,3 +73,16 @@ public extension View {
         #endif
     }
 }
+
+private struct RXControlsAtRestKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+public extension EnvironmentValues {
+    /// True where AppKit draws controls as in a window that is not the main
+    /// one, the selection grey: a menu bar popover, whichever app is in front.
+    var rxControlsAtRest: Bool {
+        get { self[RXControlsAtRestKey.self] }
+        set { self[RXControlsAtRestKey.self] = newValue }
+    }
+}

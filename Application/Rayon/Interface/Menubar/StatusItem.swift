@@ -89,6 +89,7 @@ class MenubarStatusItem: NSObject, Identifiable {
             Mac.bridge?.closePopover(self.key)
         }
         .environmentObject(RayonStore.shared)
+        .environment(\.rxControlsAtRest, true)
     }
 
     /// Called by the popover's scene once its window is up.

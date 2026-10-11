@@ -192,6 +192,8 @@ public struct RXSegmented<Value: Hashable>: View {
     }
 
     #if targetEnvironment(macCatalyst)
+        @Environment(\.rxControlsAtRest) private var atRest
+
         // UIKit's segmented control is a full-width grey capsule; the Mac one is
         // a compact track of equal segments with the selection in the accent colour.
         public var body: some View {
@@ -202,7 +204,7 @@ public struct RXSegmented<Value: Hashable>: View {
             }
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(Color.primary.opacity(0.07))
+                    .fill(Color.primary.opacity(atRest ? 0.088 : 0.07))
             )
             .fixedSize()
             .frame(maxWidth: fullWidth ? .infinity : nil)
@@ -221,13 +223,14 @@ public struct RXSegmented<Value: Hashable>: View {
                 Text(option.title)
             }
             .font(.system(size: 13))
-            .foregroundStyle(isSelected ? Color.white : Color.primary.opacity(0.85))
+            .foregroundStyle(isSelected && !atRest ? Color.white : Color.primary.opacity(isSelected ? 1 : 0.85))
             .lineLimit(1)
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: 24, maxHeight: 24)
             .background {
                 if isSelected {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.rxAccent)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(atRest ? Color.primary.opacity(0.142) : Color.rxAccent)
                 }
             }
             .overlay(alignment: .trailing) {
