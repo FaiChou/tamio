@@ -228,7 +228,7 @@ public struct ProgressHUD: View {
             Color.rxScrim.ignoresSafeArea()
             VStack(spacing: RX.Space.s3) {
                 ProgressView()
-                    .controlSize(.regular)
+                    .rxSpinner()
                 Text(text)
                     .font(.rxBody)
                     .foregroundStyle(.rxInk)

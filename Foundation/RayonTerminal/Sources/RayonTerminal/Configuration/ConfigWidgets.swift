@@ -175,7 +175,7 @@ struct ConfigWidgetView: View {
             case "switch":
                 Toggle(setting.name, isOn: Binding(get: { effective.lowercased() == "true" }, set: { value.wrappedValue = String($0) }))
                     .labelsHidden()
-                    .toggleStyle(.switch)
+                    .rxSwitchToggle()
                     .controlSize(.small)
                     .tint(.rxAccent)
             case "range":

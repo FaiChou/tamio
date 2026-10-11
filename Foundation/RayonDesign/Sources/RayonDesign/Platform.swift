@@ -21,6 +21,26 @@ public extension View {
         #endif
     }
 
+    /// A switch. Mac Catalyst's switch claims 12pt beyond the control it draws,
+    /// which would keep it that far from the trailing edge of a row.
+    func rxSwitchToggle() -> some View {
+        #if targetEnvironment(macCatalyst)
+            toggleStyle(.switch).padding(.trailing, -12)
+        #else
+            toggleStyle(.switch)
+        #endif
+    }
+
+    /// An indeterminate spinner at AppKit's regular size. Mac Catalyst draws the
+    /// regular control size at half that.
+    func rxSpinner() -> some View {
+        #if targetEnvironment(macCatalyst)
+            controlSize(.large)
+        #else
+            controlSize(.regular)
+        #endif
+    }
+
     /// A menu drawn as a button (the Mac needs the button menu style; on iOS a
     /// `Menu` already is one), optionally without the disclosure indicator.
     func rxButtonMenu(indicator: Bool = true) -> some View {

@@ -21,7 +21,7 @@ struct ConfigThemePicker: View {
         VStack(alignment: .leading, spacing: RX.Space.s3) {
             HStack(spacing: RX.Space.s3) {
                 Toggle("Separate light and dark themes", isOn: Binding(get: { dual }, set: { enabled in value = enabled ? "light:\(value),dark:\(value)" : selected }))
-                    .toggleStyle(.switch)
+                    .rxSwitchToggle()
                     .controlSize(.small)
                     .tint(.rxAccent)
                     .font(.rxBody)
@@ -90,7 +90,7 @@ struct ConfigPaletteEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: RX.Space.s3) {
             Toggle("Show all 256 colors", isOn: $extended)
-                .toggleStyle(.switch)
+                .rxSwitchToggle()
                 .controlSize(.small)
                 .tint(.rxAccent)
                 .font(.rxBody)

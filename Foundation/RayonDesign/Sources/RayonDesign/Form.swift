@@ -90,7 +90,7 @@ public struct SwitchRow: View {
         RXFormRow(title, description: description) {
             Toggle(title, isOn: $isOn)
                 .labelsHidden()
-                .toggleStyle(.switch)
+                .rxSwitchToggle()
                 .tint(.rxAccent)
                 #if os(macOS) || targetEnvironment(macCatalyst)
                 .controlSize(.small)

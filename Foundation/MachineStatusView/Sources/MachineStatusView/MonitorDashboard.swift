@@ -101,6 +101,7 @@ public struct MonitorPlaceholder: View {
             default:
                 VStack(spacing: RX.Space.s3) {
                     ProgressView()
+                        .rxSpinner()
                     Text("Connecting…")
                         .font(.rxBody)
                         .foregroundStyle(.rxInkSecondary)
