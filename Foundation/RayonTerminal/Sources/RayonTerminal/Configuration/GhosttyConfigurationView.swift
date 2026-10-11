@@ -87,7 +87,7 @@ public struct GhosttyConfigurationView: View {
     private var showsTerminalTools: Bool { search.isEmpty ? category?.section == .terminal : true }
 
     public var body: some View {
-        #if os(macOS)
+        #if os(macOS) || targetEnvironment(macCatalyst)
             columns
         #else
             CompactSettings(
@@ -108,7 +108,7 @@ public struct GhosttyConfigurationView: View {
         #endif
     }
 
-    #if os(macOS)
+    #if os(macOS) || targetEnvironment(macCatalyst)
     /// macOS: a category column beside the selected category, with the live
     /// preview beside or above it.
     private var columns: some View {
@@ -141,7 +141,7 @@ public struct GhosttyConfigurationView: View {
         .background {
             if !embedded { RXWindowBackground().ignoresSafeArea() }
         }
-        .toolbarBackground(.hidden, for: .windowToolbar)
+        .rxClearToolbar()
         .modifier(ConfigToolbar(leading: {
             ControlGroup {
                 Button { navigate(-1) } label: { Label("Back", systemImage: "chevron.left") }
@@ -489,7 +489,7 @@ public struct GhosttyConfigurationView: View {
     }
 }
 
-#if !os(macOS)
+#if !(os(macOS) || targetEnvironment(macCatalyst))
     /// iPhone and iPad: the categories as a grouped list, each pushing its page;
     /// searching replaces the list with matching settings.
     private struct CompactSettings<Page: View, Results: View>: View {
@@ -559,7 +559,7 @@ public struct GhosttyConfigurationView: View {
     }
 #endif
 
-#if os(macOS)
+#if os(macOS) || targetEnvironment(macCatalyst)
 /// Navigation at the leading edge, actions at the trailing edge of the window toolbar.
 private struct ConfigToolbar<Leading: View, Trailing: View>: ViewModifier {
     let leading: Leading
@@ -571,7 +571,7 @@ private struct ConfigToolbar<Leading: View, Trailing: View>: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, iOS 26.0, *) {
             content.toolbar {
                 ToolbarItemGroup(placement: .navigation) { leading }
                 ToolbarSpacer(.flexible)

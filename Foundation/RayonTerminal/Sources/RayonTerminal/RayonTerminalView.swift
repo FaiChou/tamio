@@ -109,6 +109,12 @@ final class RayonTerminalSession: @unchecked Sendable {
             } else if view.window?.firstResponder === view {
                 view.window?.makeFirstResponder(nil)
             }
+        #elseif targetEnvironment(macCatalyst)
+            if active {
+                DispatchQueue.main.async { view.becomeFirstResponder() }
+            } else if view.isFirstResponder {
+                view.resignFirstResponder()
+            }
         #else
             // Taking focus would raise the software keyboard; only let it go.
             if !active, view.isFirstResponder { view.resignFirstResponder() }

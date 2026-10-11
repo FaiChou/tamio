@@ -354,7 +354,7 @@ struct ConfigKeybindingBuilder: View {
                 .keyboardShortcut(.defaultAction)
                 .disabled(!parsed.errors.isEmpty || recordingStep != nil)
         }
-        #if os(macOS)
+        #if os(macOS) || targetEnvironment(macCatalyst)
         .frame(width: 580)
         #endif
     }
@@ -373,7 +373,7 @@ struct ConfigKeybindingBuilder: View {
         return VStack(alignment: .leading, spacing: RX.Space.s2) {
             HStack(spacing: RX.Space.s2) {
                 KeyCaps(text: recordingStep == index ? "Press keys…" : KeybindingNames.step(step))
-                #if os(macOS)
+                #if os(macOS) || targetEnvironment(macCatalyst)
                     Button(recordingStep == index ? "Cancel" : "Record") {
                         recordingStep = recordingStep == index ? nil : index
                     }
@@ -521,6 +521,80 @@ struct ConfigKeybindingBuilder: View {
                 return nil
             }
             return (mods.sorted() + [key]).joined(separator: "+")
+        }
+    }
+#elseif targetEnvironment(macCatalyst)
+    import UIKit
+
+    /// Captures the next key press, with its modifiers, while `active`.
+    private struct KeyRecorder: UIViewRepresentable {
+        let active: Bool
+        let record: (String) -> Void
+
+        final class Catcher: UIView {
+            var record: ((String) -> Void)?
+            override var canBecomeFirstResponder: Bool { true }
+
+            override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+                for press in presses {
+                    if let key = press.key, let step = KeyRecorder.step(for: key) {
+                        record?(step)
+                        return
+                    }
+                }
+                // A modifier on its own: keep waiting for the key.
+            }
+        }
+
+        func makeUIView(context _: Context) -> Catcher { Catcher() }
+
+        func updateUIView(_ view: Catcher, context _: Context) {
+            view.record = record
+            if active, !view.isFirstResponder {
+                DispatchQueue.main.async { view.becomeFirstResponder() }
+            } else if !active, view.isFirstResponder {
+                view.resignFirstResponder()
+            }
+        }
+
+        private static let specialKeys: [UIKeyboardHIDUsage: String] = [
+            .keyboardReturnOrEnter: "enter", .keyboardTab: "tab", .keyboardSpacebar: "space",
+            .keyboardDeleteOrBackspace: "backspace", .keyboardEscape: "escape", .keyboardDeleteForward: "delete",
+            .keyboardHome: "home", .keyboardEnd: "end", .keyboardPageUp: "page_up", .keyboardPageDown: "page_down",
+            .keyboardLeftArrow: "arrow_left", .keyboardRightArrow: "arrow_right",
+            .keyboardDownArrow: "arrow_down", .keyboardUpArrow: "arrow_up",
+            .keyboardF1: "f1", .keyboardF2: "f2", .keyboardF3: "f3", .keyboardF4: "f4", .keyboardF5: "f5",
+            .keyboardF6: "f6", .keyboardF7: "f7", .keyboardF8: "f8", .keyboardF9: "f9", .keyboardF10: "f10",
+            .keyboardF11: "f11", .keyboardF12: "f12",
+        ]
+
+        /// The unshifted character of the keys whose shifted one differs.
+        private static let unshifted: [UIKeyboardHIDUsage: String] = [
+            .keyboard1: "1", .keyboard2: "2", .keyboard3: "3", .keyboard4: "4", .keyboard5: "5",
+            .keyboard6: "6", .keyboard7: "7", .keyboard8: "8", .keyboard9: "9", .keyboard0: "0",
+            .keyboardHyphen: "-", .keyboardEqualSign: "=", .keyboardOpenBracket: "[", .keyboardCloseBracket: "]",
+            .keyboardBackslash: "\\", .keyboardSemicolon: ";", .keyboardQuote: "'", .keyboardGraveAccentAndTilde: "`",
+            .keyboardComma: ",", .keyboardPeriod: ".", .keyboardSlash: "/",
+        ]
+
+        fileprivate static func step(for key: UIKey) -> String? {
+            let flags = key.modifierFlags
+            var mods: [String] = []
+            if flags.contains(.control) { mods.append("ctrl") }
+            if flags.contains(.alternate) { mods.append("alt") }
+            if flags.contains(.shift) { mods.append("shift") }
+            if flags.contains(.command) { mods.append("super") }
+            let name: String
+            if let special = specialKeys[key.keyCode] {
+                name = special
+            } else if flags.contains(.shift) || flags.contains(.alternate), let plain = unshifted[key.keyCode] {
+                name = plain
+            } else {
+                let character = key.charactersIgnoringModifiers.lowercased()
+                guard character.unicodeScalars.count == 1 else { return nil }
+                name = character
+            }
+            return (mods.sorted() + [name]).joined(separator: "+")
         }
     }
 #endif

@@ -39,7 +39,7 @@ struct ConfigSettingRow: View {
 
     private var isModified: Bool { model.document.overrides[setting.key] != nil }
 
-    #if os(iOS)
+    #if os(iOS) && !targetEnvironment(macCatalyst)
         @Environment(\.horizontalSizeClass) private var sizeClass
         /// On a narrow iPhone screen every control goes under its title.
         private var widgetBelow: Bool { stacked || sizeClass == .compact }
@@ -105,13 +105,13 @@ struct ConfigSettingRow: View {
                                 Link("Ghostty documentation", destination: URL(string: "https://ghostty.org/docs/config/reference#" + setting.key)!)
                             }
                             .padding(RX.Space.s4)
-                            #if os(macOS)
+                            #if os(macOS) || targetEnvironment(macCatalyst)
                             .frame(width: 430, alignment: .leading)
                             #else
                             .frame(maxWidth: .infinity, alignment: .leading)
                             #endif
                         }
-                        #if os(macOS)
+                        #if os(macOS) || targetEnvironment(macCatalyst)
                         .frame(maxHeight: 500)
                         #else
                         .frame(minWidth: 320, idealWidth: 430, minHeight: 240, idealHeight: 420)

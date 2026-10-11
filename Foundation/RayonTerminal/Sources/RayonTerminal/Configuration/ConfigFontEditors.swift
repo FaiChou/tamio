@@ -162,7 +162,7 @@ struct ConfigFontPicker: View {
 
     /// macOS opens the list above the button; iPad below it, where the screen
     /// has room for the list.
-    #if os(macOS)
+    #if os(macOS) || targetEnvironment(macCatalyst)
         private static let arrowEdge: Edge = .bottom
     #else
         private static let arrowEdge: Edge = .top
@@ -241,7 +241,7 @@ private struct FontFamilyList: View {
             }
         }
         .padding(RX.Space.s3)
-        #if os(macOS)
+        #if os(macOS) || targetEnvironment(macCatalyst)
         .frame(width: 320, height: 420)
         #else
         // A List has no height of its own; give the iPad popover one (on iPhone

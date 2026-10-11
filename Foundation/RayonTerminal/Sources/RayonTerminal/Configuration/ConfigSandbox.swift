@@ -216,6 +216,77 @@ final class ConfigSandbox: ObservableObject {
             }
         }
     }
+#elseif targetEnvironment(macCatalyst)
+    import UIKit
+
+    /// The prompt's input line: Return runs, ↑/↓ walk history, Tab completes,
+    /// Esc cancels, ⌃L clears.
+    struct ConfigCommandInput: UIViewRepresentable {
+        @ObservedObject var shell: ConfigSandbox
+        let color: Color
+        let fontName: String
+        let size: CGFloat
+        private var font: UIFont { UIFont(name: fontName, size: size) ?? .monospacedSystemFont(ofSize: size, weight: .regular) }
+
+        /// A field that offers its key presses before the text system takes them.
+        final class Field: UITextField {
+            var onKey: ((UIKey) -> Bool)?
+
+            override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
+                for press in presses {
+                    if let key = press.key, onKey?(key) == true { return }
+                }
+                super.pressesBegan(presses, with: event)
+            }
+        }
+
+        func makeCoordinator() -> Coordinator { Coordinator(self) }
+        func makeUIView(context: Context) -> Field {
+            let field = Field()
+            field.delegate = context.coordinator
+            field.borderStyle = .none; field.backgroundColor = .clear; field.focusEffect = nil
+            field.autocorrectionType = .no; field.autocapitalizationType = .none; field.spellCheckingType = .no
+            field.smartQuotesType = .no; field.smartDashesType = .no
+            field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            field.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .editingChanged)
+            field.onKey = { [weak field, weak coordinator = context.coordinator] key in
+                guard let field, let coordinator else { return false }
+                return coordinator.handle(key, in: field)
+            }
+            return field
+        }
+        func updateUIView(_ field: Field, context: Context) {
+            context.coordinator.owner = self
+            if field.text != shell.input { field.text = shell.input }
+            field.textColor = UIColor(color); field.font = font
+        }
+        final class Coordinator: NSObject, UITextFieldDelegate {
+            var owner: ConfigCommandInput
+            init(_ owner: ConfigCommandInput) { self.owner = owner }
+            @objc func changed(_ field: UITextField) { owner.shell.input = field.text ?? "" }
+            func textFieldShouldReturn(_ field: UITextField) -> Bool {
+                owner.shell.input = field.text ?? ""
+                owner.shell.submit()
+                field.text = owner.shell.input
+                return false
+            }
+            func handle(_ key: UIKey, in field: UITextField) -> Bool {
+                switch key.keyCode {
+                case .keyboardUpArrow: owner.shell.historyMove(-1)
+                case .keyboardDownArrow: owner.shell.historyMove(1)
+                case .keyboardTab: owner.shell.complete()
+                case .keyboardEscape: owner.shell.output(owner.shell.prompt + owner.shell.input + "^C"); owner.shell.input = ""
+                case .keyboardL where key.modifierFlags.contains(.control): owner.shell.lines.removeAll()
+                default: return false
+                }
+                field.text = owner.shell.input
+                let end = field.endOfDocument
+                field.selectedTextRange = field.textRange(from: end, to: end)
+                return true
+            }
+        }
+    }
 #else
     /// The prompt's input line; Return runs the command.
     struct ConfigCommandInput: View {
