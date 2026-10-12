@@ -149,6 +149,27 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                 AppRouter.shared.openTerminal(command: command)
                 AppRouter.shared.route = .terminal(TerminalManager.shared.sessionContexts.last!.id)
             }
+            // "colors" opens Settings there; "general,colors" goes on to the second.
+            if let categories = ProcessInfo.processInfo.environment["RAYON_PREVIEW_SETTINGS"]?.split(separator: ",").map(String.init) {
+                for (index, category) in categories.enumerated() {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1 + Double(index) * 2) {
+                        // "@terminal" leaves Settings for the preview terminal.
+                        if category == "@terminal", let session = TerminalManager.shared.sessionContexts.last {
+                            AppRouter.shared.route = .terminal(session.id)
+                        } else {
+                            AppRouter.shared.openSettings(category)
+                        }
+                    }
+                }
+            }
+            // "key=value" makes that edit six seconds in and takes it back ten later.
+            if let pair = ProcessInfo.processInfo.environment["RAYON_PREVIEW_EDIT"]?.split(separator: "=", maxSplits: 1).map(String.init), pair.count == 2 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 6) {
+                    let old = ConfigBenchmark.value(pair[0])
+                    ConfigBenchmark.edit(pair[0], pair[1])
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 10) { ConfigBenchmark.edit(pair[0], old) }
+                }
+            }
             if ProcessInfo.processInfo.environment["RAYON_PREVIEW_MENUBAR"] != nil {
                 MenubarTool.shared.showPreview()
             }

@@ -11,7 +11,8 @@
 #if DEBUG
     import NSRemoteShell
     import RayonModule
-    import SwiftUI
+    import RayonTerminal
+import SwiftUI
     import UIKit
 
     extension Notification.Name {
@@ -35,18 +36,23 @@
         /// How long the main thread worked in the 0.4 s after the action: the
         /// state change, SwiftUI's update, layout and the commit to the render
         /// server, wherever in that window they ran.
+        /// The longest single stretch of work in the last `settle`: the hitch.
+        static var longest = 0.0
+
         static func settle(_ action: () -> Void) async -> Double {
             nonisolated(unsafe) var busy = 0.0
+            nonisolated(unsafe) var stretch = 0.0
             nonisolated(unsafe) var woke = CACurrentMediaTime()
             let activities = CFRunLoopActivity.afterWaiting.rawValue | CFRunLoopActivity.beforeWaiting.rawValue
             let observer = CFRunLoopObserverCreateWithHandler(nil, activities, true, CFIndex.max) { _, activity in
                 let now = CACurrentMediaTime()
-                if activity == .afterWaiting { woke = now } else { busy += now - woke; woke = now }
+                if activity == .afterWaiting { woke = now } else { busy += now - woke; stretch = max(stretch, now - woke); woke = now }
             }
             CFRunLoopAddObserver(CFRunLoopGetMain(), observer, .commonModes)
             action()
             try? await Task.sleep(nanoseconds: 400_000_000)
             CFRunLoopRemoveObserver(CFRunLoopGetMain(), observer, .commonModes)
+            longest = stretch * 1000
             return busy * 1000
         }
 
@@ -166,16 +172,39 @@
             let router = AppRouter.shared
             router.settingsSelection = "general"
             report("open settings", [await settle { router.route = .settings }])
+            report("open settings hitch", [longest])
             try? await Task.sleep(nanoseconds: 500_000_000)
             let ids = ["general", "connection", "text", "colors", "cursor", "window", "input", "keyboard", "advanced", "about"]
             var samples: [Double] = []
+            var hitches: [Double] = []
             let rounds = Int(ProcessInfo.processInfo.environment["RAYON_BENCH_REPEAT"] ?? "2") ?? 2
             for id in Array(repeating: ids, count: rounds).flatMap({ $0 }) {
                 let sample = await settle { router.settingsSelection = id }
-                NSLog("BENCH category %@ %.2f ms", id, sample)
+                NSLog("BENCH category %@ %.2f ms  hitch %.2f ms", id, sample, longest)
                 samples.append(sample)
+                hitches.append(longest)
             }
             report("switch category", samples)
+            report("switch category hitch", hitches)
+            await edits()
+            var reopen: [Double] = []
+            // RAYON_BENCH_BLANK leaves for a page with nothing on it, so what
+            // is measured is Settings going and coming and nothing else.
+            let away: Route = ProcessInfo.processInfo.environment["RAYON_BENCH_BLANK"] != nil ? .terminal(UUID()) : .servers
+            var leave: [Double] = []
+            var leaveHitch: [Double] = []
+            var reopenHitch: [Double] = []
+            for _ in 0 ..< (Int(ProcessInfo.processInfo.environment["RAYON_BENCH_REOPEN"] ?? "3") ?? 3) {
+                leave.append(await settle { router.route = away })
+                leaveHitch.append(longest)
+                reopen.append(await settle { router.route = .settings })
+                reopenHitch.append(longest)
+            }
+            if ProcessInfo.processInfo.environment["RAYON_BENCH_NOPLACES"] == nil { await places() }
+            report("leave settings", leave)
+            report("leave settings hitch", leaveHitch)
+            report("reopen settings", reopen)
+            report("reopen settings hitch", reopenHitch)
             router.settingsSelection = "advanced"
             try? await Task.sleep(nanoseconds: 800_000_000)
             report("idle 0.4 s", [await settle {}, await settle {}, await settle {}])
@@ -184,6 +213,43 @@
             try? await Task.sleep(nanoseconds: 800_000_000)
             await scroll()
             NSLog("BENCH done")
+        }
+
+        /// Goes between the places of the sidebar that are not Settings.
+        static func places() async {
+            let router = AppRouter.shared
+            var samples: [Double] = []
+            var hitches: [Double] = []
+            for route in [Route.home, .servers, .identities, .snippets, .home, .servers, .identities, .snippets] {
+                let sample = await settle { router.route = route }
+                NSLog("BENCH place %@ %.2f ms  hitch %.2f ms", String(describing: route), sample, longest)
+                samples.append(sample)
+                hitches.append(longest)
+            }
+            report("change place", samples)
+            report("change place hitch", hitches)
+        }
+
+        /// Changes a setting again and again, as dragging its control would,
+        /// then puts back what it had.
+        static func edits() async {
+            let router = AppRouter.shared
+            router.settingsSelection = "cursor"
+            try? await Task.sleep(nanoseconds: 800_000_000)
+            let key = "cursor-opacity"
+            let before = ConfigBenchmark.value(key)
+            var samples: [Double] = []
+            var hitches: [Double] = []
+            let count = Int(ProcessInfo.processInfo.environment["RAYON_BENCH_EDITS"] ?? "12") ?? 12
+            for step in 0 ..< count {
+                let value = String(format: "%.2f", 0.4 + Double(step % 6) * 0.1)
+                samples.append(await settle { ConfigBenchmark.edit(key, value) })
+                hitches.append(longest)
+            }
+            report("edit a setting", samples)
+            report("edit a setting hitch", hitches)
+            ConfigBenchmark.edit(key, before)
+            try? await Task.sleep(nanoseconds: 800_000_000)
         }
 
         /// Scrolls the file list from top to bottom and back at a steady pace
