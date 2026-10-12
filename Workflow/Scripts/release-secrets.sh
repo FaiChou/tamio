@@ -4,7 +4,7 @@
 # with. Run it yourself: it asks for passwords and uploads a private key.
 #
 # Usage:
-#   bash Workflow/Scripts/release-secrets.sh <DeveloperID.p12> [AuthKey_<id>.p8]
+#   bash Workflow/Scripts/release-secrets.sh <DeveloperID.p12> [AuthKey_<id>.p8] [Rayon.provisionprofile]
 #
 # The .p12: in Keychain Access, under My Certificates, select "Developer ID
 # Application: …", File → Export Items…, and give it a password.
@@ -16,14 +16,21 @@
 #   - with no .p8 given, your Apple ID and an app-specific password made at
 #     account.apple.com → Sign-In and Security → App-Specific Passwords.
 #
+# The .provisionprofile lets the released Mac app sync with iCloud: at
+# developer.apple.com → Profiles, a Developer ID profile (Mac Catalyst) for the
+# app's id, which has the iCloud capability, and that certificate.
+#
 # Needs the GitHub CLI, signed in (`gh auth login`), in a clone of the repository.
 
 set -euo pipefail
 
 P12="${1:-}"
 P8="${2:-}"
-if [[ -z "$P12" || ! -f "$P12" || ( -n "$P8" && ! -f "$P8" ) ]]; then
-    sed -n '3,19p' "$0" | sed 's/^# \{0,1\}//'
+PROFILE="${3:-}"
+# The profile may be given without a .p8.
+if [[ "$P8" == *.provisionprofile ]]; then PROFILE="$P8"; P8=""; fi
+if [[ -z "$P12" || ! -f "$P12" || ( -n "$P8" && ! -f "$P8" ) || ( -n "$PROFILE" && ! -f "$PROFILE" ) ]]; then
+    sed -n '3,23p' "$0" | sed 's/^# \{0,1\}//'
     exit 2
 fi
 
@@ -60,5 +67,8 @@ else
     set_secret NOTARY_APPLE_ID "$apple_id"
     set_secret NOTARY_PASSWORD "$apple_password"
     for name in NOTARY_KEY NOTARY_KEY_ID NOTARY_ISSUER_ID; do gh secret delete "$name" >/dev/null 2>&1 || true; done
+fi
+if [[ -n "$PROFILE" ]]; then
+    base64 < "$PROFILE" | tr -d '\n' | gh secret set MAC_PROVISIONING_PROFILE >/dev/null && printf '  set MAC_PROVISIONING_PROFILE\n'
 fi
 printf 'Done. Publish a release with: git tag v<version> && git push origin v<version>\n'

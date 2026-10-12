@@ -23,6 +23,9 @@
 # With none, the disk image is signed but not notarized, and the script says so;
 # REQUIRE_NOTARIZATION=1 makes that an error.
 #
+# With a Developer ID provisioning profile for the app (see build-macos.sh;
+# MAC_PROVISIONING_PROFILE names one), the Mac app can sync with iCloud.
+#
 # Other environment overrides:
 #   CODE_SIGN_IDENTITY    Certificate for the Mac app; "-" signs ad hoc, which
 #                         is only good for trying the script
