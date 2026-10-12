@@ -147,27 +147,45 @@ struct KeyCaps: View {
 // MARK: - List
 
 struct ConfigKeybindingList: View {
-    @ObservedObject var model: ConfigEditorModel
+    let model: ConfigEditorModel
+    /// Drawn again when the shortcuts change, not when any setting does.
+    @ObservedObject private var scope: ConfigEditorModel.Scope
     @State private var editIndex: Int?
     @State private var draft = ConfigKeybinding().rendered
     @State private var editing = false
     @State private var filter = ""
     @State private var confirmReset = false
 
-    private var entries: [String] { model.document.values("keybind") }
-
-    private var visible: [(index: Int, binding: ConfigKeybinding)] {
-        entries.enumerated().compactMap { index, entry in
-            let binding = ConfigKeybinding(entry)
-            guard KeybindingNames.applies(binding) else { return nil }
-            guard !filter.isEmpty else { return (index, binding) }
-            let text = "\(KeybindingNames.trigger(binding)) \(KeybindingNames.summary(binding)) \(entry)"
-            return text.localizedCaseInsensitiveContains(filter) ? (index, binding) : nil
-        }
+    init(model: ConfigEditorModel) {
+        self.model = model
+        scope = model.scope("keybind")
     }
 
-    private var hiddenCount: Int {
-        entries.filter { !KeybindingNames.applies(ConfigKeybinding($0)) }.count
+    private var entries: [String] { model.document.values("keybind") }
+
+    /// The shortcuts read once: those to list, how many are not Rayon's to
+    /// offer, and the key sequences more than one of them uses.
+    private struct Listing {
+        var visible: [(index: Int, binding: ConfigKeybinding)] = []
+        var hiddenCount = 0
+        var repeated: Set<String> = []
+    }
+
+    private var listing: Listing {
+        var result = Listing()
+        var seen: [String: Int] = [:]
+        for (index, entry) in entries.enumerated() {
+            let binding = ConfigKeybinding(entry)
+            seen[binding.canonical, default: 0] += 1
+            guard KeybindingNames.applies(binding) else { result.hiddenCount += 1; continue }
+            if !filter.isEmpty {
+                let text = "\(KeybindingNames.trigger(binding)) \(KeybindingNames.summary(binding)) \(entry)"
+                guard text.localizedCaseInsensitiveContains(filter) else { continue }
+            }
+            result.visible.append((index, binding))
+        }
+        result.repeated = Set(seen.filter { $0.value > 1 }.keys)
+        return result
     }
 
     var body: some View {
@@ -184,7 +202,9 @@ struct ConfigKeybindingList: View {
                     HStack(spacing: RX.Space.s2) { headerButtons }
                 }
             }
-            let rows = visible
+            let listing = listing
+            let rows = listing.visible
+            let hiddenCount = listing.hiddenCount
             ForEach(KeybindingNames.groups.map(\.title) + ["Other"], id: \.self) { group in
                 let members = rows.filter { KeybindingNames.group(of: $0.binding.action) == group }
                 if !members.isEmpty {
@@ -193,7 +213,7 @@ struct ConfigKeybindingList: View {
                             .padding(.leading, RX.Space.s4)
                         RXDividedStack {
                             ForEach(members, id: \.index) { index, binding in
-                                row(index: index, binding: binding)
+                                row(index: index, binding: binding, duplicate: listing.repeated.contains(binding.canonical))
                             }
                         }
                         .padding(.horizontal, RX.Space.s4)
@@ -236,9 +256,8 @@ struct ConfigKeybindingList: View {
         .fixedSize()
     }
 
-    private func row(index: Int, binding: ConfigKeybinding) -> some View {
-        let duplicate = entries.filter { ConfigKeybinding($0).canonical == binding.canonical }.count > 1
-        return HStack(spacing: RX.Space.s3) {
+    private func row(index: Int, binding: ConfigKeybinding, duplicate: Bool) -> some View {
+        HStack(spacing: RX.Space.s3) {
             HStack(spacing: 4) {
                 ForEach(Array(binding.steps.enumerated()), id: \.offset) { offset, step in
                     if offset > 0 { Text("then").font(.rxHelp).foregroundStyle(.rxInkSecondary) }
