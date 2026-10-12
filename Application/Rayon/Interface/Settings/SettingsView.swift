@@ -32,6 +32,9 @@ struct SettingsView: View {
                 ConfigHostSettingsSection(id: "general.recent", keywords: "recent servers history quick connect commands record remember") {
                     RecentSettings().environmentObject(store)
                 },
+                ConfigHostSettingsSection(id: "general.sync", keywords: "icloud sync cloud encrypted passphrase servers identities credentials devices") {
+                    CloudSyncSettings()
+                },
                 ConfigHostSettingsSection(id: "connection.ssh", keywords: "ssh timeout connect wait") {
                     SSHSettings().environmentObject(store)
                 },

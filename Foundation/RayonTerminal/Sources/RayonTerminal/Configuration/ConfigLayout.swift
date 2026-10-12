@@ -55,6 +55,7 @@ struct ConfigLayout {
             Group("appearance", "Appearance", [.host("general.appearance")]),
             Group("sessions", "Sessions", [.host("general.sessions")]),
             Group("recent", "Recent", [.host("general.recent")]),
+            Group("sync", "iCloud Sync", [.host("general.sync")]),
             // App-specific: the iOS app's container and log. A group shows only
             // when the app supplies its rows.
             Group("data", "Data", [.host("general.data")]),

@@ -24,6 +24,7 @@ struct RayonApp: App {
         // Before the store: it reads the master key as it loads.
         Mac.installLegacyKeyStore()
         _ = RayonStore.shared
+        CloudSync.shared.start()
 
         // Shared file-transfer core lives in RayonModule; register the
         // platform UI handler it delegates to.
