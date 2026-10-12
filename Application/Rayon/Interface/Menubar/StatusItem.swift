@@ -236,7 +236,7 @@ struct MenubarPopoverView: View {
         .frame(width: Self.width)
         // The window's material, not the popover's, so the cards sit on the same
         // backdrop as in the main window.
-        .background(RXWindowBackground().ignoresSafeArea())
+        .background(RXWindowBackground(material: true).ignoresSafeArea())
     }
 
     /// Name and system facts on the left; the server's tools as symbols on the right.

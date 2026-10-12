@@ -132,10 +132,10 @@ struct QuickConnectHero: View {
             .frame(height: 64)
             .background(
                 Capsule()
-                    .fill(.thickMaterial)
-                    .overlay(Capsule().fill(Color.rxSurface.opacity(0.35)))
+                    .fill(Color.rxSurface)
+                    .overlay(Capsule().strokeBorder(focused ? Color.clear : Color.rxHairline, lineWidth: 0.5))
                     .overlay(Capsule().strokeBorder(Color.rxAccent.opacity(focused ? 0.5 : 0), lineWidth: 1.5))
-                    .shadow(color: .black.opacity(focused ? 0.24 : 0.18), radius: focused ? 22 : 18, y: 8)
+                    .shadow(color: .black.opacity(focused ? 0.12 : 0.06), radius: focused ? 14 : 10, y: 4)
             )
             .animation(.easeOut(duration: 0.2), value: focused)
             .frame(maxWidth: 640)

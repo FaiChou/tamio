@@ -5,8 +5,8 @@
 
 import SwiftUI
 
-/// A card floating over the translucent window: a heavily blurred material with a
-/// faint tint of `surface`, a soft shadow, and a light specular edge in dark mode.
+/// A card on the window: solid `surface`, a hairline edge and a soft shadow.
+/// Content is never glass; that is for the controls floating above it.
 struct RXCardBackground: View {
     var radius: CGFloat = RX.Radius.card
     var fill: Color = .rxSurface
@@ -15,19 +15,9 @@ struct RXCardBackground: View {
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
         shape
-            .fill(.thickMaterial)
-            .overlay(shape.fill(fill.opacity(colorScheme == .dark ? 0.35 : 0.55)))
-            .overlay(
-                shape.strokeBorder(
-                    LinearGradient(
-                        colors: [Color.white.opacity(colorScheme == .dark ? 0.12 : 0.6), Color.white.opacity(colorScheme == .dark ? 0.02 : 0.15)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    ),
-                    lineWidth: 0.5
-                )
-            )
-            .shadow(color: .black.opacity(colorScheme == .dark ? 0.25 : 0.06), radius: 12, x: 0, y: 6)
+            .fill(fill)
+            .overlay(shape.strokeBorder(Color.rxHairline, lineWidth: 0.5))
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.2 : 0.05), radius: 8, x: 0, y: 3)
     }
 }
 

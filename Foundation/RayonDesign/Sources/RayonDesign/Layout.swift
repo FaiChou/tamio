@@ -47,15 +47,21 @@ import SwiftUI
 #elseif targetEnvironment(macCatalyst)
     import UIKit
 
-    /// The translucent window backdrop on Mac Catalyst. UIKit cannot draw the
-    /// window material, so this view is clear, keeps the UIKit views it sits in
-    /// clear, and hands its window to `install`, where the app puts the AppKit
-    /// material underneath.
+    /// The window backdrop on Mac Catalyst. Content sits on the solid `window`
+    /// colour: as Apple's guidance has it, only the controls and navigation
+    /// that float above content are glass. With `material`, for a menu bar
+    /// popover, the view is clear and the AppKit material shows through.
+    /// Either way it keeps the UIKit views it sits in clear and hands its
+    /// window to `install`, where the app puts the material underneath, for
+    /// the sidebar.
     public struct RXWindowBackground: UIViewRepresentable {
         /// Called with every window a backdrop appears in.
         @MainActor public static var install: ((UIWindow) -> Void)?
+        let material: Bool
 
-        public init() {}
+        public init(material: Bool = false) {
+            self.material = material
+        }
 
         public final class ClearView: UIView {
             override public func didMoveToWindow() {
@@ -88,7 +94,7 @@ import SwiftUI
 
         public func makeUIView(context _: Context) -> ClearView {
             let view = ClearView()
-            view.backgroundColor = .clear
+            view.backgroundColor = material ? .clear : UIColor(Color.rxWindow)
             view.isUserInteractionEnabled = false
             return view
         }
