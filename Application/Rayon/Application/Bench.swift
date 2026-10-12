@@ -140,6 +140,15 @@ import SwiftUI
             try? await Task.sleep(nanoseconds: 500_000_000)
 
             var samples: [Double] = []
+            for index in 0 ..< 6 {
+                samples.append(await settle {
+                    context.currentDir = "/var/log/\(index)"
+                    context.currentFileList = list.shuffled()
+                })
+            }
+            report("enter folder", samples)
+
+            samples = []
             for index in 0 ..< 20 {
                 samples.append(await settle {
                     NotificationCenter.default.post(name: .benchFiles, object: nil, userInfo: ["select": index % 12])

@@ -398,49 +398,80 @@ private struct FileTable: UIViewRepresentable {
         return table
     }
 
+    // Nothing is done to the table here. Moving it re-tests what the pointer is
+    // over, and that test reads the SwiftUI graph this update is in the middle
+    // of: entering a folder with the pointer over the list never returned.
     func updateUIView(_ table: UITableView, context: Context) {
         let coordinator = context.coordinator
-        let old = coordinator.parent
         coordinator.parent = self
-        table.isUserInteractionEnabled = context.environment.isEnabled
-        if old.revision != revision {
-            // Another folder starts at its top and fades in; a reload or the
-            // filter changes the rows in place.
-            let entered = coordinator.shownFolder != folder && coordinator.shownFolder != nil
-            if entered, !UIAccessibility.isReduceMotionEnabled {
-                UIView.transition(with: table, duration: 0.18, options: [.transitionCrossDissolve, .allowUserInteraction]) {
-                    table.reloadData()
-                    table.contentOffset = .zero
-                }
-            } else {
-                table.reloadData()
-                if entered { table.contentOffset = .zero }
-            }
-            coordinator.shownFolder = folder
-        } else if old.selection != selection {
-            for case let cell as FileCell in table.visibleCells {
-                cell.setChosen(cell.file == selection, animated: true)
-            }
-        }
+        coordinator.enabled = context.environment.isEnabled
+        coordinator.schedule(table)
     }
 
     final class Coordinator: NSObject, UITableViewDataSource, UITableViewDelegate {
         static var reuse: String { "file" }
         var parent: FileTable
-        var shownFolder: String?
+        var enabled = true
+        /// What the table shows, which is `parent`'s once `apply` has run.
+        private var rows: [File]
+        private var shownRevision: Int
+        private var shownSelection: File?
+        private var shownFolder: String?
+        private var scheduled = false
 
         init(_ parent: FileTable) {
             self.parent = parent
+            rows = parent.files
+            shownRevision = parent.revision
+            shownSelection = parent.selection
+        }
+
+        func schedule(_ table: UITableView) {
+            guard !scheduled else { return }
+            scheduled = true
+            DispatchQueue.main.async { [weak self, weak table] in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.scheduled = false
+                    if let table { self.apply(to: table) }
+                }
+            }
+        }
+
+        private func apply(to table: UITableView) {
+            if table.isUserInteractionEnabled != enabled { table.isUserInteractionEnabled = enabled }
+            if shownRevision != parent.revision {
+                // Another folder starts at its top and fades in; a reload or the
+                // filter changes the rows in place.
+                let entered = shownFolder != parent.folder && shownFolder != nil
+                rows = parent.files
+                if entered, !UIAccessibility.isReduceMotionEnabled {
+                    UIView.transition(with: table, duration: 0.18, options: [.transitionCrossDissolve, .allowUserInteraction]) {
+                        table.reloadData()
+                        table.contentOffset = .zero
+                    }
+                } else {
+                    table.reloadData()
+                    if entered { table.contentOffset = .zero }
+                }
+                shownRevision = parent.revision
+                shownFolder = parent.folder
+            } else if shownSelection != parent.selection {
+                for case let cell as FileCell in table.visibleCells {
+                    cell.setChosen(cell.file == parent.selection, animated: true)
+                }
+            }
+            shownSelection = parent.selection
         }
 
         func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
-            parent.files.count
+            rows.count
         }
 
         func tableView(_ table: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
             let cell = table.dequeueReusableCell(withIdentifier: Self.reuse, for: indexPath)
             guard let cell = cell as? FileCell else { return cell }
-            let file = parent.files[indexPath.row]
+            let file = rows[indexPath.row]
             cell.show(file, chosen: file == parent.selection)
             cell.onClick = { [weak self] in self?.parent.select(file) }
             cell.onDoubleClick = { [weak self] in self?.parent.open(file) }
@@ -448,8 +479,8 @@ private struct FileTable: UIViewRepresentable {
         }
 
         func tableView(_: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point _: CGPoint) -> UIContextMenuConfiguration? {
-            guard parent.files.indices.contains(indexPath.row) else { return nil }
-            let file = parent.files[indexPath.row]
+            guard rows.indices.contains(indexPath.row) else { return nil }
+            let file = rows[indexPath.row]
             let menu = parent.menu
             return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in menu(file) }
         }
