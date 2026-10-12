@@ -227,7 +227,7 @@ public struct RXSegmented<Value: Hashable>: View {
                 Text(option.title)
             }
             .font(.system(size: 13))
-            .foregroundStyle(isSelected && !atRest ? Color.white : Color.primary.opacity(isSelected ? 1 : 0.85))
+            .foregroundStyle(isSelected && !atRest ? Color.white : Color.primary.opacity(isSelected || atRest ? 1 : 0.85))
             .lineLimit(1)
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: 24, maxHeight: 24)
