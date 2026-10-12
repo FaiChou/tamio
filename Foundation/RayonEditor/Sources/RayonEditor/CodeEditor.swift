@@ -124,8 +124,9 @@ public struct CodeEditor: UIViewRepresentable {
         if text != context.coordinator.lastText {
             context.coordinator.load(text, into: view)
         } else if language != context.coordinator.lastLanguage {
-            // Another syntax for the same text: parse it again.
-            context.coordinator.load(view.text, into: view)
+            // Another syntax for the same text: the text, the caret and undo stay.
+            context.coordinator.lastLanguage = language
+            view.setLanguageMode(language.treeSitter.map { TreeSitterLanguageMode(language: $0) } ?? PlainTextLanguageMode())
         }
     }
 
@@ -133,6 +134,8 @@ public struct CodeEditor: UIViewRepresentable {
         var parent: CodeEditor
         var lastText = ""
         var lastLanguage = EditorLanguage.plain
+        /// Counts loads, so one that was overtaken is dropped.
+        private var loads = 0
 
         init(_ parent: CodeEditor) {
             self.parent = parent
@@ -145,12 +148,19 @@ public struct CodeEditor: UIViewRepresentable {
             let theme = EditorTheme(size: parent.fontSize)
             let language = parent.language.treeSitter
             nonisolated(unsafe) let weakView = WeakBox(view)
+            // Nothing can be typed into the view until its text is in it: a
+            // keystroke before then would stand for the whole file.
+            view.isEditable = false
+            loads += 1
+            let load = loads
             DispatchQueue.global(qos: .userInitiated).async {
                 let state: TextViewState = language.map { TextViewState(text: text, theme: theme, language: $0) }
                     ?? TextViewState(text: text, theme: theme)
                 nonisolated(unsafe) let ready = state
-                DispatchQueue.main.async {
-                    weakView.value?.setState(ready)
+                DispatchQueue.main.async { [weak self] in
+                    guard let self, self.loads == load, let view = weakView.value else { return }
+                    view.setState(ready)
+                    view.isEditable = true
                 }
             }
         }
