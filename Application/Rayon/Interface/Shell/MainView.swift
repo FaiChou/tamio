@@ -9,14 +9,30 @@
 import MachineStatusView
 import RayonModule
 import SwiftUI
+import UIKit
 
 struct MainView: View {
     @EnvironmentObject var store: RayonStore
     @ObservedObject var router = AppRouter.shared
 
     @State private var openLicenseAgreement = false
+    /// Unknown until the view is in a window. SwiftUI's WindowGroup puts a main
+    /// window in a menu bar popover's scene too, hidden; it must stay empty, or
+    /// its terminal pages take the terminals from the real window.
+    @State private var inPopoverScene: Bool?
 
     var body: some View {
+        Group {
+            if inPopoverScene == false {
+                window
+            } else {
+                Color.clear
+            }
+        }
+        .background(SceneProbe { inPopoverScene = $0 })
+    }
+
+    private var window: some View {
         NavigationSplitView(columnVisibility: $router.columnVisibility) {
             SidebarView()
                 .navigationSplitViewColumnWidth(min: 200, ideal: RX.sidebarWidth, max: 280)
@@ -130,6 +146,35 @@ private extension View {
             .zIndex(active ? 1 : 0)
             .environment(\.isActivePage, active)
     }
+}
+
+/// Reports, once in a window, whether that window belongs to a menu bar
+/// popover's scene.
+private struct SceneProbe: UIViewRepresentable {
+    let report: (Bool) -> Void
+
+    final class Probe: UIView {
+        var report: ((Bool) -> Void)?
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            guard let scene = window?.windowScene else { return }
+            // SwiftUI's delegate stands in front of the one the scene was
+            // configured with; the configuration says whose scene it is.
+            let inPopover = scene.session.configuration.delegateClass == TraySceneDelegate.self
+                || TraySceneDelegate.owns(scene.session)
+            DispatchQueue.main.async { [report] in report?(inPopover) }
+        }
+    }
+
+    func makeUIView(context _: Context) -> Probe {
+        let probe = Probe()
+        probe.isUserInteractionEnabled = false
+        probe.report = report
+        return probe
+    }
+
+    func updateUIView(_: Probe, context _: Context) {}
 }
 
 /// The window toolbar holds page controls only; the page title is in the content.
