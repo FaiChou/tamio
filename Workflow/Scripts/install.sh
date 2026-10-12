@@ -27,7 +27,9 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-$ROOT_DIR/DerivedData}"
-BUNDLE_ID="wiki.qaq.ray0n"
+BUNDLE_ID="me.mizorewww.rayon"
+# What the app was called before; its data on this Mac is carried over once.
+FORMER_BUNDLE_ID="wiki.qaq.ray0n"
 TARGET="${1:-all}"
 
 case "$TARGET" in
@@ -40,11 +42,24 @@ failed=()
 
 # MARK: - Mac
 
+# The servers, identities and settings saved while the app was
+# $FORMER_BUNDLE_ID sit in that app's container, which this one cannot open.
+# Before this one first runs they are put where the system looks for the
+# settings of an app that has no container yet, and moves them in from. The
+# former container is left as it is.
+adopt_former_mac_data() {
+    local former="$HOME/Library/Containers/$FORMER_BUNDLE_ID/Data/Library/Preferences/$FORMER_BUNDLE_ID.plist"
+    local seed="$HOME/Library/Preferences/$BUNDLE_ID.plist"
+    [[ -f "$former" && ! -e "$HOME/Library/Containers/$BUNDLE_ID" && ! -e "$seed" ]] || return 0
+    cp "$former" "$seed"
+    printf 'Carried over the data saved as %s.\n' "$FORMER_BUNDLE_ID"
+}
+
 install_mac() {
     step "Mac: building and installing to /Applications"
     if pgrep -f "/Applications/Rayon.app/Contents/MacOS/Rayon" >/dev/null; then
         printf 'Rayon is running; asking it to quit.\n'
-        osascript -e "tell application id \"$BUNDLE_ID\" to quit" >/dev/null 2>&1 || true
+        osascript -e 'tell application "/Applications/Rayon.app" to quit' >/dev/null 2>&1 || true
         for _ in $(seq 1 60); do
             pgrep -f "/Applications/Rayon.app/Contents/MacOS/Rayon" >/dev/null || break
             sleep 1
@@ -56,6 +71,7 @@ install_mac() {
         fi
     fi
     if bash "$ROOT_DIR/Workflow/Scripts/install-macos.sh"; then
+        adopt_former_mac_data
         open "/Applications/Rayon.app"
     else
         failed+=("Mac (build or install failed)")
