@@ -20,31 +20,27 @@ public struct ConfigHostSettingsSection: Identifiable {
 /// cards. The categories, their order and their groups come from `ConfigLayout`;
 /// Ghostty settings are drawn from the catalog, app rows from `hostSections`.
 public struct GhosttyConfigurationView: View {
-    @StateObject private var model = ConfigEditorModel.shared
-    @Binding private var selectionBinding: String
-    @State private var localSelection: String
+    /// Not observed here: the parts that show the document or the selected
+    /// category observe them, so an edit or another category leaves the rest
+    /// of Settings as it is.
+    private let model: ConfigEditorModel
+    @State private var ownNavigation: ConfigNavigation
+    private let externalNavigation: ConfigNavigation?
+    private var navigation: ConfigNavigation { externalNavigation ?? ownNavigation }
     @State private var search = ""
-    @State private var jumpTarget: String?
+    @StateObject private var pageState = ConfigPageState()
     @State private var showPreview = true
     @State private var resetConfirm = false
-    @State private var navigationHistory = ["general"]
-    @State private var navigationIndex = 0
-    @State private var navigating = false
     /// Width beside the category column; the preview sits beside the settings
     /// only when both fit, and above them otherwise.
     @State private var detailWidth: CGFloat = 1200
     private var previewBeside: Bool { detailWidth >= 1000 }
     private let onApplied: ((Double?) -> Void)?
     private let embedded: Bool
-    private let usesExternalSelection: Bool
+    /// False while the app keeps Settings out of sight: it then adds nothing
+    /// to the window toolbar.
+    private let active: Bool
     private let hostSections: [String: ConfigHostSettingsSection]
-
-    private var selection: String {
-        get { usesExternalSelection ? selectionBinding : localSelection }
-        nonmutating set {
-            if usesExternalSelection { selectionBinding = newValue } else { localSelection = newValue }
-        }
-    }
 
     /// Categories with something to show: app categories need their host rows.
     private var categories: [ConfigLayout.Category] {
@@ -60,22 +56,19 @@ public struct GhosttyConfigurationView: View {
         }
     }
 
-    private var category: ConfigLayout.Category? { categories.first { $0.id == selection } }
-
     public init(
         embedded: Bool = false,
         hostSections: [ConfigHostSettingsSection] = [],
-        selection: Binding<String>? = nil,
+        navigation: ConfigNavigation? = nil,
+        active: Bool = true,
         onApplied: ((Double?) -> Void)? = nil
     ) {
+        model = .shared
         self.hostSections = Dictionary(hostSections.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
-        let fallback = hostSections.isEmpty ? "text" : "general"
-        let initialSelection = selection?.wrappedValue ?? fallback
-        _localSelection = State(initialValue: initialSelection)
-        _selectionBinding = selection ?? .constant(initialSelection)
-        usesExternalSelection = selection != nil
-        _navigationHistory = State(initialValue: [initialSelection])
+        externalNavigation = navigation
+        _ownNavigation = State(initialValue: navigation ?? ConfigNavigation(hostSections.isEmpty ? "text" : "general"))
         self.embedded = embedded
+        self.active = active
         self.onApplied = onApplied
         _showPreview = State(initialValue: !embedded)
     }
@@ -83,8 +76,6 @@ public struct GhosttyConfigurationView: View {
     private func installApplyHandler() {
         model.onApplied = onApplied
     }
-
-    private var showsTerminalTools: Bool { search.isEmpty ? category?.section == .terminal : true }
 
     public var body: some View {
         #if os(macOS) || targetEnvironment(macCatalyst)
@@ -113,27 +104,18 @@ public struct GhosttyConfigurationView: View {
     /// preview beside or above it.
     private var columns: some View {
         HStack(spacing: 0) {
-            categoryColumn
+            ConfigCategoryColumn(categories: categories, navigation: navigation, model: model, search: $search)
                 .frame(width: 216)
             VStack(spacing: 0) {
                 HStack(alignment: .top, spacing: RX.Space.s4) {
                     content
                         .frame(minWidth: 440, maxWidth: .infinity, maxHeight: .infinity)
-                    if showPreview, previewBeside, search.isEmpty, category?.previews == true {
-                        ScrollView {
-                            ConfigPreview(model: model)
-                                .rxCard(padding: 0)
-                                .padding(.bottom, RX.Space.s6)
-                        }
-                        .frame(minWidth: 300, idealWidth: 340, maxWidth: 400)
-                        .padding(.trailing, RX.Space.s6)
-                        .padding(.top, RX.Space.s3)
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
-                    }
+                    ConfigPreviewBeside(
+                        categories: categories, navigation: navigation, model: model,
+                        visible: showPreview && previewBeside && search.isEmpty
+                    )
                 }
-                if !model.message.isEmpty {
-                    errorBar
-                }
+                ConfigErrorBar(model: model)
             }
             .readWidth($detailWidth)
         }
@@ -142,52 +124,28 @@ public struct GhosttyConfigurationView: View {
             if !embedded { RXWindowBackground().ignoresSafeArea() }
         }
         .rxClearToolbar()
-        .modifier(ConfigToolbar(leading: {
-            ControlGroup {
-                Button { navigate(-1) } label: { Label("Back", systemImage: "chevron.left") }
-                    .disabled(navigationIndex == 0)
-                    .help("Previous category")
-                Button { navigate(1) } label: { Label("Forward", systemImage: "chevron.right") }
-                    .disabled(navigationIndex + 1 >= navigationHistory.count)
-                    .help("Next category")
-            }
+        .modifier(ConfigToolbar(active: active, leading: {
+            ConfigHistoryButtons(navigation: navigation, chrome: navigation.chrome)
         }, trailing: {
-            Group {
-                if showsTerminalTools {
-                    ControlGroup {
-                        Button { model.undo() } label: { Label("Undo", systemImage: "arrow.uturn.backward") }
-                            .disabled(model.undoStack.isEmpty)
-                            .help("Undo the last terminal setting change")
-                        Button { model.redo() } label: { Label("Redo", systemImage: "arrow.uturn.forward") }
-                            .disabled(model.redoStack.isEmpty)
-                            .help("Redo")
-                    }
-                    Button { resetConfirm = true } label: {
-                        Label("Reset Terminal Settings…", systemImage: "arrow.counterclockwise")
-                    }
-                    .help("Reset every terminal setting to its default")
-                    if category?.previews == true {
-                        Toggle(isOn: $showPreview.animation(.easeInOut(duration: 0.25))) {
-                            Label("Preview", systemImage: "sidebar.right")
-                        }
-                        .toggleStyle(.button)
-                        .help(showPreview ? "Hide the live terminal preview" : "Show a live terminal preview beside the settings")
-                    }
-                }
-            }
+            ConfigToolbarTools(
+                chrome: navigation.chrome, model: model, history: model.history,
+                searching: !search.isEmpty, showPreview: $showPreview, resetConfirm: $resetConfirm
+            )
         }))
-        .configSearch(text: $search)
+        .configSearch(text: $search, active: active)
         .onAppear {
             installApplyHandler()
-            if category == nil { selection = categories.first?.id ?? "text" }
+            #if DEBUG
+                if let text = ProcessInfo.processInfo.environment["RAYON_PREVIEW_SEARCH"] { search = text }
+                if ProcessInfo.processInfo.environment["RAYON_PREVIEW_PREVIEW"] != nil { showPreview = true }
+            #endif
+            if !categories.contains(where: { $0.id == navigation.selection }) {
+                navigation.go(categories.first?.id ?? "text")
+            }
+            pageState.previewAbove = showPreview && !previewBeside
         }
-        .animation(.easeOut(duration: 0.18), value: selection)
+        .onChange(of: showPreview && !previewBeside) { pageState.previewAbove = $0 }
         .animation(.easeOut(duration: 0.18), value: search.isEmpty)
-        .onChange(of: selection) { next in
-            if navigating { navigating = false; return }
-            navigationHistory = Array(navigationHistory.prefix(navigationIndex + 1)) + [next]
-            navigationIndex = navigationHistory.count - 1
-        }
         .confirmationDialog("Reset every terminal setting to its default?", isPresented: $resetConfirm) {
             Button("Reset", role: .destructive) { model.edit { $0 = ConfigDocument() } }
         } message: {
@@ -213,7 +171,7 @@ public struct GhosttyConfigurationView: View {
                     ConfigKeybindingList(model: model)
                 } else {
                     ForEach(category.groups) { group in
-                        groupCard(group)
+                        ConfigGroupCard(group: group, hostSections: hostSections, model: model)
                     }
                 }
             }
@@ -223,172 +181,30 @@ public struct GhosttyConfigurationView: View {
         .navigationTitle(category.title)
     }
 
-    // MARK: Category column
-
-    private var categoryColumn: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 2) {
-                ForEach([ConfigLayout.Category.Section.app, .terminal, .info], id: \.self) { section in
-                    let members = categories.filter { $0.section == section }
-                    if !members.isEmpty {
-                        if section.rawValue.isEmpty {
-                            Spacer().frame(height: RX.Space.s4)
-                        } else {
-                            categorySection(section.rawValue)
-                        }
-                        ForEach(members) { category in
-                            categoryRow(category)
-                        }
-                    }
-                }
-            }
-            .padding(.horizontal, RX.Space.s2)
-            .padding(.top, RX.Space.s3)
-            .padding(.bottom, RX.Space.s4)
-        }
-    }
-
-    private func categorySection(_ title: String) -> some View {
-        Text(title)
-            .font(.rxSectionLabel)
-            .foregroundStyle(.rxInkSecondary)
-            .padding(.horizontal, RX.Space.s3)
-            .padding(.top, RX.Space.s4)
-            .padding(.bottom, RX.Space.s1)
-    }
-
-    private func categoryRow(_ category: ConfigLayout.Category) -> some View {
-        let selected = selection == category.id && search.isEmpty
-        return Button {
-            search = ""
-            selection = category.id
-        } label: {
-            HStack(spacing: RX.Space.s2) {
-                Image(systemName: category.icon)
-                    .font(.system(size: 13))
-                    .foregroundStyle(selected ? Color.rxAccent : Color.rxInkSecondary)
-                    .frame(width: 18)
-                Text(category.title)
-                    .font(.system(size: 13, weight: selected ? .medium : .regular))
-                    .foregroundStyle(.rxInk)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                let count = modifiedCount(category)
-                if count > 0 {
-                    Text("\(count)")
-                        .font(.system(size: 11).monospacedDigit())
-                        .foregroundStyle(.rxAccent)
-                        .help("\(count) changed from the default")
-                }
-            }
-            .padding(.horizontal, RX.Space.s3)
-            .frame(height: 30)
-            .background(
-                Capsule()
-                    .fill(selected ? Color.primary.opacity(0.09) : .clear)
-            )
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func modifiedCount(_ category: ConfigLayout.Category) -> Int {
-        model.document.overrides.keys.filter { ConfigLayout.categoryOfKey[$0]?.id == category.id }.count
-    }
-
-    // MARK: Errors
-
-    /// Settings save automatically; only a failed save needs a word.
-    private var errorBar: some View {
-        HStack(spacing: RX.Space.s2) {
-            Image(systemName: "exclamationmark.triangle")
-                .foregroundStyle(.rxWarning)
-            Text(model.message)
-                .font(.rxBody)
-                .foregroundStyle(.rxInk)
-                .textSelection(.enabled)
-            Spacer()
-            Button { model.message = "" } label: { Image(systemName: "xmark") }
-                .buttonStyle(.borderless)
-                .accessibilityLabel("Dismiss")
-        }
-        .padding(.horizontal, RX.Space.s4)
-        .padding(.vertical, RX.Space.s3)
-        .background(Color.clear.rxCard(padding: 0))
-        .padding(.horizontal, RX.Space.s6)
-        .padding(.bottom, RX.Space.s4)
-    }
-
     // MARK: Content
 
     @ViewBuilder private var content: some View {
-        if !search.isEmpty {
-            searchContent
-        } else if let category {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: RX.Space.s6) {
-                        PageTitle(category.title)
-                        if showPreview, !previewBeside, category.previews {
-                            ConfigPreview(model: model)
-                                .rxCard(padding: 0)
-                                .transition(.opacity)
-                        }
-                        if category.id == "keyboard" {
-                            ConfigKeybindingList(model: model)
-                        } else {
-                            ForEach(category.groups) { group in
-                                groupCard(group)
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, RX.Space.s6)
-                    .padding(.top, RX.Space.s3)
-                    .padding(.bottom, RX.Space.s6)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .id(category.id)
-                .task(id: jumpTarget) {
-                    guard let jumpTarget else { return }
-                    await Task.yield()
-                    proxy.scrollTo(jumpTarget, anchor: .top)
+        #if targetEnvironment(macCatalyst)
+            ZStack {
+                ConfigPageDeck(
+                    categories: categories, navigation: navigation, hostSections: hostSections, model: model,
+                    previewAbove: pageState.previewAbove, jump: pageState.jump
+                )
+                    .ignoresSafeArea(.container, edges: .vertical)
+                    .opacity(search.isEmpty ? 1 : 0)
+                    .allowsHitTesting(search.isEmpty)
+                    .accessibilityHidden(!search.isEmpty)
+                if !search.isEmpty {
+                    searchContent
                 }
             }
-        } else {
-            EmptyStateView("Choose a category", systemImage: "slider.horizontal.3")
-                .frame(maxHeight: .infinity)
-        }
-    }
-
-    /// A group: its caption, then its rows on one card.
-    @ViewBuilder private func groupCard(_ group: ConfigLayout.Group, keys: [String]? = nil) -> some View {
-        let hosts = group.items.compactMap { item -> ConfigHostSettingsSection? in
-            if case let .host(id) = item { return hostSections[id] }
-            return nil
-        }
-        let settings = (keys ?? group.items.compactMap { item -> String? in
-            if case let .setting(key) = item { return key }
-            return nil
-        }).compactMap { ConfigCatalog.shared.setting(key: $0) }
-        if !hosts.isEmpty || !settings.isEmpty {
-            VStack(alignment: .leading, spacing: RX.Space.s2) {
-                CapsLabel(group.title)
-                    .padding(.leading, RX.Space.s4)
-                VStack(spacing: 0) {
-                    ForEach(hosts) { $0.content }
-                    if !settings.isEmpty {
-                        RXDividedStack {
-                            ForEach(settings) { setting in
-                                ConfigSettingRow(model: model, setting: setting, query: search).id(setting.key)
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal, RX.Space.s4)
-                .background(Color.clear.rxCard(padding: 0))
+        #else
+            if !search.isEmpty {
+                searchContent
+            } else {
+                ConfigSelectedCategory(categories: categories, navigation: navigation, hostSections: hostSections, model: model, state: pageState)
             }
-        }
+        #endif
     }
 
     // MARK: Search
@@ -419,15 +235,15 @@ public struct GhosttyConfigurationView: View {
                                     .foregroundStyle(.rxInk)
                                 Spacer()
                                 Button("Show in \(category.title)") {
-                                    jumpTarget = groups.first?.1.first
-                                    selection = category.id
+                                    pageState.jump = groups.first?.1.first.map { .init(category: category.id, key: $0) }
+                                    navigation.go(category.id)
                                     search = ""
                                 }
                                 .rxLinkButton()
                                 .font(.rxHelp)
                             }
                             ForEach(groups, id: \.0.id) { group, keys in
-                                groupCard(group, keys: keys)
+                                ConfigGroupCard(group: group, keys: keys, hostSections: hostSections, model: model, query: search)
                             }
                         }
                     }
@@ -480,12 +296,6 @@ public struct GhosttyConfigurationView: View {
             }
         }
         return result
-    }
-
-    private func navigate(_ delta: Int) {
-        let next = navigationIndex + delta
-        guard navigationHistory.indices.contains(next) else { return }
-        navigating = true; navigationIndex = next; selection = navigationHistory[next]
     }
 }
 
@@ -562,9 +372,9 @@ public struct GhosttyConfigurationView: View {
 #if os(macOS) || targetEnvironment(macCatalyst)
 private extension View {
     @ViewBuilder
-    func configSearch(text: Binding<String>) -> some View {
+    func configSearch(text: Binding<String>, active: Bool) -> some View {
         #if targetEnvironment(macCatalyst)
-            rxToolbarSearch(text: text, prompt: "Search settings")
+            rxToolbarSearch(text: text, prompt: "Search settings", active: active)
         #else
             searchable(text: text, placement: .toolbar, prompt: "Search settings")
         #endif
@@ -573,10 +383,12 @@ private extension View {
 
 /// Navigation at the leading edge, actions at the trailing edge of the window toolbar.
 private struct ConfigToolbar<Leading: View, Trailing: View>: ViewModifier {
+    let active: Bool
     let leading: Leading
     let trailing: Trailing
 
-    init(@ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
+    init(active: Bool, @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
+        self.active = active
         self.leading = leading()
         self.trailing = trailing()
     }
@@ -586,13 +398,20 @@ private struct ConfigToolbar<Leading: View, Trailing: View>: ViewModifier {
             if #available(iOS 26.0, *) {
                 // UIKit gives each button a circle of its own; AppKit's back and
                 // forward share a capsule (see RayonDesign's Toolbar.swift).
+                // The condition sits inside the toolbar: outside it, Settings
+                // would be built again each time it came into sight.
                 content.toolbar {
-                    ToolbarItem(placement: .navigation) {
-                        RXToolbarCapsule(spacing: 13, minSlot: 32) { leading }
+                    if active {
+                        ToolbarItem(placement: .navigation) {
+                            RXToolbarCapsule(spacing: 13, minSlot: 32) { leading }
+                        }
+                        .sharedBackgroundVisibility(.hidden)
+                        ToolbarSpacer(.flexible)
+                        ToolbarItem(placement: .automatic) {
+                            RXToolbarCapsule { trailing }
+                        }
+                        .sharedBackgroundVisibility(.hidden)
                     }
-                    .sharedBackgroundVisibility(.hidden)
-                    ToolbarSpacer(.flexible)
-                    ToolbarItemGroup(placement: .automatic) { trailing }
                 }
             } else {
                 content.toolbar {

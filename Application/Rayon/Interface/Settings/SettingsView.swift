@@ -14,34 +14,39 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject var store: RayonStore
     @ObservedObject var router = AppRouter.shared
+    /// False while Settings is kept out of sight.
+    var active = true
 
     var body: some View {
         GhosttyConfigurationView(
             embedded: true,
+            // Each category's page is hosted on its own, so the rows carry the
+            // store with them.
             hostSections: [
                 ConfigHostSettingsSection(id: "general.appearance", keywords: "appearance dark light mode theme system") {
-                    AppearanceSettings()
+                    AppearanceSettings().environmentObject(store)
                 },
                 ConfigHostSettingsSection(id: "general.sessions", keywords: "open sessions automatically ask before closing confirmation quit") {
-                    SessionSettings()
+                    SessionSettings().environmentObject(store)
                 },
                 ConfigHostSettingsSection(id: "general.recent", keywords: "recent servers history quick connect commands record remember") {
-                    RecentSettings()
+                    RecentSettings().environmentObject(store)
                 },
                 ConfigHostSettingsSection(id: "connection.ssh", keywords: "ssh timeout connect wait") {
-                    SSHSettings()
+                    SSHSettings().environmentObject(store)
                 },
                 ConfigHostSettingsSection(id: "connection.monitor", keywords: "monitor refresh interval status") {
-                    MonitorSettings()
+                    MonitorSettings().environmentObject(store)
                 },
                 ConfigHostSettingsSection(id: "about.rayon", keywords: "version build license source github agreement") {
-                    AboutSettings()
+                    AboutSettings().environmentObject(store)
                 },
                 ConfigHostSettingsSection(id: "about.acknowledgements", keywords: "acknowledgements credits libraries ghostty") {
-                    AcknowledgementSettings()
+                    AcknowledgementSettings().environmentObject(store)
                 },
             ],
-            selection: $router.settingsSelection,
+            navigation: router.settingsNavigation,
+            active: active,
             onApplied: { size in
                 // One font size: the terminal's Font Size setting also sets the
                 // size ⌘+ and ⌘− start from.

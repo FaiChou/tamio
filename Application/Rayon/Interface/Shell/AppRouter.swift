@@ -8,6 +8,7 @@
 import Combine
 import MachineStatusView
 import RayonModule
+import RayonTerminal
 import SwiftUI
 
 enum Route: Hashable {
@@ -45,7 +46,13 @@ final class AppRouter: ObservableObject {
     /// Presents the server editor for a new server from anywhere (menu, Home, Servers).
     @Published var presentNewServer = false
     /// Settings category to show when Settings opens.
-    @Published var settingsSelection: String = SettingsCategory.general
+    /// Settings follows this itself, so a change of category does not go
+    /// through every view that watches the router.
+    let settingsNavigation = ConfigNavigation(SettingsCategory.general)
+    var settingsSelection: String {
+        get { settingsNavigation.selection }
+        set { settingsNavigation.go(newValue) }
+    }
 
     private var cancellables = Set<AnyCancellable>()
 

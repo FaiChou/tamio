@@ -20,6 +20,9 @@ struct MainView: View {
     /// window in a menu bar popover's scene too, hidden; it must stay empty, or
     /// its terminal pages take the terminals from the real window.
     @State private var inPopoverScene: Bool?
+    /// Settings is built when it is first opened and kept from then on: its
+    /// categories are many rows each, and coming back shows what is there.
+    @State private var settingsOpened = false
 
     var body: some View {
         Group {
@@ -44,7 +47,7 @@ struct MainView: View {
                     .ignoresSafeArea()
                 // Places (Home, Servers, Settings…) cross-fade with a slight rise,
                 // so the eye follows the change of place.
-                if !router.route.isSession {
+                if !router.route.isSession, router.route != .settings {
                     content
                         .id(router.route)
                         .transition(.asymmetric(
@@ -52,7 +55,19 @@ struct MainView: View {
                             removal: .opacity
                         ))
                 }
+                if settingsOpened || router.route == .settings {
+                    // Told directly, not through the environment: a change of
+                    // environment reaches every row of every category.
+                    SettingsView(active: router.route == .settings)
+                        .opacity(router.route == .settings ? 1 : 0)
+                        .animation(router.route == .settings ? .easeOut(duration: 0.16) : nil, value: router.route == .settings)
+                        .allowsHitTesting(router.route == .settings)
+                        .accessibilityHidden(router.route != .settings)
+                }
                 SessionPages(route: router.route)
+            }
+            .onChange(of: router.route == .settings) { shown in
+                if shown { settingsOpened = true }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .animation(.easeOut(duration: 0.2), value: router.route.isSession ? nil : router.route)
@@ -94,9 +109,7 @@ struct MainView: View {
             SnippetsView()
         case .portForward:
             PortForwardView()
-        case .settings:
-            SettingsView()
-        case .terminal, .monitor, .transfer, .editor:
+        case .settings, .terminal, .monitor, .transfer, .editor:
             EmptyView()
         }
     }

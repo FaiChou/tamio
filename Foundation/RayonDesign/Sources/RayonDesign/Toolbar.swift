@@ -378,13 +378,15 @@
     public extension View {
         /// Search at the trailing end of the window toolbar, drawn as AppKit's.
         @ViewBuilder
-        func rxToolbarSearch(text: Binding<String>, prompt: String) -> some View {
+        func rxToolbarSearch(text: Binding<String>, prompt: String, active: Bool = true) -> some View {
             if #available(iOS 26.0, *) {
                 toolbar {
-                    ToolbarItem(placement: .automatic) {
-                        RXToolbarSearchField(text: text, prompt: prompt)
+                    if active {
+                        ToolbarItem(placement: .automatic) {
+                            RXToolbarSearchField(text: text, prompt: prompt)
+                        }
+                        .sharedBackgroundVisibility(.hidden)
                     }
-                    .sharedBackgroundVisibility(.hidden)
                 }
             } else {
                 searchable(text: text, placement: .toolbar, prompt: prompt)
