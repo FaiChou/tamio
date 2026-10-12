@@ -166,9 +166,14 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return configuration
     }
 
-    /// Asked when the app is about to quit. With terminals open, the answer is
-    /// no for now, and the question goes to the user.
+    /// Set once the user agreed to quit, so the quit that follows goes through.
+    @MainActor private var quitConfirmed = false
+
+    /// Asked when the app is about to quit. With terminals open or unsaved
+    /// text, the answer is no for now, and the question goes to the user.
     @MainActor func mayTerminate() -> Bool {
+        // The question was answered; this is the quit that follows it.
+        if quitConfirmed { return true }
         let terminals = !TerminalManager.shared.sessionContexts.isEmpty
         // Unsaved text is always asked about, whatever the setting.
         let unsaved = EditorCenter.shared.workspaces.contains(where: \.hasUnsavedChanges)
@@ -189,6 +194,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             always: unsaved
         ) { confirmed in
             guard confirmed else { return }
+            MainActor.assumeIsolated { self.quitConfirmed = true }
             TerminalManager.shared.closeAll()
             Mac.bridge?.terminate()
         }
