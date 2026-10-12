@@ -25,6 +25,9 @@
             if ProcessInfo.processInfo.environment["RAYON_PREVIEW_FILES"] != nil {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2) { Task { await previewFiles() } }
             }
+            if ProcessInfo.processInfo.environment["RAYON_BENCH_SETTINGS"] != nil {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { Task { await settings() } }
+            }
             guard let value = ProcessInfo.processInfo.environment["RAYON_BENCH_FILES"], let count = Int(value) else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) { Task { await files(count) } }
         }
@@ -154,6 +157,31 @@
 
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             report("idle 0.4 s", [await settle {}, await settle {}, await settle {}])
+            await scroll()
+            NSLog("BENCH done")
+        }
+
+        /// Opens Settings, goes through its categories and scrolls the longest.
+        static func settings() async {
+            let router = AppRouter.shared
+            router.settingsSelection = "general"
+            report("open settings", [await settle { router.route = .settings }])
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            let ids = ["general", "connection", "text", "colors", "cursor", "window", "input", "keyboard", "advanced", "about"]
+            var samples: [Double] = []
+            let rounds = Int(ProcessInfo.processInfo.environment["RAYON_BENCH_REPEAT"] ?? "2") ?? 2
+            for id in Array(repeating: ids, count: rounds).flatMap({ $0 }) {
+                let sample = await settle { router.settingsSelection = id }
+                NSLog("BENCH category %@ %.2f ms", id, sample)
+                samples.append(sample)
+            }
+            report("switch category", samples)
+            router.settingsSelection = "advanced"
+            try? await Task.sleep(nanoseconds: 800_000_000)
+            report("idle 0.4 s", [await settle {}, await settle {}, await settle {}])
+            await scroll()
+            router.settingsSelection = "colors"
+            try? await Task.sleep(nanoseconds: 800_000_000)
             await scroll()
             NSLog("BENCH done")
         }
