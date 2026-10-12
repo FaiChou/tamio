@@ -23,6 +23,8 @@ public extension RayonStore {
         case machineRedacted
         case licenseAgreed
         case openInterfaceAutomatically
+        case syncPassphrase
+        case syncState
     }
 
     func readEncryptedDefault<T: Codable>(from key: UserDefaultKey, _: T) -> T? {
@@ -58,6 +60,13 @@ public extension RayonStore {
             UserDefaults
                 .standard
                 .set(encrypt, forKey: key.rawValue)
+        }
+    }
+
+    /// Removes a stored value, after any write of it that is still queued.
+    func removeDefault(_ key: UserDefaultKey) {
+        storeQueue.async {
+            UserDefaults.standard.removeObject(forKey: key.rawValue)
         }
     }
 
