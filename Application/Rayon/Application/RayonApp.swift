@@ -169,16 +169,24 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     /// Asked when the app is about to quit. With terminals open, the answer is
     /// no for now, and the question goes to the user.
     @MainActor func mayTerminate() -> Bool {
-        guard !TerminalManager.shared.sessionContexts.isEmpty else { return true }
-        if RayonStore.shared.disableConformation {
+        let terminals = !TerminalManager.shared.sessionContexts.isEmpty
+        // Unsaved text is always asked about, whatever the setting.
+        let unsaved = EditorCenter.shared.workspaces.contains(where: \.hasUnsavedChanges)
+        guard terminals || unsaved else { return true }
+        if RayonStore.shared.disableConformation, !unsaved {
             TerminalManager.shared.closeAll()
             return true
         }
+        let consequences = [
+            unsaved ? "Unsaved changes in the editor will be lost." : nil,
+            terminals ? "Open terminal sessions will be closed." : nil,
+        ]
         UIBridge.requiresConfirmation(
             message: "Quit Rayon?",
-            informative: "Open terminal sessions will be closed.",
-            confirmTitle: "Quit",
-            destructive: true
+            informative: consequences.compactMap { $0 }.joined(separator: " "),
+            confirmTitle: unsaved ? "Discard Changes and Quit" : "Quit",
+            destructive: true,
+            always: unsaved
         ) { confirmed in
             guard confirmed else { return }
             TerminalManager.shared.closeAll()

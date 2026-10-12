@@ -837,7 +837,8 @@ enum FileTransferSessionActions {
                     ? "Files open in the editor have changes that are not saved. They are lost if you close."
                     : "A transfer is still running and will be interrupted.",
                 confirmTitle: unsaved ? "Discard Changes" : "Close",
-                destructive: true
+                destructive: true,
+                always: unsaved
             ) { confirmed in
                 if confirmed { FileTransferManager.shared.end(for: context.id) }
             }

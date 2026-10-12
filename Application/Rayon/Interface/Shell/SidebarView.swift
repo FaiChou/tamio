@@ -311,10 +311,16 @@ private struct OwnerSidebarRow: View {
         if routes.count > 1 {
             Divider()
             Button("Close All") {
+                let unsaved = routes.contains { route in
+                    guard case let .editor(id) = route else { return false }
+                    return editors.workspaces.first { $0.id == id }?.hasUnsavedChanges ?? false
+                }
                 UIBridge.requiresConfirmation(
                     message: "Close everything open on \(title)?",
-                    confirmTitle: "Close All",
-                    destructive: true
+                    informative: unsaved ? "Unsaved changes in the editor will be lost." : nil,
+                    confirmTitle: unsaved ? "Discard Changes and Close" : "Close All",
+                    destructive: true,
+                    always: unsaved
                 ) { confirmed in
                     if confirmed { AppRouter.shared.closeAll(owner) }
                 }

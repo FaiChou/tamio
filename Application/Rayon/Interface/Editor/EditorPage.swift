@@ -161,7 +161,8 @@ struct EditorPage: View {
             message: "Reload \(current.name) from the server?",
             informative: "Your changes are replaced by the file on the server.",
             confirmTitle: "Reload",
-            destructive: true
+            destructive: true,
+            always: true
         ) { confirmed in
             MainActor.assumeIsolated {
                 if confirmed { current.load() }

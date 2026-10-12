@@ -11,17 +11,19 @@ import SwiftUI
 extension UIBridge {
     /// ConfirmDialog: the title names the thing, one sentence of consequence,
     /// a verb on the confirming button and Cancel. Skipped when
-    /// Settings › General › Ask before closing is off.
+    /// Settings › General › Ask before closing is off, unless `always`: losing
+    /// unsaved text is asked about whatever the setting.
     static func requiresConfirmation(
         message: String,
         informative: String? = nil,
         confirmTitle: String = "Continue",
         destructive: Bool = false,
+        always: Bool = false,
         confirmation: @escaping (Bool) -> Void
     ) {
         // Keep the immediate callback when confirmation is disabled.
         nonisolated(unsafe) let confirmation = confirmation
-        if RayonStore.shared.disableConformation {
+        if RayonStore.shared.disableConformation, !always {
             confirmation(true)
             return
         }
