@@ -62,7 +62,7 @@ enum AppearancePreference: String, CaseIterable {
     case light
     case dark
 
-    static let key = "wiki.qaq.rayon.appearance"
+    static let key = "me.mizorewww.rayon.appearance"
 
     var style: UIUserInterfaceStyle {
         switch self {
@@ -128,7 +128,7 @@ private struct SessionSettings: View {
 
 private struct RecentSettings: View {
     @StateObject var store = RayonStore.shared
-    @AppStorage("wiki.qaq.rayon.maxRecentRecordCount") private var recentLimit = 8
+    @AppStorage("me.mizorewww.rayon.maxRecentRecordCount") private var recentLimit = 8
 
     var body: some View {
         RXDividedStack {
@@ -153,7 +153,7 @@ private struct RecentSettings: View {
 
 private struct DataSettings: View {
     #if DEBUG
-        @State private var redirectLog = UserDefaults.standard.value(forKey: "wiki.qaq.redirect.diag") as? Bool ?? false
+        @State private var redirectLog = UserDefaults.standard.value(forKey: "me.mizorewww.redirect.diag") as? Bool ?? false
     #endif
 
     var body: some View {
@@ -177,7 +177,7 @@ private struct DataSettings: View {
                     isOn: $redirectLog
                 )
                 .onChange(of: redirectLog) { newValue in
-                    UserDefaults.standard.set(newValue, forKey: "wiki.qaq.redirect.diag")
+                    UserDefaults.standard.set(newValue, forKey: "me.mizorewww.redirect.diag")
                 }
             #endif
         }

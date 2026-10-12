@@ -16,6 +16,10 @@ public class RayonStore: ObservableObject {
             debugPrint("RayonStore init completed")
         }
 
+        // Before anything is read: the settings may still be under their
+        // former names.
+        Self.adoptFormerDefaults()
+
         // bool(forKey:) also reads "YES"/"1" from the argument domain
         // (`-licenseAgreed YES`), and is false when the key is missing.
         licenseAgreed = UserDefaults.standard.bool(forKey: UserDefaultKey.licenseAgreed.rawValue)
@@ -92,7 +96,7 @@ public class RayonStore: ObservableObject {
         }
     }
 
-    @UserDefaultsWrapper(key: "wiki.qaq.rayon.timeout", defaultValue: 5)
+    @UserDefaultsWrapper(key: "me.mizorewww.rayon.timeout", defaultValue: 5)
     private var UDTimeout: Int
     @Published public var timeout: Int = 0 {
         didSet {
@@ -100,7 +104,7 @@ public class RayonStore: ObservableObject {
         }
     }
 
-    @UserDefaultsWrapper(key: "wiki.qaq.rayon.monitorInterval", defaultValue: 3)
+    @UserDefaultsWrapper(key: "me.mizorewww.rayon.monitorInterval", defaultValue: 3)
     private var UDMonitorInterval: Int
     @Published public var monitorInterval: Int = 0 {
         didSet {
@@ -156,7 +160,7 @@ public class RayonStore: ObservableObject {
         }
     }
 
-    @UserDefaultsWrapper(key: "wiki.qaq.rayon.saveTemporarySession", defaultValue: true)
+    @UserDefaultsWrapper(key: "me.mizorewww.rayon.saveTemporarySession", defaultValue: true)
     private var UDSaveTemporarySession: Bool
 
     @Published public var saveTemporarySession: Bool = false {
@@ -165,7 +169,7 @@ public class RayonStore: ObservableObject {
         }
     }
 
-    @UserDefaultsWrapper(key: "wiki.qaq.rayon.storeRecent", defaultValue: true)
+    @UserDefaultsWrapper(key: "me.mizorewww.rayon.storeRecent", defaultValue: true)
     private var UDStoreRecent: Bool
 
     @Published public var storeRecent: Bool = false {
@@ -177,7 +181,7 @@ public class RayonStore: ObservableObject {
         }
     }
 
-    @UserDefaultsWrapper(key: "wiki.qaq.rayon.reducedViewEffects", defaultValue: false)
+    @UserDefaultsWrapper(key: "me.mizorewww.rayon.reducedViewEffects", defaultValue: false)
     private var UDReducedViewEffects: Bool
 
     @Published public var reducedViewEffects: Bool = false {
@@ -186,7 +190,7 @@ public class RayonStore: ObservableObject {
         }
     }
 
-    @UserDefaultsWrapper(key: "wiki.qaq.rayon.disableConformation", defaultValue: false)
+    @UserDefaultsWrapper(key: "me.mizorewww.rayon.disableConformation", defaultValue: false)
     private var UDDisableConformation: Bool
 
     @Published public var disableConformation: Bool = false {
@@ -195,7 +199,7 @@ public class RayonStore: ObservableObject {
         }
     }
 
-    @UserDefaultsWrapper(key: "wiki.qaq.rayon.maxRecentRecordCount", defaultValue: 8)
+    @UserDefaultsWrapper(key: "me.mizorewww.rayon.maxRecentRecordCount", defaultValue: 8)
     public var maxRecentRecordCount: Int
 
     @Published public var recentRecord: [RecentConnection] = [] {
@@ -207,7 +211,7 @@ public class RayonStore: ObservableObject {
         }
     }
 
-    @UserDefaultsWrapper(key: "wiki.qaq.rayon.terminalFontSize", defaultValue: 14)
+    @UserDefaultsWrapper(key: "me.mizorewww.rayon.terminalFontSize", defaultValue: 14)
     public var UDTerminalFontSize: Int
 
     @Published public var terminalFontSize: Int = 14 {

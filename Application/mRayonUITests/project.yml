@@ -3,7 +3,7 @@
 # Regenerate the project with: xcodegen generate
 name: mRayonUITests
 options:
-  bundleIdPrefix: wiki.qaq.ray0n
+  bundleIdPrefix: me.mizorewww.rayon
   deploymentTarget:
     iOS: "16.0"
 targets:

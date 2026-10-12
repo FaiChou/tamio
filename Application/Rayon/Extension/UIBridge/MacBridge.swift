@@ -35,21 +35,28 @@ enum Mac {
     /// Lets the store find the master key the AppKit builds of Rayon kept in
     /// the login keychain. Call before `RayonStore.shared` is first used.
     static func installLegacyKeyStore() {
-        let service = "wiki.qaq.rayon.kcAccess"
-        let account = "wiki.qaq.rayon.MasterCrypto"
+        let service = "me.mizorewww.rayon.kcAccess"
+        let account = "me.mizorewww.rayon.MasterCrypto"
+        // The names the key was saved under while the app was wiki.qaq.ray0n.
+        // It is read from there and never written there.
+        let former = (service: "wiki.qaq.rayon.kcAccess", account: "wiki.qaq.rayon.MasterCrypto")
         AES.legacyKeyStore = LegacyKeyStore(
             read: {
                 guard let bridge else { return .unavailable }
-                var outcome = LegacyKeyStore.ReadResult.unavailable
-                bridge.readLoginKeychain(service: service, account: account) { status, value in
-                    switch status {
-                    case .found: outcome = value.map { .found($0) } ?? .unavailable
-                    case .absent: outcome = .absent
-                    case .unavailable: outcome = .unavailable
-                    @unknown default: outcome = .unavailable
+                func read(_ service: String, _ account: String) -> LegacyKeyStore.ReadResult {
+                    var outcome = LegacyKeyStore.ReadResult.unavailable
+                    bridge.readLoginKeychain(service: service, account: account) { status, value in
+                        switch status {
+                        case .found: outcome = value.map { .found($0) } ?? .unavailable
+                        case .absent: outcome = .absent
+                        case .unavailable: outcome = .unavailable
+                        @unknown default: outcome = .unavailable
+                        }
                     }
+                    return outcome
                 }
-                return outcome
+                if case let .found(key) = read(service, account) { return .found(key) }
+                return read(former.service, former.account)
             },
             write: { key in
                 bridge?.writeLoginKeychain(service: service, account: account, label: "Rayon Master Crypto Key", value: key) ?? false

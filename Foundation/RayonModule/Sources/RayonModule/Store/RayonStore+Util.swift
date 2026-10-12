@@ -11,7 +11,7 @@ import NSRemoteShell
 private let documentEncoder = PropertyListEncoder()
 private let documentDecoder = PropertyListDecoder()
 private let crypto: AES = .shared
-private let storeQueue = DispatchQueue(label: "wiki.qaq.rayon.store")
+private let storeQueue = DispatchQueue(label: "me.mizorewww.rayon.store")
 
 public extension RayonStore {
     enum UserDefaultKey: String {
@@ -25,6 +25,25 @@ public extension RayonStore {
         case openInterfaceAutomatically
         case syncPassphrase
         case syncState
+    }
+
+    /// Settings used to be saved under names that began with the former
+    /// maintainer's domain. They are copied, once, to the names used now; the
+    /// old ones are left as they were.
+    static func adoptFormerDefaults(
+        in defaults: UserDefaults = .standard,
+        domain: String? = Bundle.main.bundleIdentifier
+    ) {
+        let adopted = "me.mizorewww.rayon.adoptedFormerDefaults"
+        guard !defaults.bool(forKey: adopted) else { return }
+        let former = "wiki.qaq."
+        // The saved settings only: not what a launch argument says.
+        let saved = domain.flatMap { defaults.persistentDomain(forName: $0) } ?? [:]
+        for (key, value) in saved where key.hasPrefix(former) {
+            let name = "me.mizorewww." + key.dropFirst(former.count)
+            if saved[name] == nil { defaults.set(value, forKey: name) }
+        }
+        defaults.set(true, forKey: adopted)
     }
 
     func readEncryptedDefault<T: Codable>(from key: UserDefaultKey, _: T) -> T? {

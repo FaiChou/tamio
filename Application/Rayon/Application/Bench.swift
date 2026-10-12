@@ -17,7 +17,7 @@ import SwiftUI
 
     extension Notification.Name {
         /// userInfo: "select" (Int, an index into the sorted list) or "filter" (String).
-        static let benchFiles = Notification.Name("wiki.qaq.rayon.bench.files")
+        static let benchFiles = Notification.Name("me.mizorewww.rayon.bench.files")
     }
 
     @MainActor

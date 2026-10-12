@@ -616,7 +616,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = wiki.qaq.ray0n.debug;
+				PRODUCT_BUNDLE_IDENTIFIER = me.mizorewww.rayon.debug;
 				PRODUCT_NAME = Rayon;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -697,7 +697,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = wiki.qaq.ray0n.bridge;
+				PRODUCT_BUNDLE_IDENTIFIER = me.mizorewww.rayon.bridge;
 				PRODUCT_NAME = MacBridge;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;
@@ -725,7 +725,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = wiki.qaq.ray0n;
+				PRODUCT_BUNDLE_IDENTIFIER = me.mizorewww.rayon;
 				PRODUCT_NAME = Rayon;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -813,7 +813,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = wiki.qaq.ray0n.bridge;
+				PRODUCT_BUNDLE_IDENTIFIER = me.mizorewww.rayon.bridge;
 				PRODUCT_NAME = MacBridge;
 				SDKROOT = macosx;
 				SKIP_INSTALL = YES;

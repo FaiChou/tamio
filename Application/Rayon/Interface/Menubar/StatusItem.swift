@@ -123,9 +123,9 @@ class MenubarStatusItem: NSObject, Identifiable {
 /// of its own; the bridge moves that window's content into the popover and
 /// keeps the window out of sight.
 final class TraySceneDelegate: NSObject, UIWindowSceneDelegate {
-    static let activityType = "wiki.qaq.rayon.menubar-popover"
+    static let activityType = "me.mizorewww.rayon.menubar-popover"
     private static let itemKey = "item"
-    private static let marker = "wiki.qaq.rayon.menubar-popover"
+    private static let marker = "me.mizorewww.rayon.menubar-popover"
 
     var window: UIWindow?
 

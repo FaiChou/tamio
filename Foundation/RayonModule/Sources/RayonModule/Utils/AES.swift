@@ -71,15 +71,21 @@ public struct AES: Sendable {
             #endif
             return makeEngine(key: keyBuilder + keyBuilder + keyBuilder)
         #else
-            let keychainServiceID = "wiki.qaq.rayon.kcAccess"
-            let masterKeyID = "wiki.qaq.rayon.MasterCrypto"
+            let keychainServiceID = "me.mizorewww.rayon.kcAccess"
+            let masterKeyID = "me.mizorewww.rayon.MasterCrypto"
             let keychain = Keychain(service: keychainServiceID)
                 .label("Rayon Master Crypto Key")
                 .comment("Rayon requires a master crypto key to access your encrypted data on disk and protects your accounts")
 
+            // Where the key was kept while the app was wiki.qaq.ray0n; read
+            // when there is none under the names used now.
+            let formerKeychain = Keychain(service: "wiki.qaq.rayon.kcAccess")
+            let formerMasterKeyID = "wiki.qaq.rayon.MasterCrypto"
+
             func stored() throws -> String? {
-                guard let master = try keychain.getString(masterKeyID), master.count > 2 else { return nil }
-                return master
+                if let master = try keychain.getString(masterKeyID), master.count > 2 { return master }
+                if let master = try? formerKeychain.getString(formerMasterKeyID), master.count > 2 { return master }
+                return nil
             }
             func store(_ new: String) -> Bool {
                 do {

@@ -92,7 +92,7 @@ extension TerminalManager {
         let termInterface: RayonTerminalView = .init()
 
         private static let queue = DispatchQueue(
-            label: "wiki.qaq.terminal",
+            label: "me.mizorewww.terminal",
             attributes: .concurrent
         )
 

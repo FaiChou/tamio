@@ -25,7 +25,7 @@ class MenubarTool {
     private init() {}
 
     /// Servers shown in the menu bar, so they come back after Rayon restarts.
-    private static let persistedKey = "wiki.qaq.rayon.menubarMachines"
+    private static let persistedKey = "me.mizorewww.rayon.menubarMachines"
 
     private func persist() {
         bootstrapLock.lock()

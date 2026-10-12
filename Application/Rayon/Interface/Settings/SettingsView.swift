@@ -65,7 +65,7 @@ enum AppearancePreference: String, CaseIterable {
     case light
     case dark
 
-    static let key = "wiki.qaq.rayon.appearance"
+    static let key = "me.mizorewww.rayon.appearance"
 
     @MainActor
     func apply() {
@@ -118,7 +118,7 @@ private struct SessionSettings: View {
 
 private struct RecentSettings: View {
     @EnvironmentObject var store: RayonStore
-    @AppStorage("wiki.qaq.rayon.maxRecentRecordCount") private var recentLimit = 8
+    @AppStorage("me.mizorewww.rayon.maxRecentRecordCount") private var recentLimit = 8
 
     var body: some View {
         RXDividedStack {

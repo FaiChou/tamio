@@ -86,7 +86,7 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
     private var loopContinue = true
     private var cancellables = Set<AnyCancellable>()
 
-    private static let queue = DispatchQueue(label: "wiki.qaq.monitor", attributes: .concurrent)
+    private static let queue = DispatchQueue(label: "me.mizorewww.monitor", attributes: .concurrent)
 
     public init(machine: RDMachine, identity: RDIdentity?) {
         self.machine = machine

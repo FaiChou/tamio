@@ -32,7 +32,7 @@ targets:
       base:
         PRODUCT_NAME: MacBridge
         CODE_SIGN_IDENTITY: "-"
-        PRODUCT_BUNDLE_IDENTIFIER: wiki.qaq.ray0n.bridge
+        PRODUCT_BUNDLE_IDENTIFIER: me.mizorewww.rayon.bridge
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_NSPrincipalClass: Bridge
         SKIP_INSTALL: YES
@@ -74,9 +74,9 @@ targets:
         SWIFT_EMIT_LOC_STRINGS: YES
       configs:
         Debug:
-          PRODUCT_BUNDLE_IDENTIFIER: wiki.qaq.ray0n.debug
+          PRODUCT_BUNDLE_IDENTIFIER: me.mizorewww.rayon.debug
         Release:
-          PRODUCT_BUNDLE_IDENTIFIER: wiki.qaq.ray0n
+          PRODUCT_BUNDLE_IDENTIFIER: me.mizorewww.rayon
     dependencies:
       - package: RayonModule
       - package: RayonTerminal

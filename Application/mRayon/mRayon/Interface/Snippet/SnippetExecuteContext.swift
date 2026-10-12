@@ -24,7 +24,7 @@ class SnippetExecuteContext: ObservableObject {
     @Published var completedProgress: Float = 0
     @Published var totalProgress: Float = 2_147_483_648 // will update
 
-    static let queue = DispatchQueue(label: "wiki.qaq.snippet.exec", attributes: .concurrent)
+    static let queue = DispatchQueue(label: "me.mizorewww.snippet.exec", attributes: .concurrent)
 
     init(snippet: RDSnippet, machineGroup: [RDMachine]) {
         self.snippet = snippet

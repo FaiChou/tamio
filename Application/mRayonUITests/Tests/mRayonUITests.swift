@@ -1,6 +1,6 @@
 import XCTest
 
-/// Drives the installed iOS app (bundle `wiki.qaq.ray0n`). Each test attaches
+/// Drives the installed iOS app (bundle `me.mizorewww.rayon`). Each test attaches
 /// screenshots to the result bundle.
 @MainActor
 final class MRayonUITests: XCTestCase {
@@ -8,7 +8,7 @@ final class MRayonUITests: XCTestCase {
 
     override func setUp() async throws {
         continueAfterFailure = false
-        app = XCUIApplication(bundleIdentifier: "wiki.qaq.ray0n")
+        app = XCUIApplication(bundleIdentifier: "me.mizorewww.rayon")
         // Skip the first-launch agreement through the argument domain; nothing
         // is written to the app's stored defaults.
         app.launchArguments += ["-licenseAgreed", "YES"]

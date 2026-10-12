@@ -141,7 +141,7 @@ class BatchSnippetExecContext: ObservableObject {
 
     func beingExecution() {
         let queue = DispatchQueue(
-            label: "wiki.qaq.rayon.exec.batch.\(snippet.name)",
+            label: "me.mizorewww.rayon.exec.batch.\(snippet.name)",
             attributes: .concurrent
         )
         let machines = machines

@@ -74,8 +74,8 @@ final class ConfigEditorModel: ObservableObject {
     private var pendingSave: Task<Void, Never>?
     private let defaults: UserDefaults
     private struct Storage: Codable { let version: Int; let document: ConfigDocument }
-    private static let snapshotKey = "wiki.qaq.rayon.ghosttyConfiguration.v1"
-    private static let storageKey = "wiki.qaq.rayon.ghosttyConfiguration"
+    private static let snapshotKey = "me.mizorewww.rayon.ghosttyConfiguration.v1"
+    private static let storageKey = "me.mizorewww.rayon.ghosttyConfiguration"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults

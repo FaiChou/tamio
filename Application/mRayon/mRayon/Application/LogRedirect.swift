@@ -21,7 +21,7 @@ class LogRedirect {
             .default
             .urls(for: .documentDirectory, in: .userDomainMask)
             .first?
-            .appendingPathComponent("wiki.qaq.diag.log")
+            .appendingPathComponent("me.mizorewww.diag.log")
         {
             path = url
             try? FileManager.default.removeItem(at: url)
@@ -36,7 +36,7 @@ class LogRedirect {
             return
         }
         #if DEBUG
-            guard UserDefaults.standard.value(forKey: "wiki.qaq.redirect.diag") as? Bool ?? false else {
+            guard UserDefaults.standard.value(forKey: "me.mizorewww.redirect.diag") as? Bool ?? false else {
                 return
             }
         #endif

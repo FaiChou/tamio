@@ -106,7 +106,7 @@ final class CloudKeyValueTransport: SyncTransport {
     /// one device. Set RAYON_SYNC_LOCAL in the environment.
     @MainActor
     final class LocalTransport: SyncTransport {
-        private static let key = "wiki.qaq.rayon.debug.sync"
+        private static let key = "me.mizorewww.rayon.debug.sync"
         var changed: (() -> Void)?
         var problem: String? { nil }
         func read() -> Data? { UserDefaults.standard.data(forKey: Self.key) }

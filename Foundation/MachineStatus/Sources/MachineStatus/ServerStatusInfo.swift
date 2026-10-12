@@ -120,7 +120,7 @@ public class ServerStatus: ObservableObject, Equatable {
         #endif
 
         let group = DispatchGroup()
-        let queue = DispatchQueue(label: "wiki.qaq.rayon.info", attributes: .concurrent)
+        let queue = DispatchQueue(label: "me.mizorewww.rayon.info", attributes: .concurrent)
         group.enter()
         queue.async { [weak self] in
             defer { group.leave() }

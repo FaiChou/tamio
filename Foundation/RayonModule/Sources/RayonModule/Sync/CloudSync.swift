@@ -64,9 +64,9 @@ public final class CloudSync: ObservableObject {
     public static let minimumPassphraseLength = 8
 
     private enum Key {
-        static let on = "wiki.qaq.rayon.sync.enabled"
-        static let servers = "wiki.qaq.rayon.sync.servers"
-        static let identities = "wiki.qaq.rayon.sync.identities"
+        static let on = "me.mizorewww.rayon.sync.enabled"
+        static let servers = "me.mizorewww.rayon.sync.servers"
+        static let identities = "me.mizorewww.rayon.sync.identities"
     }
 
     /// The passphrase as it is kept on the device: with the servers and

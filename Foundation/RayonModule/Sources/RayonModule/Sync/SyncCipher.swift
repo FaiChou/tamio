@@ -36,7 +36,7 @@ enum SyncCipher {
     static let minimumRounds = 100_000
     static let maximumRounds = 10_000_000
 
-    private static let context = Data("wiki.qaq.rayon.sync.v1".utf8)
+    private static let context = Data("me.mizorewww.rayon.sync.v1".utf8)
 
     static func newSalt() -> Data {
         Data((0 ..< 16).map { _ in UInt8.random(in: .min ... .max) })

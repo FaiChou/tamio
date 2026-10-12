@@ -17,7 +17,7 @@ struct EditorPage: View {
     @EnvironmentObject var store: RayonStore
     @Environment(\.isActivePage) private var isActive
 
-    @AppStorage("wiki.qaq.rayon.editor.wrapsLines") private var wrapsLines = false
+    @AppStorage("me.mizorewww.rayon.editor.wrapsLines") private var wrapsLines = false
     @State private var openPrompt = false
     @Namespace private var tabs
 
