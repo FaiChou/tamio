@@ -47,12 +47,32 @@ failed=()
 # Before this one first runs they are put where the system looks for the
 # settings of an app that has no container yet, and moves them in from. The
 # former container is left as it is.
+seeded_former_mac_data=""
 adopt_former_mac_data() {
     local former="$HOME/Library/Containers/$FORMER_BUNDLE_ID/Data/Library/Preferences/$FORMER_BUNDLE_ID.plist"
     local seed="$HOME/Library/Preferences/$BUNDLE_ID.plist"
     [[ -f "$former" && ! -e "$HOME/Library/Containers/$BUNDLE_ID" && ! -e "$seed" ]] || return 0
     cp "$former" "$seed"
-    printf 'Carried over the data saved as %s.\n' "$FORMER_BUNDLE_ID"
+    seeded_former_mac_data=1
+}
+
+# The system has been seen to make the container and leave the settings where
+# they were put. Whether it took them is checked rather than assumed.
+report_former_mac_data() {
+    [[ -n "$seeded_former_mac_data" ]] || return 0
+    local seed="$HOME/Library/Preferences/$BUNDLE_ID.plist"
+    local taken="$HOME/Library/Containers/$BUNDLE_ID/Data/Library/Preferences/$BUNDLE_ID.plist"
+    for _ in $(seq 1 30); do
+        [[ -e "$taken" ]] && break
+        sleep 1
+    done
+    if [[ -e "$seed" ]]; then
+        printf 'The data saved as %s was NOT carried over: the system left it at %s.\n' "$FORMER_BUNDLE_ID" "$seed" >&2
+        printf 'Quit Rayon, run `defaults delete %s; defaults import %s "%s"`, delete that file and open Rayon again.\n' "$BUNDLE_ID" "$BUNDLE_ID" "$seed" >&2
+        failed+=("Mac (former data not carried over)")
+    else
+        printf 'Carried over the data saved as %s.\n' "$FORMER_BUNDLE_ID"
+    fi
 }
 
 install_mac() {
@@ -73,6 +93,7 @@ install_mac() {
     if bash "$ROOT_DIR/Workflow/Scripts/install-macos.sh"; then
         adopt_former_mac_data
         open "/Applications/Rayon.app"
+        report_former_mac_data
     else
         failed+=("Mac (build or install failed)")
     fi
