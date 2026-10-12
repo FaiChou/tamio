@@ -295,6 +295,7 @@ struct ConfigWidgetView: View {
             Text(model.document.overrides[setting.key] != nil ? "Custom" : model.document.effectiveTheme(dark: scheme == .dark) != nil ? "Theme" : "Default")
                 .font(.rxHelp)
                 .foregroundStyle(.rxInkSecondary)
+                .fixedSize()
             ColorPicker(setting.name, selection: Binding(get: { Color(configHex: model.document.effectiveColor(setting.key, dark: scheme == .dark)) }, set: { value.wrappedValue = $0.configHex }), supportsOpacity: false)
                 .labelsHidden()
                 .frame(width: 44)
