@@ -90,4 +90,55 @@ final class MRayonUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Reconnect"].firstMatch.waitForExistence(timeout: 15), "The closed session offers Reconnect")
         screenshot("Terminal")
     }
+
+    /// A server on Home answers a tap: its actions are offered, and Open
+    /// Terminal shows the terminal (to a closed local port here).
+    func testAServerOnHomeOpensItsTerminal() {
+        let name = "UITest Server"
+        XCTAssertTrue(app.staticTexts["Home"].firstMatch.waitForExistence(timeout: 10))
+        if !app.staticTexts[name].firstMatch.exists {
+            app.buttons["New Server"].firstMatch.tap()
+            let nameField = app.textFields["Name"]
+            XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+            nameField.tap()
+            nameField.typeText(name)
+            let address = app.textFields["Host Address"]
+            address.tap()
+            address.typeText("127.0.0.1")
+            let port = app.textFields["Host Port"]
+            port.tap()
+            port.typeText(XCUIKeyboardKey.delete.rawValue + XCUIKeyboardKey.delete.rawValue + "1")
+            app.buttons["Save"].firstMatch.tap()
+        }
+        XCTAssertTrue(app.staticTexts[name].firstMatch.waitForExistence(timeout: 5), "Home lists the server")
+        // Once it has been connected to, the server is also among the recent
+        // ones, above; a tap there connects at once.
+        let named = app.staticTexts.matching(identifier: name)
+        let tile = named.element(boundBy: named.count - 1)
+        screenshot("Home with a server")
+        tile.tap()
+        let open = app.buttons["Open Terminal"].firstMatch
+        XCTAssertTrue(open.waitForExistence(timeout: 5), "A tap on the server offers its actions")
+        screenshot("Server actions")
+        open.tap()
+        XCTAssertTrue(app.buttons["Close Session"].firstMatch.waitForExistence(timeout: 15), "Open Terminal shows the terminal")
+        screenshot("Terminal of a server")
+    }
+
+    /// The same from the Servers tab's list (iPhone).
+    func testAServerInTheListOpensItsTerminal() throws {
+        let name = "UITest Server"
+        let servers = app.tabBars.buttons["Servers"]
+        try XCTSkipUnless(servers.waitForExistence(timeout: 5), "iPhone layout only")
+        servers.tap()
+        let row = app.staticTexts[name].firstMatch
+        try XCTSkipUnless(row.waitForExistence(timeout: 5), "Run testAServerOnHomeOpensItsTerminal first: it adds the server")
+        screenshot("Servers")
+        row.tap()
+        let open = app.buttons["Open Terminal"].firstMatch
+        XCTAssertTrue(open.waitForExistence(timeout: 5), "A tap on the row offers its actions")
+        open.tap()
+        XCTAssertTrue(app.buttons["Close Session"].firstMatch.waitForExistence(timeout: 15), "Open Terminal shows the terminal")
+        screenshot("Terminal from the list")
+    }
 }
