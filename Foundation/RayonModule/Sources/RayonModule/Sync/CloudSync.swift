@@ -176,7 +176,13 @@ public final class CloudSync: ObservableObject {
     /// `passphrase` (or the current one). Other devices are then asked for it.
     public func replaceStoredData(passphrase new: String? = nil) {
         guard isOn else { return }
-        if let new { set(passphrase: new) }
+        if let new {
+            // The key in use until now is kept for the round: it reads what
+            // is stored one last time.
+            let old = key
+            set(passphrase: new)
+            key = old
+        }
         replacesNext = true
         sync()
     }

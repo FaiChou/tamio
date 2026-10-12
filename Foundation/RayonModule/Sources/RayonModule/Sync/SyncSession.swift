@@ -20,8 +20,9 @@ struct SyncInput: Sendable {
     var key: SyncCipher.Key?
     var syncsMachines = true
     var syncsIdentities = true
-    /// Do not read what is stored: put this device's data in its place, under
-    /// a new key.
+    /// Seal under a new key from `passphrase`, whatever is stored. What is
+    /// stored is merged first if `key`, the one in use until now, still opens
+    /// it; otherwise this device's data takes its place.
     var replacesRemote = false
     var now = Date()
     var rounds = SyncCipher.rounds
@@ -53,7 +54,17 @@ enum SyncSession {
         var key = input.replacesRemote ? nil : input.key
         var stored = false
 
-        if let remote = input.remote, !input.replacesRemote {
+        if input.replacesRemote {
+            if let remote = input.remote, let old = input.key,
+               let envelope = try? JSONDecoder().decode(SyncEnvelope.self, from: remote),
+               envelope.version == SyncEnvelope.currentVersion,
+               envelope.salt == old.salt, envelope.rounds == old.rounds,
+               let plain = SyncCipher.open(envelope, with: old),
+               let decoded = try? JSONDecoder().decode(SyncDocument.self, from: plain)
+            {
+                document = decoded
+            }
+        } else if let remote = input.remote {
             guard let envelope = try? JSONDecoder().decode(SyncEnvelope.self, from: remote) else {
                 return .unreadable
             }

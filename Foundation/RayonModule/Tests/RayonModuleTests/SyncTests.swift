@@ -12,13 +12,15 @@ private struct Device {
     var identities: [RDIdentity] = []
     var state = SyncState()
     var passphrase = "correct horse battery"
+    var key: SyncCipher.Key?
     var syncsIdentities = true
 
     /// One round against `cloud`, applying what it says.
     @discardableResult
     mutating func sync(_ cloud: inout Data?, at now: Date, replacing: Bool = false) -> SyncOutcome {
         var input = SyncInput(
-            machines: machines, identities: identities, state: state, passphrase: passphrase, remote: cloud
+            machines: machines, identities: identities, state: state, passphrase: passphrase, remote: cloud,
+            key: key
         )
         input.syncsIdentities = syncsIdentities
         input.replacesRemote = replacing
@@ -46,6 +48,7 @@ private struct Device {
             }
         }
         state = done.state
+        key = done.key
         if let upload = done.upload { cloud = upload }
         return outcome
     }
@@ -206,6 +209,28 @@ final class SyncTests: XCTestCase {
         mac.passphrase = "a new passphrase"
         mac.sync(&cloud, at: time(30))
         XCTAssertEqual(Set(mac.machines.map(\.name)), ["alpha", "beta"])
+    }
+
+    func testChangingThePassphraseKeepsWhatAnotherDeviceStored() {
+        var cloud: Data?
+        var mac = Device(), phone = Device()
+        mac.machines = [machine("alpha"), machine("beta")]
+        mac.sync(&cloud, at: time(0))
+        phone.sync(&cloud, at: time(1))
+
+        // The phone deletes one and adds one; the Mac has not synced since.
+        phone.machines.removeAll { $0.name == "alpha" }
+        phone.machines.append(machine("gamma"))
+        phone.sync(&cloud, at: time(10))
+
+        mac.passphrase = "a new passphrase"
+        mac.sync(&cloud, at: time(20), replacing: true)
+        XCTAssertEqual(Set(mac.machines.map(\.name)), ["beta", "gamma"])
+
+        guard case .locked = phone.sync(&cloud, at: time(30)) else { return XCTFail("expected locked") }
+        phone.passphrase = "a new passphrase"
+        phone.sync(&cloud, at: time(40))
+        XCTAssertEqual(Set(phone.machines.map(\.name)), ["beta", "gamma"])
     }
 
     func testAKindThatIsNotSyncedIsLeftAlone() {
