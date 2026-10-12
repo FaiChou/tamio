@@ -43,6 +43,16 @@ public extension FileTransferContext {
         // NSRemoteShell serializes its own work; the rest of the transfer code
         // also calls it from background queues.
         nonisolated(unsafe) let shell = shell
+        // Asked first, so a file that is too large is never fetched. The
+        // answer follows a link to the file it names.
+        let size: Int64? = await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                continuation.resume(returning: shell.requestFileInfo(at: remotePath)?.size?.int64Value)
+            }
+        }
+        if let size, size > Self.editableSizeLimit {
+            throw RemoteTextFileError.tooLarge(bytes: size, limit: Self.editableSizeLimit)
+        }
         let succeeded = await Self.background {
             shell.requestDownload(fromFileAndWait: remotePath, toLocalPath: local.path) { _, _, _ in
             } withContinuationHandler: {
