@@ -29,9 +29,10 @@ final class ConfigEditorModel: ObservableObject {
 
     private var scopes: [String: Scope] = [:]
     /// Settings other rows read as well: colours follow the theme and the
-    /// palette, font styles, features and variations follow the families.
+    /// palette, and those left unset follow the foreground or background;
+    /// font styles, features and variations follow the families.
     private static let sharedKeys: Set<String> = [
-        "theme", "palette", "font-family", "font-family-bold", "font-family-italic", "font-family-bold-italic",
+        "theme", "palette", "foreground", "background", "font-family", "font-family-bold", "font-family-italic", "font-family-bold-italic",
     ]
 
     func scope(_ key: String) -> Scope {
