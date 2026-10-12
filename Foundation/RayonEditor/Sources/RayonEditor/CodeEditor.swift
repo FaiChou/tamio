@@ -146,7 +146,8 @@ public struct CodeEditor: UIViewRepresentable {
             lastText = text
             lastLanguage = parent.language
             let theme = EditorTheme(size: parent.fontSize)
-            let language = parent.language.treeSitter
+            let loaded = parent.language
+            let language = loaded.treeSitter
             nonisolated(unsafe) let weakView = WeakBox(view)
             // Nothing can be typed into the view until its text is in it: a
             // keystroke before then would stand for the whole file.
@@ -161,6 +162,10 @@ public struct CodeEditor: UIViewRepresentable {
                     guard let self, self.loads == load, let view = weakView.value else { return }
                     view.setState(ready)
                     view.isEditable = true
+                    // The syntax was changed while this one was being parsed.
+                    if self.lastLanguage != loaded {
+                        view.setLanguageMode(self.lastLanguage.treeSitter.map { TreeSitterLanguageMode(language: $0) } ?? PlainTextLanguageMode())
+                    }
                 }
             }
         }
