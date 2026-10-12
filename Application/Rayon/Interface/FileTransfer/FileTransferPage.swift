@@ -44,6 +44,8 @@ struct FileTransferPage: View {
 
     private func show(sorted list: [FileTransferContext.RemoteFile]) {
         sorted = list
+        // A reload reads every file anew; one that is gone is no longer chosen.
+        if let chosen = selection { selection = list.first { $0.name == chosen.name && $0.base == chosen.base } }
         applyFilter()
     }
 
@@ -402,15 +404,17 @@ private struct FileTable: UIViewRepresentable {
         coordinator.parent = self
         table.isUserInteractionEnabled = context.environment.isEnabled
         if old.revision != revision {
-            if coordinator.shownFolder != folder, coordinator.shownFolder != nil, !UIAccessibility.isReduceMotionEnabled {
-                // Another folder fades in from its top; a reload or the filter
-                // changes the rows in place.
+            // Another folder starts at its top and fades in; a reload or the
+            // filter changes the rows in place.
+            let entered = coordinator.shownFolder != folder && coordinator.shownFolder != nil
+            if entered, !UIAccessibility.isReduceMotionEnabled {
                 UIView.transition(with: table, duration: 0.18, options: [.transitionCrossDissolve, .allowUserInteraction]) {
                     table.reloadData()
                     table.contentOffset = .zero
                 }
             } else {
                 table.reloadData()
+                if entered { table.contentOffset = .zero }
             }
             coordinator.shownFolder = folder
         } else if old.selection != selection {
