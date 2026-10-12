@@ -84,7 +84,9 @@ struct ConfigThemePicker: View {
 
 /// The 16 (or 256) palette swatches: a color well, its hex value and a reset.
 struct ConfigPaletteEditor: View {
-    @ObservedObject var model: ConfigEditorModel
+    let model: ConfigEditorModel
+    /// Its row says when to draw again (see `ConfigEditorModel.Scope`).
+    @Environment(\.configRevision) private var revision
     @Environment(\.colorScheme) private var scheme
     @State private var extended = false
     var body: some View {

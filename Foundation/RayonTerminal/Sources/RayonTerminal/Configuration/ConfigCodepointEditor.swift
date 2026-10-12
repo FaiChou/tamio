@@ -55,7 +55,9 @@ struct CodepointMapping: Equatable {
 /// `font-codepoint-map`: "these characters use this font", one row per rule,
 /// with named character sets and the installed-font picker.
 struct ConfigCodepointMapEditor: View {
-    @ObservedObject var model: ConfigEditorModel
+    let model: ConfigEditorModel
+    /// Its row says when to draw again (see `ConfigEditorModel.Scope`).
+    @Environment(\.configRevision) private var revision
     /// A rule being added; it is written once it has a font.
     @State private var pending: CodepointMapping?
 

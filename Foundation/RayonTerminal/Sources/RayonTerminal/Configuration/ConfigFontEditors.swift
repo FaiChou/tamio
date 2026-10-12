@@ -270,7 +270,9 @@ private struct FontFamilyList: View {
 
 /// `font-family`: the main font, then fallbacks tried in order for missing glyphs.
 struct ConfigFontFamilyEditor: View {
-    @ObservedObject var model: ConfigEditorModel
+    let model: ConfigEditorModel
+    /// Its row says when to draw again (see `ConfigEditorModel.Scope`).
+    @Environment(\.configRevision) private var revision
     let key: String
     /// Bold / italic families may be left unset to follow the main font.
     let placeholder: String
@@ -350,7 +352,9 @@ struct ConfigFontFamilyEditor: View {
 
 /// `font-style…`: the styles the chosen family actually has.
 struct ConfigFontStylePicker: View {
-    @ObservedObject var model: ConfigEditorModel
+    let model: ConfigEditorModel
+    /// Its row says when to draw again (see `ConfigEditorModel.Scope`).
+    @Environment(\.configRevision) private var revision
     let key: String
 
     /// The family this style applies to: its own family key, else the main font.
@@ -404,7 +408,9 @@ struct ConfigFontStylePicker: View {
 /// `font-feature`: the chosen font's OpenType features as switches, grouped as
 /// the font groups them. A switch left at the font's default writes nothing.
 struct ConfigFontFeatureEditor: View {
-    @ObservedObject var model: ConfigEditorModel
+    let model: ConfigEditorModel
+    /// Its row says when to draw again (see `ConfigEditorModel.Scope`).
+    @Environment(\.configRevision) private var revision
     @State private var custom = ""
 
     private var family: String { model.document.overrides["font-family"]?.first ?? "" }
@@ -496,7 +502,9 @@ struct ConfigFontFeatureEditor: View {
 /// `font-variation…`: a slider and field per axis of the chosen variable font.
 /// An axis left at its default writes nothing.
 struct ConfigFontVariationEditor: View {
-    @ObservedObject var model: ConfigEditorModel
+    let model: ConfigEditorModel
+    /// Its row says when to draw again (see `ConfigEditorModel.Scope`).
+    @Environment(\.configRevision) private var revision
     let key: String
 
     private var family: String { configFamily(for: key, prefix: "font-variation", in: model.document) }

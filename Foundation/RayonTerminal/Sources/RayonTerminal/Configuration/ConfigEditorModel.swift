@@ -2,14 +2,72 @@ import Foundation
 import SwiftUI
 import GhosttyTerminal
 
+/// Passed down a setting's row: it changes when the row has to be drawn again.
+private struct ConfigRevisionKey: EnvironmentKey {
+    static let defaultValue = 0
+}
+
+extension EnvironmentValues {
+    var configRevision: Int {
+        get { self[ConfigRevisionKey.self] }
+        set { self[ConfigRevisionKey.self] = newValue }
+    }
+}
+
 @MainActor
 final class ConfigEditorModel: ObservableObject {
     static let shared = ConfigEditorModel()
-    @Published private(set) var document: ConfigDocument
+    @Published private(set) var document: ConfigDocument {
+        didSet { touchScopes(since: oldValue) }
+    }
+
+    /// What a setting's row watches, so a change to one setting draws that
+    /// row again and not every row of every category.
+    final class Scope: ObservableObject {
+        @Published fileprivate(set) var revision = 0
+    }
+
+    private var scopes: [String: Scope] = [:]
+    /// Settings other rows read as well: colours follow the theme and the
+    /// palette, font styles, features and variations follow the families.
+    private static let sharedKeys: Set<String> = [
+        "theme", "palette", "font-family", "font-family-bold", "font-family-italic", "font-family-bold-italic",
+    ]
+
+    func scope(_ key: String) -> Scope {
+        if let scope = scopes[key] { return scope }
+        let scope = Scope()
+        scopes[key] = scope
+        return scope
+    }
+
+    private func touchScopes(since old: ConfigDocument) {
+        let keys = Set(old.overrides.keys).union(document.overrides.keys)
+            .filter { old.overrides[$0] != document.overrides[$0] }
+        if keys.contains(where: Self.sharedKeys.contains) {
+            for scope in scopes.values { scope.revision += 1 }
+        } else {
+            for key in keys { scopes[key]?.revision += 1 }
+        }
+    }
     @Published private(set) var saved: ConfigDocument
     @Published var message = ""
-    @Published private(set) var undoStack: [ConfigDocument] = []
-    @Published private(set) var redoStack: [ConfigDocument] = []
+    private(set) var undoStack: [ConfigDocument] = [] {
+        didSet { if history.canUndo == undoStack.isEmpty { history.canUndo = !undoStack.isEmpty } }
+    }
+
+    private(set) var redoStack: [ConfigDocument] = [] {
+        didSet { if history.canRedo == redoStack.isEmpty { history.canRedo = !redoStack.isEmpty } }
+    }
+
+    /// Whether there is something to undo and to redo: what the toolbar
+    /// watches, which changes far less often than the document.
+    final class History: ObservableObject {
+        @Published fileprivate(set) var canUndo = false
+        @Published fileprivate(set) var canRedo = false
+    }
+
+    let history = History()
     /// Called after a change is applied, with the new font size when it changed.
     var onApplied: ((Double?) -> Void)?
     private var pendingSave: Task<Void, Never>?
@@ -185,3 +243,19 @@ public enum RayonTerminalConfiguration {
         }
     }
 }
+
+#if DEBUG
+    /// For the app's Settings benchmark: an edit as a control would make it.
+    @MainActor
+    public enum ConfigBenchmark {
+        public static func edit(_ key: String, _ value: String?) {
+            ConfigEditorModel.shared.edit { document in
+                if let value { document.set(key, [value]) } else { document.overrides.removeValue(forKey: key) }
+            }
+        }
+
+        public static func value(_ key: String) -> String? {
+            ConfigEditorModel.shared.document.overrides[key]?.first
+        }
+    }
+#endif

@@ -9,10 +9,19 @@ import SwiftUI
 /// A setting drawn with the settings-row vocabulary: name and the catalog's first
 /// sentence on the left, the control right-aligned. Wide editors sit underneath.
 struct ConfigSettingRow: View {
-    @ObservedObject var model: ConfigEditorModel
+    let model: ConfigEditorModel
     let setting: ConfigSetting
     var query = ""
+    /// The row is drawn again when its setting changes, not when any does.
+    @ObservedObject private var scope: ConfigEditorModel.Scope
     @State private var help = false
+
+    init(model: ConfigEditorModel, setting: ConfigSetting, query: String = "") {
+        self.model = model
+        self.setting = setting
+        self.query = query
+        scope = model.scope(setting.key)
+    }
 
     private var highlightedName: AttributedString {
         var text = AttributedString(ConfigLayout.title(setting))
@@ -135,12 +144,15 @@ struct ConfigSettingRow: View {
         }
         .padding(.vertical, 12)
         .frame(minHeight: RX.formRowMinHeight)
+        .environment(\.configRevision, scope.revision)
     }
 }
 
 /// How every widget type in the catalog is drawn (see the design system's SettingControls).
 struct ConfigWidgetView: View {
-    @ObservedObject var model: ConfigEditorModel
+    let model: ConfigEditorModel
+    /// Its row says when to draw again (see `ConfigEditorModel.Scope`).
+    @Environment(\.configRevision) private var revision
     let setting: ConfigSetting
     @Environment(\.colorScheme) private var scheme
     private var value: Binding<String> { model.binding(setting.key) }
@@ -378,7 +390,9 @@ struct ConfigPairInput: View {
     private func write(_ a: String, _ b: String, _ linked: Bool) { value = linked ? a : scroll ? "precision:\(a),discrete:\(b)" : "\(a),\(b)" }
 }
 struct ConfigRepeatableEditor: View {
-    @ObservedObject var model: ConfigEditorModel
+    let model: ConfigEditorModel
+    /// Its row says when to draw again (see `ConfigEditorModel.Scope`).
+    @Environment(\.configRevision) private var revision
     let key: String
     var placeholder = "Value"
     var body: some View {
