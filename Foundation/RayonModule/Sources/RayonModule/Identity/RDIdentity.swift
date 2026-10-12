@@ -8,7 +8,7 @@
 import Foundation
 import NSRemoteShell
 
-public struct RDIdentity: Codable, Identifiable, Equatable {
+public struct RDIdentity: Codable, Identifiable, Equatable, Sendable {
     public init(
         id: UUID = .init(),
         username: String = "",

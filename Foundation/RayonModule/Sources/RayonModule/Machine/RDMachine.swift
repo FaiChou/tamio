@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct RDMachine: Codable, Identifiable, Equatable {
+public struct RDMachine: Codable, Identifiable, Equatable, Sendable {
     public init(id: UUID = UUID(),
                 remoteAddress: String = "",
                 remotePort: String = "",
