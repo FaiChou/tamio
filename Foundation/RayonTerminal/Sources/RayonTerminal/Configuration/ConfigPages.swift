@@ -76,6 +76,8 @@ final class ConfigPageState: ObservableObject {
     struct Jump: Equatable {
         let category: String
         let key: String
+        /// Asking for the same setting again is a new request.
+        let id = UUID()
     }
 
     /// The live preview goes above the settings when there is no room beside them.
@@ -429,6 +431,8 @@ struct ConfigCategoryContent: View {
         let model: ConfigEditorModel
         let previewAbove: Bool
         let jump: ConfigPageState.Jump?
+        /// Whether Settings is the page in the window.
+        let active: Bool
 
         func makeUIViewController(context _: Context) -> Deck { Deck() }
 
@@ -442,6 +446,7 @@ struct ConfigCategoryContent: View {
             }
             deck.animated = !context.environment.accessibilityReduceMotion
             deck.follow(navigation)
+            if deck.active != active { deck.active = active }
         }
 
         final class Deck: UIViewController {
@@ -453,6 +458,19 @@ struct ConfigCategoryContent: View {
             /// What the pages share; they are made once, with this.
             let state = ConfigPageState()
             var animated = true
+            /// Out of sight, Settings keeps no field being typed in and
+            /// builds no more pages.
+            var active = true {
+                didSet {
+                    guard active != oldValue else { return }
+                    if active {
+                        warm(after: 0.5)
+                    } else {
+                        warming?.cancel()
+                        view.endEditing(true)
+                    }
+                }
+            }
             private weak var navigation: ConfigNavigation?
             private var following: AnyCancellable?
 
@@ -480,6 +498,8 @@ struct ConfigCategoryContent: View {
                 shown = id
                 // Its size is settled with the deck's, which may be about to change.
                 view.setNeedsLayout()
+                // A field left with the caret in it would go on taking keys.
+                previous?.view.endEditing(true)
                 previous.map { set($0, visible: false) }
                 set(page, visible: true)
                 if animated, previous != nil {
@@ -528,7 +548,7 @@ struct ConfigCategoryContent: View {
             private func warm(after delay: TimeInterval) {
                 warming?.cancel()
                 let work = DispatchWorkItem { [weak self] in
-                    guard let self, view.window != nil,
+                    guard let self, active, view.window != nil,
                           let next = categories.first(where: { self.pages[$0.id] == nil })
                     else { return }
                     page(next.id)?.view.layoutIfNeeded()

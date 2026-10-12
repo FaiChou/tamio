@@ -67,7 +67,9 @@ struct MainView: View {
                 SessionPages(route: router.route)
             }
             .onChange(of: router.route == .settings) { shown in
-                if shown { settingsOpened = true }
+                // Before macOS 26 its toolbar and search field cannot be taken
+                // out of the window while it is kept, so there it is not kept.
+                if shown, #available(iOS 26.0, *) { settingsOpened = true }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .animation(.easeOut(duration: 0.2), value: router.route.isSession ? nil : router.route)

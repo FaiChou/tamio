@@ -145,6 +145,9 @@ public struct GhosttyConfigurationView: View {
             pageState.previewAbove = showPreview && !previewBeside
         }
         .onChange(of: showPreview && !previewBeside) { pageState.previewAbove = $0 }
+        // Settings stays in the window; a search left behind would cover the
+        // category it is next opened at.
+        .onChange(of: active) { if !$0 { search = "" } }
         .animation(.easeOut(duration: 0.18), value: search.isEmpty)
         .confirmationDialog("Reset every terminal setting to its default?", isPresented: $resetConfirm) {
             Button("Reset", role: .destructive) { model.edit { $0 = ConfigDocument() } }
@@ -188,7 +191,7 @@ public struct GhosttyConfigurationView: View {
             ZStack {
                 ConfigPageDeck(
                     categories: categories, navigation: navigation, hostSections: hostSections, model: model,
-                    previewAbove: pageState.previewAbove, jump: pageState.jump
+                    previewAbove: pageState.previewAbove, jump: pageState.jump, active: active
                 )
                     .ignoresSafeArea(.container, edges: .vertical)
                     .opacity(search.isEmpty ? 1 : 0)
