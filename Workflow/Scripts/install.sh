@@ -13,14 +13,15 @@
 # left unanswered, say), nothing is replaced.
 #
 # The iOS app is built unsigned, then signed with the Apple Development
-# certificate and the team's wildcard provisioning profile, so its bundle id
-# needs no registration. A device this Mac cannot reach (no cable, and not
+# certificate and a provisioning profile: the one made for its bundle id when
+# there is one (that is what lets it sync with iCloud), else the team's
+# wildcard profile, which needs no registration. A device this Mac cannot reach (no cable, and not
 # found on the local network) is skipped and named at the end.
 #
 # Environment overrides:
 #   DEVELOPMENT_TEAM      Team for the iOS signature (default: the certificate's)
 #   CODE_SIGN_IDENTITY    Certificate (default: the first Apple Development one)
-#   PROVISIONING_PROFILE  Path to a .mobileprovision (default: the team's "*")
+#   PROVISIONING_PROFILE  Path to a .mobileprovision (default: see above)
 #   DERIVED_DATA_PATH     Build products directory (default: ./DerivedData)
 
 set -euo pipefail
@@ -116,33 +117,6 @@ certificate_team() {
         | sed -n 's/^ *organizationalUnitName *= *//p' | head -1
 }
 
-# The newest unexpired profile of the team whose app id is "TEAM.*".
-wildcard_profile() {
-    local team="$1" file
-    for file in "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"/*.mobileprovision \
-                "$HOME/Library/MobileDevice/Provisioning Profiles"/*.mobileprovision; do
-        [[ -f "$file" ]] || continue
-        printf '%s\t' "$file"
-        security cms -D -i "$file" 2>/dev/null | base64 | tr -d '\n'
-        printf '\n'
-    done | /usr/bin/python3 -c '
-import base64, datetime, plistlib, sys
-team, best = sys.argv[1], (None, None)
-for line in sys.stdin:
-    path, _, data = line.rstrip("\n").partition("\t")
-    try:
-        profile = plistlib.loads(base64.b64decode(data))
-    except Exception:
-        continue
-    expiry = profile.get("ExpirationDate")
-    if profile.get("Entitlements", {}).get("application-identifier") != team + ".*":
-        continue
-    if expiry and expiry > datetime.datetime.utcnow() and (best[1] is None or expiry > best[1]):
-        best = (path, expiry)
-print(best[0] or "", end="")
-' "$team"
-}
-
 # Paired iPhones and iPads, as "identifier<TAB>name<TAB>transport"; the
 # transport is "none" when the Mac has no route to the device.
 paired_devices() {
@@ -180,9 +154,10 @@ install_ios() {
         return
     fi
     team="${DEVELOPMENT_TEAM:-$(certificate_team "$identity")}"
-    profile="${PROVISIONING_PROFILE:-$(wildcard_profile "$team")}"
+    profile="${PROVISIONING_PROFILE:-$(bash "$ROOT_DIR/Workflow/Scripts/provisioning-profile.sh" \
+        mobileprovision "$team" "$BUNDLE_ID" "$identity" wildcard)}"
     if [[ -z "$profile" ]]; then
-        printf 'No wildcard provisioning profile for team %s. Open Xcode once with that team signed in.\n' "$team" >&2
+        printf 'No provisioning profile for %s or wildcard one for team %s. Open Xcode once with that team signed in.\n' "$BUNDLE_ID" "$team" >&2
         failed+=("iOS (no provisioning profile)")
         return
     fi
@@ -230,7 +205,9 @@ EOF
     # A profile that grants iCloud's key-value store (not the wildcard one:
     # that takes an app id registered with the iCloud capability) lets the
     # app sync; the app looks for the same thing in the profile.
-    if security cms -D -i "$profile" 2>/dev/null | grep -q 'com.apple.developer.ubiquity-kvstore-identifier'; then
+    local grants
+    grants="$(security cms -D -i "$profile" 2>/dev/null || true)"
+    if [[ "$grants" == *com.apple.developer.ubiquity-kvstore-identifier* ]]; then
         /usr/libexec/PlistBuddy \
             -c "Add :com.apple.developer.ubiquity-kvstore-identifier string $team.$BUNDLE_ID" "$entitlements"
     fi

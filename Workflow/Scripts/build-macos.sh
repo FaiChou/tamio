@@ -5,6 +5,11 @@
 # Signed with the first Apple Development certificate in the keychain, so the
 # signature, and the keychain's trust in it, survive rebuilds; ad hoc when
 # there is none. Override with CODE_SIGN_IDENTITY / DEVELOPMENT_TEAM.
+#
+# With a provisioning profile made for the app's bundle id and that
+# certificate, the app is also signed for iCloud's key-value store, which the
+# system only grants with one. It is looked for by provisioning-profile.sh;
+# MAC_PROVISIONING_PROFILE names one outright.
 
 set -euo pipefail
 
@@ -45,5 +50,39 @@ xcodebuild \
     build
 
 APP_PATH="$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION-maccatalyst/Rayon.app"
+
+# The profile goes into the app, and what it grants into the signature: the
+# app asks its own signature whether it may sync.
+sign_for_icloud() {
+    [[ "$CODE_SIGN_IDENTITY" != "-" && -n "$DEVELOPMENT_TEAM" ]] || return 0
+    local bundle_id profile grants entitlements key signature options=()
+    bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Contents/Info.plist")"
+    profile="${MAC_PROVISIONING_PROFILE:-$(bash "$ROOT_DIR/Workflow/Scripts/provisioning-profile.sh" \
+        provisionprofile "$DEVELOPMENT_TEAM" "$bundle_id" "$CODE_SIGN_IDENTITY")}"
+    [[ -n "$profile" ]] || return 0
+    # Read whole before it is searched: a search that stops at the first match
+    # would fail the pipe.
+    grants="$(security cms -D -i "$profile" 2>/dev/null || true)"
+    [[ "$grants" == *com.apple.developer.ubiquity-kvstore-identifier* ]] || return 0
+
+    entitlements="$(mktemp)"
+    /usr/bin/codesign -d --entitlements - --xml "$APP_PATH" 2>/dev/null > "$entitlements"
+    for key in com.apple.application-identifier com.apple.developer.ubiquity-kvstore-identifier; do
+        /usr/libexec/PlistBuddy -c "Delete :$key" "$entitlements" 2>/dev/null || true
+        /usr/libexec/PlistBuddy -c "Add :$key string $DEVELOPMENT_TEAM.$bundle_id" "$entitlements"
+    done
+    /usr/libexec/PlistBuddy -c 'Delete :com.apple.developer.team-identifier' "$entitlements" 2>/dev/null || true
+    /usr/libexec/PlistBuddy -c "Add :com.apple.developer.team-identifier string $DEVELOPMENT_TEAM" "$entitlements"
+
+    cp "$profile" "$APP_PATH/Contents/embedded.provisionprofile"
+    signature="$(/usr/bin/codesign -d --verbose=2 "$APP_PATH" 2>&1 || true)"
+    [[ "$signature" == *"(runtime)"* ]] && options=(--options runtime)
+    /usr/bin/codesign --force --sign "$CODE_SIGN_IDENTITY" ${options[@]+"${options[@]}"} --timestamp=none \
+        --entitlements "$entitlements" "$APP_PATH"
+    rm -f "$entitlements"
+    printf 'Signed for iCloud with %s\n' "$(basename "$profile")"
+}
+sign_for_icloud
+
 /usr/bin/codesign --verify --deep --strict --all-architectures --verbose=2 "$APP_PATH"
 printf '\nSigned (%s): %s\n' "$CODE_SIGN_IDENTITY" "$APP_PATH"
