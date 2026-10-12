@@ -111,15 +111,26 @@ enum SyncMerge {
         for value in local { items[value.id.uuidString] = value }
 
         // What changed here since the last sync: edited or new items, and
-        // items that are gone.
+        // items that are gone. A change is dated after the one it follows,
+        // even if that one came from a device whose clock runs ahead.
+        func date(after stamp: SyncState.Stamp?) -> Date {
+            guard let stamp else { return now }
+            return max(now, stamp.modified.addingTimeInterval(0.001))
+        }
         for (id, value) in items {
             let digest = digest(value)
-            if state[id]?.digest != digest {
-                state[id] = .init(digest: digest, modified: now)
+            guard let known = state[id] else {
+                // Never synced from here (sync was just turned on): what is
+                // stored stands. Only an item the store lacks is new.
+                if remote[id] == nil { state[id] = .init(digest: digest, modified: now) }
+                continue
+            }
+            if known.digest != digest {
+                state[id] = .init(digest: digest, modified: date(after: known))
             }
         }
         for (id, stamp) in state where stamp.digest != nil && items[id] == nil {
-            state[id] = .init(digest: nil, modified: now)
+            state[id] = .init(digest: nil, modified: date(after: stamp))
         }
 
         var result = Result(entries: remote)
@@ -128,6 +139,11 @@ enum SyncMerge {
             case (nil, nil):
                 continue
             case let (mine?, nil):
+                guard mine.digest != nil else {
+                    // Deleted here and not stored: nothing left to say.
+                    state[id] = nil
+                    continue
+                }
                 result.entries[id] = .init(modified: mine.modified, value: items[id])
                 result.dirty = true
             case let (mine, theirs?):

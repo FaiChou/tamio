@@ -233,6 +233,62 @@ final class SyncTests: XCTestCase {
         XCTAssertEqual(Set(phone.machines.map(\.name)), ["beta", "gamma"])
     }
 
+    func testTurningSyncOffAndOnDoesNotUndoWhatHappenedMeanwhile() {
+        var cloud: Data?
+        var mac = Device(), phone = Device()
+        mac.machines = [machine("alpha"), machine("beta")]
+        mac.sync(&cloud, at: time(0))
+        phone.sync(&cloud, at: time(1))
+
+        // The phone stops syncing; the Mac renames one server and deletes the other.
+        phone.state = SyncState()
+        mac.machines.removeAll { $0.name == "beta" }
+        mac.machines[0].name = "renamed"
+        mac.sync(&cloud, at: time(10))
+
+        phone.machines.append(machine("gamma"))
+        phone.sync(&cloud, at: time(20))
+        mac.sync(&cloud, at: time(30))
+        XCTAssertEqual(Set(phone.machines.map(\.name)), ["renamed", "gamma"])
+        XCTAssertEqual(Set(mac.machines.map(\.name)), ["renamed", "gamma"])
+    }
+
+    func testAClockThatRunsAheadDoesNotUndoALaterEdit() {
+        var cloud: Data?
+        var mac = Device(), phone = Device()
+        mac.machines = [machine("alpha")]
+        mac.sync(&cloud, at: time(0))
+        phone.sync(&cloud, at: time(1))
+
+        // The phone's clock is an hour ahead.
+        phone.machines[0].name = "from the phone"
+        phone.sync(&cloud, at: time(3600 + 10))
+        mac.sync(&cloud, at: time(20))
+        mac.machines[0].name = "later, from the Mac"
+        mac.sync(&cloud, at: time(30))
+        phone.sync(&cloud, at: time(3600 + 40))
+        XCTAssertEqual(mac.machines.map(\.name), ["later, from the Mac"])
+        XCTAssertEqual(phone.machines.map(\.name), ["later, from the Mac"])
+    }
+
+    func testAnExpiredDeletionIsNotPassedBackAndForth() {
+        var cloud: Data?
+        var mac = Device(), phone = Device()
+        mac.machines = [machine("alpha"), machine("beta")]
+        mac.sync(&cloud, at: time(0))
+        phone.sync(&cloud, at: time(1))
+        mac.machines.removeAll { $0.name == "alpha" }
+        mac.sync(&cloud, at: time(10))
+        phone.sync(&cloud, at: time(20))
+
+        // The Mac forgets the deletion; the phone, whose clock is behind, has not yet.
+        let later = 10 + SyncMerge.tombstoneLifetime + 1
+        XCTAssertTrue(uploaded(mac.sync(&cloud, at: time(later))))
+        XCTAssertFalse(uploaded(phone.sync(&cloud, at: time(later - 3600))))
+        XCTAssertFalse(uploaded(mac.sync(&cloud, at: time(later + 10))))
+        XCTAssertEqual(phone.machines.map(\.name), ["beta"])
+    }
+
     func testAKindThatIsNotSyncedIsLeftAlone() {
         var cloud: Data?
         var mac = Device(), phone = Device()

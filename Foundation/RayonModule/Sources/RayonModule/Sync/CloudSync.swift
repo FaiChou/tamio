@@ -37,6 +37,7 @@ public final class CloudSync: ObservableObject {
             guard syncsServers != oldValue else { return }
             defaults.set(syncsServers, forKey: Key.servers)
             state.machines = [:]
+            generation += 1
             sync()
         }
     }
@@ -46,6 +47,7 @@ public final class CloudSync: ObservableObject {
             guard syncsIdentities != oldValue else { return }
             defaults.set(syncsIdentities, forKey: Key.identities)
             state.identities = [:]
+            generation += 1
             sync()
         }
     }
@@ -89,6 +91,9 @@ public final class CloudSync: ObservableObject {
     private var pending = false
     private var replacesNext = false
     private var started = false
+    /// Counts the changes to what a round reads, to tell a round that was
+    /// overtaken by one.
+    private var generation = 0
     private var observers: Set<AnyCancellable> = []
 
     private init() {
@@ -115,6 +120,19 @@ public final class CloudSync: ObservableObject {
         guard !started else { return }
         started = true
         transport.changed = { [weak self] in self?.sync() }
+        // Asks iCloud for what it has, well before Settings asks whether
+        // there is anything.
+        _ = transport.read()
+        Publishers.Merge(
+            store.$machineGroup.dropFirst().map { _ in () },
+            store.$identityGroup.dropFirst().map { _ in () }
+        )
+        .sink { [weak self] in
+            // Set from the main thread, like everything the interface shows.
+            guard Thread.isMainThread else { return }
+            MainActor.assumeIsolated { self?.generation += 1 }
+        }
+        .store(in: &observers)
         // The publishers fire before the value is set; by the time the delay
         // has passed the store has it.
         Publishers.Merge(
@@ -156,6 +174,17 @@ public final class CloudSync: ObservableObject {
             state = SyncState()
             isOn = true
             defaults.set(true, forKey: Key.on)
+            generation += 1
+            if !hasStoredData {
+                // iCloud may not have delivered what another device stored
+                // yet; give it a moment before storing over it.
+                status = .syncing
+                Task { [weak self] in
+                    try? await Task.sleep(nanoseconds: 3_000_000_000)
+                    self?.sync()
+                }
+                return
+            }
         }
         sync()
     }
@@ -169,6 +198,7 @@ public final class CloudSync: ObservableObject {
         store.removeDefault(.syncPassphrase)
         state = SyncState()
         store.removeDefault(.syncState)
+        generation += 1
         status = .off
     }
 
@@ -236,10 +266,18 @@ public final class CloudSync: ObservableObject {
         replacesNext = false
 
         let round = input
+        let read = generation
         Task {
             // Deriving a key takes a few hundred milliseconds.
             let outcome = await Task.detached(priority: .utility) { SyncSession.run(round) }.value
-            finish(outcome)
+            if read == generation {
+                finish(outcome)
+            } else {
+                // Something was edited meanwhile: what the round worked out
+                // is about data that is gone.
+                replacesNext = replacesNext || round.replacesRemote
+                pending = true
+            }
             running = false
             if pending {
                 pending = false

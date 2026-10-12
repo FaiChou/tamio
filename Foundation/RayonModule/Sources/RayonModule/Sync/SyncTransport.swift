@@ -70,15 +70,24 @@ final class CloudKeyValueTransport: SyncTransport {
         cloud.synchronize()
     }
 
-    /// Whether the app was signed with a provisioning profile that grants the
-    /// iCloud key-value store. Without it the store silently stays on the
-    /// device, which would look like sync and not be.
+    /// Whether the app is signed for the iCloud key-value store. Without the
+    /// entitlement the store silently stays on the device, which would look
+    /// like sync and not be.
     static let isEntitled: Bool = {
+        let entitlement = "com.apple.developer.ubiquity-kvstore-identifier"
         #if targetEnvironment(macCatalyst) || os(macOS)
-            let profile = Bundle.main.bundleURL.appendingPathComponent("Contents/embedded.provisionprofile")
+            // The Mac says what the running signature holds.
+            guard let task = SecTaskCreateFromSelf(nil) else { return false }
+            return SecTaskCopyValueForEntitlement(task, entitlement as CFString, nil) != nil
         #else
-            let profile = Bundle.main.bundleURL.appendingPathComponent("embedded.mobileprovision")
+            // iOS does not; there the provisioning profile is asked, which the
+            // scripts that sign the app follow.
+            return profileGrants(entitlement)
         #endif
+    }()
+
+    private static func profileGrants(_ entitlement: String) -> Bool {
+        let profile = Bundle.main.bundleURL.appendingPathComponent("embedded.mobileprovision")
         // A signed (CMS) file with a property list inside.
         guard let data = try? Data(contentsOf: profile),
               let start = data.range(of: Data("<?xml".utf8)),
@@ -88,8 +97,8 @@ final class CloudKeyValueTransport: SyncTransport {
               ) as? [String: Any],
               let entitlements = plist["Entitlements"] as? [String: Any]
         else { return false }
-        return entitlements["com.apple.developer.ubiquity-kvstore-identifier"] != nil
-    }()
+        return entitlements[entitlement] != nil
+    }
 }
 
 #if DEBUG
