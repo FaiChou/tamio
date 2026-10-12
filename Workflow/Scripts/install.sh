@@ -190,6 +190,13 @@ install_ios() {
 </dict>
 </plist>
 EOF
+    # A profile that grants iCloud's key-value store (not the wildcard one:
+    # that takes an app id registered with the iCloud capability) lets the
+    # app sync; the app looks for the same thing in the profile.
+    if security cms -D -i "$profile" 2>/dev/null | grep -q 'com.apple.developer.ubiquity-kvstore-identifier'; then
+        /usr/libexec/PlistBuddy \
+            -c "Add :com.apple.developer.ubiquity-kvstore-identifier string $team.$BUNDLE_ID" "$entitlements"
+    fi
     # Nested code first, then the app with its entitlements.
     find "$app" -depth \( -name '*.framework' -o -name '*.dylib' -o -name '*.appex' \) -print0 \
         | while IFS= read -r -d '' nested; do
