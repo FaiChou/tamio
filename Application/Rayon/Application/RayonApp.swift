@@ -143,6 +143,12 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         TraySceneDelegate.discardLeftovers()
         MenubarTool.shared.restore()
         #if DEBUG
+            if ProcessInfo.processInfo.environment["RAYON_PREVIEW_TERMINAL"] != nil,
+               let command = SSHCommandReader(command: "ssh demo@203.0.113.10")
+            {
+                AppRouter.shared.openTerminal(command: command)
+                AppRouter.shared.route = .terminal(TerminalManager.shared.sessionContexts.last!.id)
+            }
             if ProcessInfo.processInfo.environment["RAYON_PREVIEW_MENUBAR"] != nil {
                 MenubarTool.shared.showPreview()
             }
