@@ -14,8 +14,8 @@
 #
 # The iOS app is built unsigned, then signed with the Apple Development
 # certificate and the team's wildcard provisioning profile, so its bundle id
-# needs no registration. A device that is locked, asleep or out of reach is
-# skipped and named at the end.
+# needs no registration. A device this Mac cannot reach (no cable, and not
+# found on the local network) is skipped and named at the end.
 #
 # Environment overrides:
 #   DEVELOPMENT_TEAM      Team for the iOS signature (default: the certificate's)
@@ -106,7 +106,8 @@ print(best[0] or "", end="")
 ' "$team"
 }
 
-# Paired iPhones and iPads, as "identifier<TAB>name".
+# Paired iPhones and iPads, as "identifier<TAB>name<TAB>transport"; the
+# transport is "none" when the Mac has no route to the device.
 paired_devices() {
     local json
     json="$(mktemp)"
@@ -123,7 +124,11 @@ for d in devices:
         continue
     if d.get("connectionProperties", {}).get("pairingState") != "paired":
         continue
-    print(f'{d["identifier"]}\t{d["deviceProperties"]["name"]}')
+    connection = d.get("connectionProperties", {})
+    transport = connection.get("transportType") or "none"
+    if connection.get("tunnelState") == "unavailable":
+        transport = "none"
+    print(f'{d["identifier"]}\t{d["deviceProperties"]["name"]}\t{transport}')
 EOF
     rm -f "$json"
 }
@@ -200,15 +205,20 @@ EOF
         printf 'No paired iPhone or iPad.\n'
         return
     fi
-    while IFS=$'\t' read -r identifier name; do
+    while IFS=$'\t' read -r identifier name transport; do
         printf '%s: ' "$name"
+        if [[ "$transport" == none ]]; then
+            printf 'not reachable\n'
+            failed+=("$name (this Mac has no connection to it: plug it in, or put it on this Wi-Fi, then run '$0 ios')")
+            continue
+        fi
         local output
         if output="$(xcrun devicectl device install app --device "$identifier" "$app" 2>&1)"; then
             printf 'installed\n'
         else
             printf 'not installed\n'
             printf '%s\n' "$output" | grep -E 'ERROR|error' | head -3 | sed 's/^/    /' >&2
-            failed+=("$name (unlock it, keep it awake and on this Mac's network or cable, then run '$0 ios')")
+            failed+=("$name (reachable over $transport, but the install failed; see the error above)")
         fi
     done <<<"$devices"
 }
