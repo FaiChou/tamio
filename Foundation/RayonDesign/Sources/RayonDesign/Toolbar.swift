@@ -190,6 +190,7 @@
         /// Where the selection is drawn: it trails `selection` by the slide.
         @State private var drawn: Value?
         @Namespace private var pill
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         public init(selection: Value, options: [Option], select: @escaping (Value) -> Void) {
             self.selection = selection
@@ -239,7 +240,7 @@
 
         private func slide(to value: Value) {
             RXSegmentedMemory.last[memoryKey] = AnyHashable(value)
-            withAnimation(.rxMove) { drawn = value }
+            withAnimation(reduceMotion ? nil : .rxMove) { drawn = value }
         }
     }
 
