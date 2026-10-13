@@ -96,8 +96,7 @@
     while (1) {
         struct sockaddr_in peeraddr;
         socklen_t peeraddrlen = sizeof(peeraddr);
-        getpeername(STDIN_FILENO, (struct sockaddr*)&peeraddr, &peeraddrlen);
-        int forwardsock = accept(self.representedSocket, (struct sockaddr *)&sin, &peeraddrlen);
+        int forwardsock = accept(self.representedSocket, (struct sockaddr *)&peeraddr, &peeraddrlen);
         if (forwardsock <= 0) { return; }
         NSLog(@"accept is returning child socket %d", forwardsock);
         NSDate *date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.timeout intValue]];
