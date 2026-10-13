@@ -9,6 +9,11 @@ import Combine
 import Foundation
 import NSRemoteShell
 import PropertyWrapper
+#if canImport(UIKit)
+    import UIKit
+#elseif canImport(AppKit)
+    import AppKit
+#endif
 
 public class RayonStore: ObservableObject {
     public init() {
@@ -74,7 +79,25 @@ public class RayonStore: ObservableObject {
         ) {
             portForwardGroup = read
         }
+
+        // Storing is debounced; leaving the foreground writes what is
+        // still waiting.
+        #if canImport(UIKit)
+            observers.append(NotificationCenter.default.addObserver(
+                forName: UIApplication.willResignActiveNotification, object: nil, queue: .main
+            ) { [weak self] _ in
+                self?.flushPendingWrites()
+            })
+        #elseif canImport(AppKit)
+            observers.append(NotificationCenter.default.addObserver(
+                forName: NSApplication.willResignActiveNotification, object: nil, queue: .main
+            ) { [weak self] _ in
+                self?.flushPendingWrites()
+            })
+        #endif
     }
+
+    private var observers: [NSObjectProtocol] = []
 
     // Preserve legacy access from the existing UI and worker queues.
     nonisolated(unsafe) public static let shared = RayonStore()

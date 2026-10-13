@@ -13,6 +13,48 @@ private let documentDecoder = PropertyListDecoder()
 private let crypto: AES = .shared
 private let storeQueue = DispatchQueue(label: "me.mizorewww.rayon.store")
 
+/// How long a change may wait before it is stored: monitoring touches the
+/// machine group every few seconds per machine, and each touch used to be
+/// a full encode + encrypt + write of the whole group.
+private let storeWriteDebounce: TimeInterval = 1.5
+
+/// Coalesces encrypted writes per key. The in-memory value changes at
+/// once; only storing is deferred. Main thread only.
+private final class DeferredStoreWrites {
+    // Main-thread confined by contract, like the store itself.
+    nonisolated(unsafe) static let shared = DeferredStoreWrites()
+
+    private var pending: [RayonStore.UserDefaultKey: (item: DispatchWorkItem, write: () -> Void)] = [:]
+
+    func schedule(_ key: RayonStore.UserDefaultKey, write: @escaping () -> Void) {
+        pending[key]?.item.cancel()
+        let item = DispatchWorkItem { [weak self] in
+            self?.pending[key] = nil
+            storeQueue.async(execute: write)
+        }
+        pending[key] = (item, write)
+        DispatchQueue.main.asyncAfter(deadline: .now() + storeWriteDebounce, execute: item)
+    }
+
+    func cancel(_ key: RayonStore.UserDefaultKey) {
+        pending[key]?.item.cancel()
+        pending[key] = nil
+    }
+
+    /// Stores everything still waiting, in the order the writes were
+    /// scheduled, and returns once the bytes are on disk.
+    func flush() {
+        let entries = pending
+        pending.removeAll()
+        for entry in entries {
+            entry.value.item.cancel()
+            // Serial and first-in-first-out: a write of the same key that
+            // already fired runs first, this newer value lands after it.
+            storeQueue.sync(execute: entry.value.write)
+        }
+    }
+}
+
 public extension RayonStore {
     enum UserDefaultKey: String {
         case identityGroupEncrypted
@@ -87,23 +129,36 @@ public extension RayonStore {
 
     func storeEncryptedDefault<T: Codable>(to key: UserDefaultKey, with data: T) {
         guard !crypto.isEphemeral else { return }
-        storeQueue.async {
-            guard let data = try? documentEncoder.encode(data),
-                  let encrypt = crypto.encrypt(data: data)
-            else {
-                debugPrint("RayonStore: failed to encode or encrypt \(key.rawValue); the change is not stored")
-                return
+        onMainThread {
+            DeferredStoreWrites.shared.schedule(key) {
+                guard let data = try? documentEncoder.encode(data),
+                      let encrypt = crypto.encrypt(data: data)
+                else {
+                    debugPrint("RayonStore: failed to encode or encrypt \(key.rawValue); the change is not stored")
+                    return
+                }
+                UserDefaults
+                    .standard
+                    .set(encrypt, forKey: key.rawValue)
             }
-            UserDefaults
-                .standard
-                .set(encrypt, forKey: key.rawValue)
+        }
+    }
+
+    /// Stores everything the debounce is still holding. For when the app
+    /// goes to the background or is about to terminate.
+    func flushPendingWrites() {
+        onMainThread {
+            DeferredStoreWrites.shared.flush()
         }
     }
 
     /// Removes a stored value, after any write of it that is still queued.
     func removeDefault(_ key: UserDefaultKey) {
-        storeQueue.async {
-            UserDefaults.standard.removeObject(forKey: key.rawValue)
+        onMainThread {
+            DeferredStoreWrites.shared.cancel(key)
+            storeQueue.async {
+                UserDefaults.standard.removeObject(forKey: key.rawValue)
+            }
         }
     }
 
