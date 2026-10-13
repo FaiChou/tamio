@@ -13,7 +13,6 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject var store: RayonStore
-    @ObservedObject var router = AppRouter.shared
 
     var body: some View {
         ScrollView {
@@ -41,7 +40,7 @@ struct HomeView: View {
                 message: "Saved servers keep their address, port and identity, and open a terminal, files or a monitor.",
                 actionTitle: "New Server"
             ) {
-                router.presentNewServer = true
+                AppRouter.shared.presentNewServer = true
             }
             .frame(maxWidth: 640)
             .rxCard()
@@ -265,7 +264,12 @@ struct RecentChip: View {
 
     var title: String {
         switch record {
-        case let .command(command): return command.command.replacingOccurrences(of: "ssh ", with: "")
+        case let .command(command):
+            // Only the leading "ssh " is decoration; one inside the
+            // arguments is part of the command.
+            var title = command.command
+            if title.hasPrefix("ssh ") { title.removeFirst("ssh ".count) }
+            return title
         case let .machine(id):
             let machine = store.machineGroup[id]
             return machine.isNotPlaceholder() ? machine.name : "Deleted server"
