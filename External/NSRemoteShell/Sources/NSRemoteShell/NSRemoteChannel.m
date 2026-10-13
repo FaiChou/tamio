@@ -105,21 +105,26 @@
 - (void)unsafeChannelRead {
     char buffer[BUFFER_SIZE];
     char errorBuffer[BUFFER_SIZE];
-    memset(buffer, 0, sizeof(buffer));
-    memset(errorBuffer, 0, sizeof(errorBuffer));
-    
+
     long rcout = libssh2_channel_read(self.representedChannel, buffer, (ssize_t)sizeof(buffer));
     long rcerr = libssh2_channel_read_stderr(self.representedChannel, errorBuffer, (ssize_t)sizeof(errorBuffer));
-    
+
     if (rcout != LIBSSH2_ERROR_EAGAIN && rcout > 0) {
-        NSString *read = [[NSString alloc] initWithUTF8String:buffer];
-        if (self.receiveDataBlock) {
+        NSString *read = [[NSString alloc] initWithBytes:buffer length:(NSUInteger)rcout encoding:NSUTF8StringEncoding];
+        if (!read) {
+            // a chunk holding invalid or split UTF-8 must not be dropped nor passed as nil
+            read = [[NSString alloc] initWithBytes:buffer length:(NSUInteger)rcout encoding:NSISOLatin1StringEncoding];
+        }
+        if (read && self.receiveDataBlock) {
             self.receiveDataBlock(read);
         }
     }
     if (rcerr != LIBSSH2_ERROR_EAGAIN && rcerr > 0) {
-        NSString *read = [[NSString alloc] initWithUTF8String:errorBuffer];
-        if (self.receiveDataBlock) {
+        NSString *read = [[NSString alloc] initWithBytes:errorBuffer length:(NSUInteger)rcerr encoding:NSUTF8StringEncoding];
+        if (!read) {
+            read = [[NSString alloc] initWithBytes:errorBuffer length:(NSUInteger)rcerr encoding:NSISOLatin1StringEncoding];
+        }
+        if (read && self.receiveDataBlock) {
             self.receiveDataBlock(read);
         }
     }
