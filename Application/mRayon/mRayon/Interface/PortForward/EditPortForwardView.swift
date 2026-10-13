@@ -114,7 +114,11 @@ struct EditPortForwardView: View {
         .onAppear {
             if initializedOnce { return }
             initializedOnce = true
-            onMainThread(delay: 0.1) { // <-- SwiftUI bug here, don't remove
+            // Writing the fields synchronously in onAppear races the
+            // sheet's own first update: on iOS 15 the values could be
+            // swallowed and the form stayed empty. One runloop hop lets
+            // the current update cycle finish before the state changes.
+            DispatchQueue.main.async {
                 if let edit = inEditWith {
                     let read = RayonStore.shared.portForwardGroup[edit]
                     forwardOrientation = read.forwardOrientation
