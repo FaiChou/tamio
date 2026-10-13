@@ -9,8 +9,6 @@ import MachineStatusView
 import RayonModule
 import SwiftUI
 
-private var importData: Data?
-
 struct HomeView: View {
     @EnvironmentObject var store: RayonStore
     @ObservedObject var monitors = MonitorCenter.shared
@@ -86,6 +84,7 @@ struct QuickConnectCard: View {
     @EnvironmentObject var store: RayonStore
     @State private var command = ""
     @State private var suggestion: String?
+    @State private var importData: Data?
 
     var parsed: SSHCommandReader? {
         let trimmed = command.trimmingCharacters(in: .whitespaces)
