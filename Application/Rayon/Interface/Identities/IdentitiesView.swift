@@ -162,7 +162,7 @@ enum IdentityActions {
             message: "Delete identity \(identity.username)?",
             informative: users > 0
                 ? "\(users) server\(users == 1 ? "" : "s") use it and will try automatic identities instead."
-                : "Its password and keys are removed from Rayon.",
+                : "Its password and keys are removed from catussh.",
             confirmTitle: "Delete",
             destructive: true
         ) { confirmed in

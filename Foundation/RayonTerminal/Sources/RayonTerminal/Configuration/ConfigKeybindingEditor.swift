@@ -243,7 +243,7 @@ struct ConfigKeybindingList: View {
                 }
             }
             if hiddenCount > 0 {
-                HelpText("\(hiddenCount) of Ghostty's shortcuts are for windows, tabs and splits, which Rayon manages itself; they are not shown.")
+                HelpText("\(hiddenCount) of Ghostty's shortcuts are for windows, tabs and splits, which catussh manages itself; they are not shown.")
             }
         }
         .confirmationDialog("Restore the default shortcuts?", isPresented: $confirmReset) {

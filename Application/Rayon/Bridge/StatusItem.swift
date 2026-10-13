@@ -61,9 +61,9 @@ final class StatusItem: NSObject, NSPopoverDelegate {
     private func showMenu() {
         close()
         let menu = NSMenu()
-        menu.addItem(withTitle: "Open Rayon", action: #selector(openApp), keyEquivalent: "").target = self
+        menu.addItem(withTitle: "Open catussh", action: #selector(openApp), keyEquivalent: "").target = self
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit Rayon", action: #selector(quit), keyEquivalent: "q").target = self
+        menu.addItem(withTitle: "Quit catussh", action: #selector(quit), keyEquivalent: "q").target = self
         // Shown for this click only, so a left click still opens the popover.
         item.menu = menu
         item.button?.performClick(nil)

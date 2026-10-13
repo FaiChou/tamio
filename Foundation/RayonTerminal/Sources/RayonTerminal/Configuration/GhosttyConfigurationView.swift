@@ -94,7 +94,7 @@ public struct GhosttyConfigurationView: View {
             .confirmationDialog("Reset every terminal setting to its default?", isPresented: $resetConfirm) {
                 Button("Reset", role: .destructive) { model.edit { $0 = ConfigDocument() } }
             } message: {
-                Text("Rayon's General and Connection preferences are kept.")
+                Text("catussh's General and Connection preferences are kept.")
             }
         #endif
     }
@@ -152,7 +152,7 @@ public struct GhosttyConfigurationView: View {
         .confirmationDialog("Reset every terminal setting to its default?", isPresented: $resetConfirm) {
             Button("Reset", role: .destructive) { model.edit { $0 = ConfigDocument() } }
         } message: {
-            Text("Rayon's General and Connection preferences are kept.")
+            Text("catussh's General and Connection preferences are kept.")
         }
         .frame(minWidth: embedded ? 700 : 960, minHeight: 560)
     }

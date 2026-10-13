@@ -73,7 +73,7 @@ enum Mac {
                 return read(former.service, former.account)
             },
             write: { key in
-                bridge?.writeLoginKeychain(service: service, account: account, label: "Rayon Master Crypto Key", value: key) ?? false
+                bridge?.writeLoginKeychain(service: service, account: account, label: "catussh Master Crypto Key", value: key) ?? false
             }
         )
     }

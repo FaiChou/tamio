@@ -216,7 +216,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             terminals ? "Open terminal sessions will be closed." : nil,
         ]
         UIBridge.requiresConfirmation(
-            message: "Quit Rayon?",
+            message: "Quit catussh?",
             informative: consequences.compactMap { $0 }.joined(separator: " "),
             confirmTitle: unsaved ? "Discard Changes and Quit" : "Quit",
             destructive: true,

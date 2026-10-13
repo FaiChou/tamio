@@ -125,7 +125,7 @@ struct SidebarView: View {
                     Label("Settings", systemImage: "gearshape").tag(Route.settings)
                 }
             }
-            .navigationTitle("Rayon")
+            .navigationTitle("catussh")
             .scrollContentBackground(.hidden)
             .background(RXBackdrop().ignoresSafeArea())
         } detail: {
@@ -327,8 +327,8 @@ var appVersion: String {
     let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
     let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
     #if DEBUG
-        return "Rayon \(short) (\(build)) · Debug"
+        return "catussh \(short) (\(build)) · Debug"
     #else
-        return "Rayon \(short) (\(build))"
+        return "catussh \(short) (\(build))"
     #endif
 }

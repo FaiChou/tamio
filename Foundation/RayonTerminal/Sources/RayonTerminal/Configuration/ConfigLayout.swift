@@ -30,7 +30,7 @@ struct ConfigLayout {
     }
 
     struct Category: Identifiable {
-        enum Section: String { case app = "Rayon", terminal = "Terminal", info = "" }
+        enum Section: String { case app = "catussh", terminal = "Terminal", info = "" }
 
         let id: String
         let title: String
@@ -110,7 +110,7 @@ struct ConfigLayout {
             Group("compatibility", "Compatibility", keys: ["title", "enquiry-response", "vt-kam-allowed"]),
         ]),
         Category(id: "about", title: "About", icon: "info.circle", section: .info, groups: [
-            Group("rayon", "Rayon", [.host("about.rayon")]),
+            Group("rayon", "catussh", [.host("about.rayon")]),
             Group("acknowledgements", "Acknowledgements", [.host("about.acknowledgements")]),
         ]),
     ]

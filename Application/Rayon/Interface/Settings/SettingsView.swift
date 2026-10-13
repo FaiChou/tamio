@@ -231,7 +231,7 @@ private struct AboutSettings: View {
 private struct AcknowledgementSettings: View {
     var body: some View {
         RXDividedStack {
-            RXFormRow("Maintained by", description: "mizorewww, continuing Rayon after the original repository was archived.") {
+            RXFormRow("Maintained by", description: "mizorewww — catussh continues Rayon, whose original repository was archived.") {
                 EmptyView()
             }
             RXFormRow("Originally created by", description: "Lakr Aream (@Lakr233) with @__oquery, @zlind0, @unixzii, @82flex and @xnth97. This version is not affiliated with or endorsed by them.") {
@@ -303,7 +303,7 @@ struct AgreementSheet: View {
     @State private var agreed = false
 
     var body: some View {
-        SheetScaffold("Welcome to Rayon") {
+        SheetScaffold("Welcome to catussh") {
             VStack(alignment: .leading, spacing: RX.Space.s3) {
                 ScrollView {
                     Text(AboutDocument.agreement.text)

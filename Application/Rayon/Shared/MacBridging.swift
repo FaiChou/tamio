@@ -84,7 +84,7 @@ import Foundation
     func addStatusItem(_ id: String, toolTip: String, frames: [AnyObject], idleFrame: AnyObject?, onClick: @escaping () -> Void)
     func updateStatusItem(_ id: String, title: String, frameInterval: Double)
     func removeStatusItem(_ id: String)
-    /// Called by "Open Rayon" in a menu bar item's right-click menu.
+    /// Called by "Open catussh" in a menu bar item's right-click menu.
     func setOpenAppHandler(_ handler: @escaping () -> Void)
 
     /// Call before asking UIKit for the scene whose window becomes a popover, so
