@@ -133,7 +133,7 @@ private struct PortForwardRow: View {
             }
         }
         .sheet(isPresented: $openEdit) {
-            NavigationStack { EditPortForwardView { forward.id } }
+            NavigationStack { EditPortForwardView(requestPortForward: forward.id) }
         }
     }
 }

@@ -13,10 +13,10 @@ import SymbolPicker
 struct EditSnippetView: View {
     @Environment(\.dismiss) private var dismiss
 
-    let inEditWith: (() -> (UUID?))?
+    let inEditWith: UUID?
 
-    init(requestIdentity: (() -> (UUID?))? = nil) {
-        inEditWith = requestIdentity
+    init(requestSnippet: UUID? = nil) {
+        inEditWith = requestSnippet
     }
 
     let editor = SCodeEditor()
@@ -58,7 +58,7 @@ struct EditSnippetView: View {
                 RXSectionHeader("Code")
             }
 
-            if let identity = inEditWith?() {
+            if let identity = inEditWith {
                 Section {
                     Button {
                         UIBridge.requiresConfirmation(
@@ -80,7 +80,7 @@ struct EditSnippetView: View {
             if initializedOnce { return }
             initializedOnce = true
             onMainThread(delay: 0.1) { // <-- SwiftUI bug here, don't remove
-                if let edit = inEditWith?() {
+                if let edit = inEditWith {
                     let read = RayonStore.shared.snippetGroup[edit]
                     name = read.name
                     group = read.group
@@ -102,7 +102,7 @@ struct EditSnippetView: View {
             SymbolPicker(symbol: $avatar)
         }
         .rxGroupedList()
-        .navigationTitle(inEditWith?() == nil ? "New Snippet" : "Edit Snippet")
+        .navigationTitle(inEditWith == nil ? "New Snippet" : "Edit Snippet")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
@@ -120,12 +120,7 @@ struct EditSnippetView: View {
             return
         }
 
-        var id = UUID()
-        if let inEditWith = inEditWith,
-           let readId = inEditWith()
-        {
-            id = readId
-        }
+        let id = inEditWith ?? UUID()
 
         var newSnippet = RDSnippet(
             id: id,

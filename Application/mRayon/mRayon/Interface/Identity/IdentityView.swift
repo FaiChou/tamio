@@ -52,7 +52,7 @@ struct IdentityView: View {
                         Section {
                             ForEach(group.identities) { identity in
                                 NavigationLink {
-                                    EditIdentityView { identity.id }
+                                    EditIdentityView(requestIdentity: identity.id)
                                 } label: {
                                     IdentityRow(identity: identity)
                                 }

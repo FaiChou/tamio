@@ -79,7 +79,7 @@ struct SnippetElementView: View {
         .contentShape(Rectangle())
         .onTapGesture { openEdit = true }
         .sheet(isPresented: $openEdit) {
-            NavigationStack { EditSnippetView { identity } }
+            NavigationStack { EditSnippetView(requestSnippet: identity) }
         }
     }
 }

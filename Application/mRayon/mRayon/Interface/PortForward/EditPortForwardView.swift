@@ -11,10 +11,10 @@ import SwiftUI
 struct EditPortForwardView: View {
     @Environment(\.dismiss) private var dismiss
 
-    let inEditWith: (() -> (UUID?))?
+    let inEditWith: UUID?
 
-    init(requestIdentity: (() -> (UUID?))? = nil) {
-        inEditWith = requestIdentity
+    init(requestPortForward: UUID? = nil) {
+        inEditWith = requestPortForward
     }
 
     @State var initializedOnce = false
@@ -115,7 +115,7 @@ struct EditPortForwardView: View {
             if initializedOnce { return }
             initializedOnce = true
             onMainThread(delay: 0.1) { // <-- SwiftUI bug here, don't remove
-                if let edit = inEditWith?() {
+                if let edit = inEditWith {
                     let read = RayonStore.shared.portForwardGroup[edit]
                     forwardOrientation = read.forwardOrientation
                     bindPort = String(read.bindPort)
@@ -145,7 +145,7 @@ struct EditPortForwardView: View {
             return
         }
         var object = generateObject
-        if let edit = inEditWith?() {
+        if let edit = inEditWith {
             object.id = edit
         }
         RayonStore.shared.portForwardGroup.insert(object)

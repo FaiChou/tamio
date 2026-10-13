@@ -11,10 +11,10 @@ import SwiftUI
 struct EditMachineView: View {
     @Environment(\.dismiss) private var dismiss
 
-    let inEditWith: (() -> (UUID?))?
+    let inEditWith: UUID?
 
-    init(requestIdentity: (() -> (UUID?))? = nil) {
-        inEditWith = requestIdentity
+    init(requestMachine: UUID? = nil) {
+        inEditWith = requestMachine
     }
 
     @State var initializedOnce = false
@@ -92,7 +92,7 @@ struct EditMachineView: View {
                 RXSectionHeader("SFTP")
             }
 
-            if let identity = inEditWith?() {
+            if let identity = inEditWith {
                 Section {
                     Button {
                         UIBridge.requiresConfirmation(
@@ -114,7 +114,7 @@ struct EditMachineView: View {
             if initializedOnce { return }
             initializedOnce = true
             onMainThread(delay: 0.1) { // <-- SwiftUI bug here, don't remove
-                if let edit = inEditWith?() {
+                if let edit = inEditWith {
                     let read = RayonStore.shared.machineGroup[edit]
                     remoteAddress = read.remoteAddress
                     remotePort = read.remotePort
@@ -135,7 +135,7 @@ struct EditMachineView: View {
             }
         }
         .rxGroupedList()
-        .navigationTitle(inEditWith?() == nil ? "New Server" : "Edit Server")
+        .navigationTitle(inEditWith == nil ? "New Server" : "Edit Server")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
@@ -165,12 +165,7 @@ struct EditMachineView: View {
             return
         }
 
-        var id = UUID()
-        if let inEditWith = inEditWith,
-           let readId = inEditWith()
-        {
-            id = readId
-        }
+        let id = inEditWith ?? UUID()
 
         var newMachine = RDMachine(
             id: id,

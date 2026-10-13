@@ -11,9 +11,9 @@ import SwiftUI
 struct EditIdentityView: View {
     @Environment(\.dismiss) private var dismiss
 
-    let inEditWith: (() -> (UUID?))?
+    let inEditWith: UUID?
 
-    init(requestIdentity: (() -> (UUID?))? = nil) {
+    init(requestIdentity: UUID? = nil) {
         inEditWith = requestIdentity
     }
 
@@ -103,7 +103,7 @@ struct EditIdentityView: View {
             } header: {
                 RXSectionHeader("Group")
             }
-            if let identity = inEditWith?() {
+            if let identity = inEditWith {
                 Section {
                     Button {
                         UIBridge.requiresConfirmation(
@@ -125,7 +125,7 @@ struct EditIdentityView: View {
             if initializedOnce { return }
             initializedOnce = true
             onMainThread(delay: 0.1) { // <-- SwiftUI bug here, don't remove
-                if let edit = inEditWith?() {
+                if let edit = inEditWith {
                     let read = RayonStore.shared.identityGroup[edit]
                     username = read.username
                     password = read.password
@@ -141,7 +141,7 @@ struct EditIdentityView: View {
             }
         }
         .rxGroupedList()
-        .navigationTitle(inEditWith?() == nil ? "New Identity" : "Edit Identity")
+        .navigationTitle(inEditWith == nil ? "New Identity" : "Edit Identity")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
@@ -234,7 +234,7 @@ struct EditIdentityView: View {
             privateKey = str
         } else {
             UIBridge.requiresConfirmation(
-                message: "File dose not look like a private key, still load the key?"
+                message: "File does not look like a private key, still load the key?"
             ) { confirmed in
                 if confirmed { privateKey = str }
             }
@@ -250,7 +250,7 @@ struct EditIdentityView: View {
             publicKey = str
         } else {
             UIBridge.requiresConfirmation(
-                message: "File dose not look like a public key, still load the key?"
+                message: "File does not look like a public key, still load the key?"
             ) { confirmed in
                 if confirmed { publicKey = str }
             }
@@ -273,12 +273,7 @@ struct EditIdentityView: View {
             return
         }
 
-        var id = UUID()
-        if let inEditWith = inEditWith,
-           let readId = inEditWith()
-        {
-            id = readId
-        }
+        let id = inEditWith ?? UUID()
 
         let newIdentity = RDIdentity(
             id: id,

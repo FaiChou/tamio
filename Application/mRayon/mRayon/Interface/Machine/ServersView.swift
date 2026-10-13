@@ -106,7 +106,7 @@ struct ServersView: View {
             NavigationStack { EditMachineView() }
         }
         .sheet(item: Binding(get: { editing.map(EditTarget.init) }, set: { editing = $0?.id })) { target in
-            NavigationStack { EditMachineView { target.id } }
+            NavigationStack { EditMachineView(requestMachine: target.id) }
         }
     }
 
