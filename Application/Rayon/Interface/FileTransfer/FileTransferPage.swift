@@ -342,10 +342,13 @@ struct FileTransferPage: View {
 
     func handleDrop(_ providers: [NSItemProvider]) -> Bool {
         guard context.connected, !busy else { return false }
+        let matching = providers.filter { $0.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) }
+        // Say no to a drop with nothing we can take, so it lands elsewhere.
+        guard !matching.isEmpty else { return false }
         let group = DispatchGroup()
         nonisolated(unsafe) var urls: [URL] = []
         let lock = NSLock()
-        for provider in providers where provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+        for provider in matching {
             group.enter()
             _ = provider.loadObject(ofClass: URL.self) { url, _ in
                 if let url {
