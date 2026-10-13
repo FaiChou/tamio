@@ -51,8 +51,8 @@ public extension ServerStatus {
             self.cores = build
         }
 
-        public init?(withRemote shell: NSRemoteShell) {
-            let comp = downloadResultFrom(shell: shell, command: .obtainProcessInfo)
+        public init?(withRemote shell: NSRemoteShell, timeout: Double) {
+            let comp = downloadResultFrom(shell: shell, command: .obtainProcessInfo, timeout: timeout)
                 .components(separatedBy: outputSeparator)
             guard comp.count == 2 else { return nil }
 

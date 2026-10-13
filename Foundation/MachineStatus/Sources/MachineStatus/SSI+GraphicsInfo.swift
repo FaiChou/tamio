@@ -35,8 +35,8 @@ public extension ServerStatus {
             units = []
         }
 
-        public init?(withRemote shell: NSRemoteShell) {
-            let downloadResult = downloadResultFrom(shell: shell, command: .obtainGraphicsInfo)
+        public init?(withRemote shell: NSRemoteShell, timeout: Double) {
+            let downloadResult = downloadResultFrom(shell: shell, command: .obtainGraphicsInfo, timeout: timeout)
             guard let coder = (
                 try? XMLDecoder().decode(
                     GraphicsInfo.self,

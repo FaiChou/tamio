@@ -58,8 +58,8 @@ public extension ServerStatus {
             self.elements = elements
         }
 
-        public init?(withRemote shell: NSRemoteShell) {
-            let downloadResult = downloadResultFrom(shell: shell, command: .obtainFileSystemInfo)
+        public init?(withRemote shell: NSRemoteShell, timeout: Double) {
+            let downloadResult = downloadResultFrom(shell: shell, command: .obtainFileSystemInfo, timeout: timeout)
             /*
              Filesystem      Size  Used Avail Use% Mounted on
              udev            935M     0  935M   0% /dev

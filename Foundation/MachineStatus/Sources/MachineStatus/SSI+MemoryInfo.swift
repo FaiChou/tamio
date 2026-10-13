@@ -59,8 +59,8 @@ public extension ServerStatus {
             }
         }
 
-        public init?(withRemote shell: NSRemoteShell) {
-            let downloadResult = downloadResultFrom(shell: shell, command: .obtainMemoryInfo)
+        public init?(withRemote shell: NSRemoteShell, timeout: Double) {
+            let downloadResult = downloadResultFrom(shell: shell, command: .obtainMemoryInfo, timeout: timeout)
             let info = ProcParsers.parseMeminfo(downloadResult)
             self.init(
                 total: info["MemTotal".uppercased()] ?? 0,

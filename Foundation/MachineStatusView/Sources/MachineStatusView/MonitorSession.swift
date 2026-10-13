@@ -178,7 +178,7 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
                         RayonStore.shared.machineGroup[self.machine.id] = read
                     }
                 }
-                status.requestInfoAndWait(with: shell)
+                status.requestInfoAndWait(with: shell, timeout: max(10, Double(refreshInterval * 2)))
                 // The status updates were queued on main; record after them.
                 onMainThread {
                     self.history.record(self.status)

@@ -69,14 +69,14 @@ public class ServerStatus: ObservableObject, Equatable {
             """
     }
 
-    static func downloadResultFrom(shell: NSRemoteShell, command: ScriptCollection) -> String {
+    static func downloadResultFrom(shell: NSRemoteShell, command: ScriptCollection, timeout: Double) -> String {
         guard shell.isConnected, shell.isAuthenticated else {
             return ""
         }
         var result = ""
         shell.beginExecute(
             withCommand: command.rawValue,
-            withTimeout: NSNumber(value: 0),
+            withTimeout: NSNumber(value: timeout),
             withOnCreate: {},
             withOutput: { result.append($0) },
             withContinuationHandler: nil
@@ -102,13 +102,16 @@ public class ServerStatus: ObservableObject, Equatable {
             lhs.graphics == rhs.graphics
     }
 
-    public func requestInfoAndWait(with remote: NSRemoteShell) {
+    /// Refreshes every info group, bounding each remote command by
+    /// `timeout` seconds so a hung probe (a driverless `nvidia-smi`, say)
+    /// cannot freeze the monitor loop forever.
+    public func requestInfoAndWait(with remote: NSRemoteShell, timeout: Double) {
         let group = DispatchGroup()
         let queue = DispatchQueue(label: "me.mizorewww.rayon.info", attributes: .concurrent)
         group.enter()
         queue.async { [weak self] in
             defer { group.leave() }
-            let info = ProcessorInfo(withRemote: remote) ?? .init()
+            let info = ProcessorInfo(withRemote: remote, timeout: timeout) ?? .init()
             onMainThread { [weak self] in
                 self?.processor = info
             }
@@ -116,7 +119,7 @@ public class ServerStatus: ObservableObject, Equatable {
         group.enter()
         queue.async { [weak self] in
             defer { group.leave() }
-            let info = FileSystemInfo(withRemote: remote) ?? .init()
+            let info = FileSystemInfo(withRemote: remote, timeout: timeout) ?? .init()
             onMainThread { [weak self] in
                 self?.fileSystem = info
             }
@@ -124,7 +127,7 @@ public class ServerStatus: ObservableObject, Equatable {
         group.enter()
         queue.async { [weak self] in
             defer { group.leave() }
-            let info = MemoryInfo(withRemote: remote) ?? .init()
+            let info = MemoryInfo(withRemote: remote, timeout: timeout) ?? .init()
             onMainThread { [weak self] in
                 self?.memory = info
             }
@@ -132,7 +135,7 @@ public class ServerStatus: ObservableObject, Equatable {
         group.enter()
         queue.async { [weak self] in
             defer { group.leave() }
-            let info = SystemInfo(withRemote: remote) ?? .init()
+            let info = SystemInfo(withRemote: remote, timeout: timeout) ?? .init()
             onMainThread { [weak self] in
                 self?.system = info
             }
@@ -140,7 +143,7 @@ public class ServerStatus: ObservableObject, Equatable {
         group.enter()
         queue.async { [weak self] in
             defer { group.leave() }
-            let info = NetworkInfo(withRemote: remote) ?? .init()
+            let info = NetworkInfo(withRemote: remote, timeout: timeout) ?? .init()
             onMainThread { [weak self] in
                 self?.network = info
             }
@@ -148,7 +151,7 @@ public class ServerStatus: ObservableObject, Equatable {
         group.enter()
         queue.async { [weak self] in
             defer { group.leave() }
-            let info = GraphicsInfo(withRemote: remote)
+            let info = GraphicsInfo(withRemote: remote, timeout: timeout)
             onMainThread { [weak self] in
                 self?.graphics = info
             }

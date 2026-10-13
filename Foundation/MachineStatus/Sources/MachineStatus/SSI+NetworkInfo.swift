@@ -46,8 +46,8 @@ public extension ServerStatus {
             self.elements = elements
         }
 
-        public init?(withRemote shell: NSRemoteShell) {
-            let downloadResult = downloadResultFrom(shell: shell, command: .obtainNetworkInfo)
+        public init?(withRemote shell: NSRemoteShell, timeout: Double) {
+            let downloadResult = downloadResultFrom(shell: shell, command: .obtainNetworkInfo, timeout: timeout)
             let sep = downloadResult.components(separatedBy: outputSeparator)
             if sep.count != 2 { return nil }
             let priv = sep[0]

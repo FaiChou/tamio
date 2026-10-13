@@ -49,7 +49,7 @@ public extension ServerStatus {
             self.load15 = load15
         }
 
-        public init?(withRemote shell: NSRemoteShell) {
+        public init?(withRemote shell: NSRemoteShell, timeout: Double) {
             func buildHostname(intake: String) -> String {
                 intake.replacingOccurrences(of: "\n", with: "")
             }
@@ -71,7 +71,7 @@ public extension ServerStatus {
             group.enter()
             DispatchQueue.global().async {
                 defer { group.leave() }
-                let intake = downloadResultFrom(shell: shell, command: .obtainHostname)
+                let intake = downloadResultFrom(shell: shell, command: .obtainHostname, timeout: timeout)
                 hostname = buildHostname(intake: intake)
             }
 
@@ -79,7 +79,7 @@ public extension ServerStatus {
             group.enter()
             DispatchQueue.global().async {
                 defer { group.leave() }
-                let intake = downloadResultFrom(shell: shell, command: .obtainUptime)
+                let intake = downloadResultFrom(shell: shell, command: .obtainUptime, timeout: timeout)
                 uptime = buildUptime(intake: intake)
             }
 
@@ -92,7 +92,7 @@ public extension ServerStatus {
 
             DispatchQueue.global().async {
                 defer { group.leave() }
-                let intake = downloadResultFrom(shell: shell, command: .obtainLoadavg)
+                let intake = downloadResultFrom(shell: shell, command: .obtainLoadavg, timeout: timeout)
                 let get = ProcParsers.parseLoadavg(intake)
                 runningProcess = get.runningProcess
                 totalProcess = get.totalProcess
@@ -105,7 +105,7 @@ public extension ServerStatus {
             group.enter()
             DispatchQueue.global().async {
                 defer { group.leave() }
-                let intake = downloadResultFrom(shell: shell, command: .obtainRelease)
+                let intake = downloadResultFrom(shell: shell, command: .obtainRelease, timeout: timeout)
                 release = ProcParsers.parseOsReleaseName(intake)
             }
 
