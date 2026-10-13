@@ -47,20 +47,17 @@ enum RayonUtil {
     }
 
     /// Presents a SwiftUI view in a form-sheet hosting controller over the
-    /// topmost view controller. Shared by all modal picker flows.
-    /// - Returns: false when there is no window to present from.
-    @discardableResult
-    static func presentModalSheet<Content: View>(rootView: Content) -> Bool {
+    /// topmost view controller. Shared by all modal picker flows. When the
+    /// window cannot take a modal right now — a sheet is still animating
+    /// out — the present waits in PresentationQueue and `completion` hears
+    /// whether it went up.
+    static func presentModalSheet<Content: View>(rootView: Content, completion: ((Bool) -> Void)? = nil) {
         let controller = UIHostingController(rootView: rootView)
         controller.isModalInPresentation = true
         controller.modalTransitionStyle = .coverVertical
         controller.modalPresentationStyle = .formSheet
         controller.preferredContentSize = preferredPopOverSize
-        guard let presenter = UIWindow.shutUpKeyWindow?.topMostViewController else {
-            return false
-        }
-        presenter.present(controller, animated: true, completion: nil)
-        return true
+        PresentationQueue.present(controller, completion: completion)
     }
 
     static func selectIdentity() async -> RDIdentity.ID? {
@@ -73,8 +70,10 @@ enum RayonUtil {
                     }
                 }
                 .expended()
-                if !presentModalSheet(rootView: picker) {
-                    continuation.resume(returning: nil)
+                presentModalSheet(rootView: picker) { presented in
+                    // No window took the picker: report no selection
+                    // instead of leaking the continuation.
+                    if !presented { continuation.resume(returning: nil) }
                 }
             }
         }
@@ -90,8 +89,8 @@ enum RayonUtil {
                     }, canSelectMany: canSelectMany)
                 }
                 .expended()
-                if !presentModalSheet(rootView: picker) {
-                    continuation.resume(returning: [])
+                presentModalSheet(rootView: picker) { presented in
+                    if !presented { continuation.resume(returning: []) }
                 }
             }
         }
@@ -108,8 +107,7 @@ enum RayonUtil {
             guard !machineIds.isEmpty else {
                 return
             }
-            // so that picker is closed
-            onMainThread(delay: 0.6) {
+            onMainThread {
                 let runner = NavigationStack {
                     let context = SnippetExecuteContext(snippet: snippet, machineGroup: machineIds.map { machineId in
                         RayonStore.shared.machineGroup[machineId]
@@ -118,6 +116,8 @@ enum RayonUtil {
                 }
                 .expended()
                 .navigationBarTitleDisplayMode(.inline)
+                // The picker sheet is still animating out when the
+                // selection comes back; the queue waits it out.
                 presentModalSheet(rootView: runner)
             }
         }
