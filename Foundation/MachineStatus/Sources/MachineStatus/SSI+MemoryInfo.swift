@@ -15,14 +15,14 @@ public extension ServerStatus {
     struct MemoryInfo: Codable, Equatable, Identifiable {
         public var id = UUID()
 
-        public let memTotal: Float
-        public let memFree: Float
-        public let memBuffers: Float
-        public let memCached: Float
-        public let swapTotal: Float
-        public let swapFree: Float
-        public let phyUsed: Float
-        public let swapUsed: Float
+        public let memTotal: Double
+        public let memFree: Double
+        public let memBuffers: Double
+        public let memCached: Double
+        public let swapTotal: Double
+        public let swapFree: Double
+        public let phyUsed: Double
+        public let swapUsed: Double
         public init() {
             memTotal = 0
             memFree = 0
@@ -34,7 +34,7 @@ public extension ServerStatus {
             swapUsed = 0
         }
 
-        public init(total: Float, free: Float, buffers: Float, cached: Float, swapTotal: Float, swapFree: Float) {
+        public init(total: Double, free: Double, buffers: Double, cached: Double, swapTotal: Double, swapFree: Double) {
             memTotal = total
             memFree = free
             memBuffers = buffers

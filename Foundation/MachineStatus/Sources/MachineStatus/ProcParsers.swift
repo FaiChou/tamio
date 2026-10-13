@@ -13,8 +13,8 @@ enum ProcParsers {
     // MARK: - /proc/meminfo
 
     /// Parses `/proc/meminfo` content into a keyed dictionary (values in kB).
-    static func parseMeminfo(_ raw: String) -> [String: Float] {
-        var info = [String: Float]()
+    static func parseMeminfo(_ raw: String) -> [String: Double] {
+        var info = [String: Double]()
         for line in raw.components(separatedBy: "\n") where line.count > 0 {
             var line = line
             while line.contains("  ") {
@@ -25,7 +25,7 @@ enum ProcParsers {
             guard cut.count == 3, cut[2].uppercased() == "KB" else {
                 continue
             }
-            info[cut[0].uppercased()] = Float(cut[1])
+            info[cut[0].uppercased()] = Double(cut[1])
         }
         return info
     }
