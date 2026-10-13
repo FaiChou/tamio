@@ -19,7 +19,7 @@ public class FileTransferManager: ObservableObject {
     @Published public var transfers: [FileTransferContext] = []
 
     public func begin(for machineId: RDMachine.ID, force: Bool = false) {
-        assert(Thread.isMainThread, "accessing to property terminals requires main thread")
+        assert(Thread.isMainThread, "accessing to property transfers requires main thread")
         debugPrint("\(self) \(#function) \(machineId)")
         if !force {
             for transfer in transfers where transfer.machine.id == machineId {
