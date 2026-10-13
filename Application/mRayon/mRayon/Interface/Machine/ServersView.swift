@@ -217,7 +217,9 @@ enum ServerActions {
         do {
             let existing = MonitorCenter.shared.session(for: machine)
             let session = try MonitorCenter.shared.begin(for: machine)
-            guard existing == nil || RayonStore.shared.openInterfaceAutomatically else { return }
+            // An existing monitor is brought forward even when sessions do
+            // not open automatically; a new one waits for the setting.
+            guard existing != nil || RayonStore.shared.openInterfaceAutomatically else { return }
             let host = UIHostingController(rootView: DefaultModalPresenter {
                 MonitorView(session: session)
             }.environmentObject(RayonStore.shared))
