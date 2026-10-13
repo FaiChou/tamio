@@ -39,12 +39,11 @@ extension UIViewController {
            !(next is UIAlertController),
            !(next is UIActivityViewController)
         {
-            CATransaction.begin()
             navigator.pushViewController(next, animated: true)
-            CATransaction.commit()
         } else {
+            // The caller chooses the presentation style; the terminal asks
+            // for .fullScreen on iPhone.
             next.modalTransitionStyle = .coverVertical
-            next.modalPresentationStyle = .formSheet
             present(next, animated: true, completion: nil)
         }
     }

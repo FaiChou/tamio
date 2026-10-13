@@ -151,7 +151,6 @@ class TerminalContext: ObservableObject, Identifiable, Equatable {
             let host = UIHostingController(
                 rootView: DefaultPresent(context: self)
             )
-//            host.isModalInPresentation = true
             host.modalTransitionStyle = .coverVertical
             // iPhone: the terminal is full screen with the key bar above the keyboard.
             host.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .phone ? .fullScreen : .formSheet
