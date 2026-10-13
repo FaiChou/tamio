@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import NSRemoteShell
 
 public extension ServerStatus {
     /// 服务器 文件系统 信息
@@ -56,13 +55,13 @@ public extension ServerStatus {
             self.elements = elements
         }
 
-        public init?(withRemote shell: NSRemoteShell, timeout: Double) {
-            let downloadResult = downloadResultFrom(shell: shell, command: .obtainFileSystemInfo, timeout: timeout)
+        /// Builds from `df -Pk` output, mounts sorted by mount point.
+        public init(dfPk: String) {
             /*
              Filesystem     1024-blocks      Used Available Capacity Mounted on
              /dev/sda1        102687776  42301880  55049164      42% /
              */
-            let result = ProcParsers.parseDfPk(downloadResult).sorted(by: { a, b in
+            let result = ProcParsers.parseDfPk(dfPk).sorted(by: { a, b in
                 a.mountPoint < b.mountPoint
             })
             self.init(elements: result)

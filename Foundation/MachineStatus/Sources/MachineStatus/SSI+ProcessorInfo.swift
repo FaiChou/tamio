@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import NSRemoteShell
 
 public extension ServerStatus {
     /// 服务器 CPU 信息
@@ -49,13 +48,12 @@ public extension ServerStatus {
             self.cores = build
         }
 
-        public init?(withRemote shell: NSRemoteShell, timeout: Double) {
-            let comp = downloadResultFrom(shell: shell, command: .obtainProcessInfo, timeout: timeout)
-                .components(separatedBy: outputSeparator)
-            guard comp.count == 2 else { return nil }
-
-            let resultPriv = ProcParsers.parseProcStat(comp[0])
-            let resultCurr = ProcParsers.parseProcStat(comp[1])
+        /// Builds from two `/proc/stat` payloads sampled about a second
+        /// apart; nil when either side is missing the aggregate cpu row.
+        public init?(statBefore: String?, statAfter: String?) {
+            guard let statBefore, let statAfter else { return nil }
+            let resultPriv = ProcParsers.parseProcStat(statBefore)
+            let resultCurr = ProcParsers.parseProcStat(statAfter)
 
             guard let privSum = resultPriv.summary,
                   let currSum = resultCurr.summary

@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import NSRemoteShell
 
 public extension ServerStatus {
     /// 服务器 RAM 信息
@@ -57,9 +56,8 @@ public extension ServerStatus {
             }
         }
 
-        public init?(withRemote shell: NSRemoteShell, timeout: Double) {
-            let downloadResult = downloadResultFrom(shell: shell, command: .obtainMemoryInfo, timeout: timeout)
-            let info = ProcParsers.parseMeminfo(downloadResult)
+        public init(meminfo: String) {
+            let info = ProcParsers.parseMeminfo(meminfo)
             self.init(
                 total: info["MemTotal".uppercased()] ?? 0,
                 free: info["MemFree".uppercased()] ?? 0,

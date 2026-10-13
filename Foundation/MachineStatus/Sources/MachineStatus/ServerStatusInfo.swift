@@ -24,57 +24,76 @@ func onMainThread(delay: Double = 0, run: @escaping () -> Void) {
     run()
 }
 
+/// Hands a value out of a @Sendable dispatch block without capturing a
+/// var, which Swift 6 diagnoses.
+private final class ConcurrentValue<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Value
+
+    init(_ value: Value) {
+        self.value = value
+    }
+
+    func store(_ newValue: Value) {
+        lock.lock()
+        value = newValue
+        lock.unlock()
+    }
+
+    func load() -> Value {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
+    }
+}
+
 public class ServerStatus: ObservableObject, Equatable {
     public init() {}
 
-    static let outputSeparator = "[*******]"
+    /// The merged monitor script echoes this marker on its own line ahead
+    /// of each section; `ProcParsers.splitMonitorSections` only opens a
+    /// section on a full-line match, which kernel /proc payloads, df rows
+    /// and os-release assignments can never produce. That is what the old
+    /// "[*******]" token could not promise inside two samples of one file.
+    static let sectionMarkerPrefix = "<<<RAYON-SECTION:"
+    static let sectionMarkerSuffix = ">>>"
 
-    enum ScriptCollection: String, CaseIterable {
-        case obtainProcessInfo =
-            """
-             /bin/cat /proc/stat && /bin/sleep 1 && echo '[*******]' && /bin/cat /proc/stat
-            """
-        case obtainMemoryInfo =
-            """
-             /bin/cat /proc/meminfo
-            """
-        case obtainFileSystemInfo =
-            """
-             /bin/df -Pk
-            """
-        case obtainHostname =
-            """
-             ([ -f /proc/sys/kernel/hostname ] && cat /proc/sys/kernel/hostname )|| echo "localhost"
-            """
-        case obtainUptime =
-            """
-             /bin/cat /proc/uptime
-            """
-        case obtainLoadavg =
-            """
-             /bin/cat /proc/loadavg
-            """
-        case obtainRelease =
-            """
-             /bin/cat /etc/os-release
-            """
-        case obtainNetworkInfo =
-            """
-             /bin/cat /proc/net/dev && /bin/sleep 1 && echo '[*******]' && /bin/cat /proc/net/dev
-            """
-        case obtainGraphicsInfo =
-            """
-             nvidia-smi -q -x | tr -d "[\t\n]" || echo "no nvidia gpu available"
-            """
+    /// `nvidia-smi` stays a command of its own: it is slow and missing on
+    /// most machines, and its failure must not cost the other sections.
+    static let graphicsScript = "nvidia-smi -q -x | tr -d \"[\\t\\n]\" || echo \"no nvidia gpu available\""
+
+    /// One remote run that samples the CPU and network counters twice one
+    /// second apart and reads every other /proc payload behind markers, so
+    /// a refresh costs one exec channel instead of nine and one remote
+    /// second instead of two.
+    static func monitorScript() -> String {
+        let sections = [
+            ("cpu-a", "/bin/cat /proc/stat"),
+            ("net-a", "/bin/cat /proc/net/dev"),
+            ("wait", "/bin/sleep 1"),
+            ("cpu-b", "/bin/cat /proc/stat"),
+            ("net-b", "/bin/cat /proc/net/dev"),
+            ("mem", "/bin/cat /proc/meminfo"),
+            ("df", "/bin/df -Pk"),
+            ("uptime", "/bin/cat /proc/uptime"),
+            ("loadavg", "/bin/cat /proc/loadavg"),
+            ("hostname", "([ -f /proc/sys/kernel/hostname ] && cat /proc/sys/kernel/hostname )|| echo \"localhost\""),
+            ("os-release", "/bin/cat /etc/os-release"),
+        ]
+        return sections
+            .map { name, command in
+                "echo '\(sectionMarkerPrefix)\(name)\(sectionMarkerSuffix)'\n\(command)"
+            }
+            .joined(separator: "\n")
     }
 
-    static func downloadResultFrom(shell: NSRemoteShell, command: ScriptCollection, timeout: Double) -> String {
+    static func downloadResultFrom(shell: NSRemoteShell, command: String, timeout: Double) -> String {
         guard shell.isConnected, shell.isAuthenticated else {
             return ""
         }
         var result = ""
         shell.beginExecute(
-            withCommand: command.rawValue,
+            withCommand: command,
             withTimeout: NSNumber(value: timeout),
             withOnCreate: {},
             withOutput: { result.append($0) },
@@ -103,60 +122,60 @@ public class ServerStatus: ObservableObject, Equatable {
 
     private static let queue = DispatchQueue(label: "me.mizorewww.rayon.info", attributes: .concurrent)
 
-    /// Refreshes every info group, bounding each remote command by
-    /// `timeout` seconds so a hung probe (a driverless `nvidia-smi`, say)
-    /// cannot freeze the monitor loop forever.
+    /// Runs the merged monitor script and the GPU probe on two channels,
+    /// then parses every section on its own: one section going missing
+    /// (a hung `nvidia-smi`, a server without /proc) empties only its
+    /// model. `timeout` bounds each channel so a hung probe cannot freeze
+    /// the monitor loop forever.
     public func requestInfoAndWait(with remote: NSRemoteShell, timeout: Double) {
+        // The shell multiplexes channels internally; claiming it Sendable
+        // is for the compiler, like the legacy model callbacks.
+        nonisolated(unsafe) let remote = remote
         let group = DispatchGroup()
         let queue = Self.queue
+
+        let mergedOutput = ConcurrentValue("")
         group.enter()
-        queue.async { [weak self] in
+        queue.async {
             defer { group.leave() }
-            let info = ProcessorInfo(withRemote: remote, timeout: timeout) ?? .init()
-            onMainThread { [weak self] in
-                self?.processor = info
-            }
+            mergedOutput.store(Self.downloadResultFrom(shell: remote, command: Self.monitorScript(), timeout: timeout))
         }
+
+        let graphicsResult = ConcurrentValue<GraphicsInfo?>(nil)
         group.enter()
-        queue.async { [weak self] in
+        queue.async {
             defer { group.leave() }
-            let info = FileSystemInfo(withRemote: remote, timeout: timeout) ?? .init()
-            onMainThread { [weak self] in
-                self?.fileSystem = info
-            }
+            graphicsResult.store(GraphicsInfo(withRemote: remote, timeout: timeout))
         }
-        group.enter()
-        queue.async { [weak self] in
-            defer { group.leave() }
-            let info = MemoryInfo(withRemote: remote, timeout: timeout) ?? .init()
-            onMainThread { [weak self] in
-                self?.memory = info
-            }
-        }
-        group.enter()
-        queue.async { [weak self] in
-            defer { group.leave() }
-            let info = SystemInfo(withRemote: remote, timeout: timeout) ?? .init()
-            onMainThread { [weak self] in
-                self?.system = info
-            }
-        }
-        group.enter()
-        queue.async { [weak self] in
-            defer { group.leave() }
-            let info = NetworkInfo(withRemote: remote, timeout: timeout) ?? .init()
-            onMainThread { [weak self] in
-                self?.network = info
-            }
-        }
-        group.enter()
-        queue.async { [weak self] in
-            defer { group.leave() }
-            let info = GraphicsInfo(withRemote: remote, timeout: timeout)
-            onMainThread { [weak self] in
-                self?.graphics = info
-            }
-        }
+
         group.wait()
+
+        let sections = ProcParsers.splitMonitorSections(mergedOutput.load())
+        let processor = ProcessorInfo(statBefore: sections["cpu-a"], statAfter: sections["cpu-b"]) ?? .init()
+        let network = NetworkInfo(netDevBefore: sections["net-a"], netDevAfter: sections["net-b"]) ?? .init()
+        let memory = MemoryInfo(meminfo: sections["mem"] ?? "")
+        let fileSystem = FileSystemInfo(dfPk: sections["df"] ?? "")
+        let load = ProcParsers.parseLoadavg(sections["loadavg"] ?? "")
+        let system = SystemInfo(
+            release: ProcParsers.parseOsReleaseName(sections["os-release"] ?? ""),
+            uptimeInSec: ProcParsers.parseUptime(sections["uptime"] ?? ""),
+            hostname: (sections["hostname"] ?? "").replacingOccurrences(of: "\n", with: ""),
+            runningProcs: load.runningProcess,
+            totalProcs: load.totalProcess,
+            load1: load.load1avg,
+            load5: load.load5avg,
+            load15: load.load15avg
+        )
+        let graphics = graphicsResult.load()
+
+        onMainThread { [weak self] in
+            guard let self else { return }
+            self.processor = processor
+            self.fileSystem = fileSystem
+            self.memory = memory
+            self.system = system
+            self.network = network
+            self.graphics = graphics
+        }
     }
 }

@@ -148,6 +148,72 @@ final class ProcParsersTests: XCTestCase {
         XCTAssertEqual(load.totalProcess, 0)
     }
 
+    // MARK: - merged monitor script
+
+    private let mergedOutputFixture = """
+    <<<RAYON-SECTION:cpu-a>>>
+    cpu  100 0 200 1600 50 0 10 0 0 0
+    cpu0 50 0 100 800 25 0 5 0 0 0
+    <<<RAYON-SECTION:net-a>>>
+    Inter-|   Receive                                                |  Transmit
+     face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
+        lo: 1000      10    0    0    0     0          0         0     1000      10    0    0    0     0       0          0
+      eth0: 5000      50    0    0    0     0          0         0     2000      20    0    0    0     0       0          0
+    <<<RAYON-SECTION:wait>>>
+    <<<RAYON-SECTION:cpu-b>>>
+    cpu  200 0 300 3200 100 0 20 0 0 0
+    cpu0 100 0 150 1600 50 0 10 0 0 0
+    <<<RAYON-SECTION:uptime>>>
+    773229.50 1531748.20
+    <<<RAYON-SECTION:hostname>>>
+    web-01
+    """
+
+    func testSplitMonitorSectionsAssignsPayloads() {
+        let sections = ProcParsers.splitMonitorSections(mergedOutputFixture)
+        XCTAssertTrue(sections["cpu-a"]?.contains("cpu0 50") == true)
+        XCTAssertTrue(sections["net-a"]?.contains("eth0:") == true)
+        XCTAssertEqual(sections["uptime"]?.trimmingCharacters(in: .whitespacesAndNewlines), "773229.50 1531748.20")
+        XCTAssertEqual(sections["hostname"]?.trimmingCharacters(in: .whitespacesAndNewlines), "web-01")
+        // The sleep marker opens a section with no payload.
+        XCTAssertEqual(sections["wait"]?.trimmingCharacters(in: .whitespacesAndNewlines), "")
+        XCTAssertFalse(sections["cpu-b"]?.contains("cpu0 50") == true)
+    }
+
+    func testSplitMonitorSectionsIgnoresInlineMarkerLookalikes() {
+        // Only a full-line marker opens a section; payload text containing
+        // the marker inside a longer line must not split.
+        let raw = """
+        <<<RAYON-SECTION:df>>>
+        /dev/sda1 100 50 50 50% /mnt/<<<RAYON-SECTION:mem>>>-disk
+        """
+        let sections = ProcParsers.splitMonitorSections(raw)
+        XCTAssertNil(sections["mem"])
+        XCTAssertTrue(sections["df"]?.contains("/mnt/<<<RAYON-SECTION:mem>>>-disk") == true)
+    }
+
+    func testMonitorScriptSamplesCountersTwiceAroundOneSleep() {
+        let script = ServerStatus.monitorScript()
+        XCTAssertEqual(script.components(separatedBy: "/bin/cat /proc/stat").count - 1, 2)
+        XCTAssertEqual(script.components(separatedBy: "/bin/cat /proc/net/dev").count - 1, 2)
+        XCTAssertEqual(script.components(separatedBy: "/bin/sleep 1").count - 1, 1)
+        for section in ["cpu-a", "net-a", "cpu-b", "net-b", "mem", "df", "uptime", "loadavg", "hostname", "os-release"] {
+            XCTAssertTrue(
+                script.contains("echo '\(ServerStatus.sectionMarkerPrefix)\(section)\(ServerStatus.sectionMarkerSuffix)'"),
+                "missing marker for \(section)"
+            )
+        }
+    }
+
+    // MARK: - /proc/uptime
+
+    func testParseUptimeReadsFirstField() {
+        XCTAssertEqual(ProcParsers.parseUptime("773229.50 1531748.20\n"), 773_229.5, accuracy: 0.001)
+        XCTAssertEqual(ProcParsers.parseUptime("42"), 42)
+        XCTAssertEqual(ProcParsers.parseUptime("garbage"), 0)
+        XCTAssertEqual(ProcParsers.parseUptime(""), 0)
+    }
+
     // MARK: - df -Pk
 
     private let dfPkFixture = """

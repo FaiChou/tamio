@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import NSRemoteShell
 
 public extension ServerStatus {
     /// 服务器 系统 信息
@@ -45,80 +44,6 @@ public extension ServerStatus {
             self.load1 = load1
             self.load5 = load5
             self.load15 = load15
-        }
-
-        public init?(withRemote shell: NSRemoteShell, timeout: Double) {
-            func buildHostname(intake: String) -> String {
-                intake.replacingOccurrences(of: "\n", with: "")
-            }
-            func buildUptime(intake: String) -> Double {
-                let get = intake
-                let raw = get
-                    .components(separatedBy: " ")
-                    .first ?? ""
-                guard let val = Double(raw)
-                else {
-                    return 0
-                }
-                return val
-            }
-
-            let group = DispatchGroup()
-
-            var hostname = "Unknown Host Name"
-            group.enter()
-            DispatchQueue.global().async {
-                defer { group.leave() }
-                let intake = downloadResultFrom(shell: shell, command: .obtainHostname, timeout: timeout)
-                hostname = buildHostname(intake: intake)
-            }
-
-            var uptime: Double = 0
-            group.enter()
-            DispatchQueue.global().async {
-                defer { group.leave() }
-                let intake = downloadResultFrom(shell: shell, command: .obtainUptime, timeout: timeout)
-                uptime = buildUptime(intake: intake)
-            }
-
-            var runningProcess = 0
-            var totalProcess = 0
-            var load1avg: Float = 0
-            var load5avg: Float = 0
-            var load15avg: Float = 0
-            group.enter()
-
-            DispatchQueue.global().async {
-                defer { group.leave() }
-                let intake = downloadResultFrom(shell: shell, command: .obtainLoadavg, timeout: timeout)
-                let get = ProcParsers.parseLoadavg(intake)
-                runningProcess = get.runningProcess
-                totalProcess = get.totalProcess
-                load1avg = get.load1avg
-                load5avg = get.load5avg
-                load15avg = get.load15avg
-            }
-
-            var release = ""
-            group.enter()
-            DispatchQueue.global().async {
-                defer { group.leave() }
-                let intake = downloadResultFrom(shell: shell, command: .obtainRelease, timeout: timeout)
-                release = ProcParsers.parseOsReleaseName(intake)
-            }
-
-            group.wait()
-
-            self.init(
-                release: release,
-                uptimeInSec: uptime,
-                hostname: hostname,
-                runningProcs: runningProcess,
-                totalProcs: totalProcess,
-                load1: load1avg,
-                load5: load5avg,
-                load15: load15avg
-            )
         }
 
         public func description() -> String {

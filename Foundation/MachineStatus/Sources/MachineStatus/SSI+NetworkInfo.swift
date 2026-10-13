@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import NSRemoteShell
 
 public extension ServerStatus {
     /// 服务器 NET 信息
@@ -44,12 +43,11 @@ public extension ServerStatus {
             self.elements = elements
         }
 
-        public init?(withRemote shell: NSRemoteShell, timeout: Double) {
-            let downloadResult = downloadResultFrom(shell: shell, command: .obtainNetworkInfo, timeout: timeout)
-            let sep = downloadResult.components(separatedBy: outputSeparator)
-            if sep.count != 2 { return nil }
-            let priv = sep[0]
-            let curr = sep[1]
+        /// Builds from two `/proc/net/dev` payloads sampled about a second
+        /// apart; rates are the counter deltas, so the sampling gap is
+        /// exactly the script's sleep.
+        public init?(netDevBefore: String?, netDevAfter: String?) {
+            guard let netDevBefore, let netDevAfter else { return nil }
 
             typealias RxTxPair = (Int, Int)
 
@@ -88,8 +86,8 @@ public extension ServerStatus {
                 return result
             }
 
-            let getPriv = build(str: priv)
-            let getCurr = build(str: curr)
+            let getPriv = build(str: netDevBefore)
+            let getCurr = build(str: netDevAfter)
             var result = [NetworkInfoElement]()
             for item in getPriv {
                 if let target = getCurr[item.key] {

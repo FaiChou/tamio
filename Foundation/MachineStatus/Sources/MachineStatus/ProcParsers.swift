@@ -97,6 +97,45 @@ enum ProcParsers {
         )
     }
 
+    // MARK: - merged monitor script
+
+    /// Splits the merged monitor script's output into named sections. The
+    /// script echoes a marker line ahead of each command's payload and
+    /// only a full-line match opens a section; kernel /proc payloads, df
+    /// rows and os-release assignments can never consist of just the
+    /// marker, so sections cannot collide with remote content the way a
+    /// bare token like "[*******]" could sit inside one payload.
+    static func splitMonitorSections(_ raw: String) -> [String: String] {
+        var sections = [String: String]()
+        var current: String?
+        for line in raw.components(separatedBy: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix(ServerStatus.sectionMarkerPrefix),
+               trimmed.hasSuffix(ServerStatus.sectionMarkerSuffix)
+            {
+                let name = String(
+                    trimmed
+                        .dropFirst(ServerStatus.sectionMarkerPrefix.count)
+                        .dropLast(ServerStatus.sectionMarkerSuffix.count)
+                )
+                current = name
+                sections[name] = ""
+                continue
+            }
+            if let current {
+                sections[current, default: ""] += line + "\n"
+            }
+        }
+        return sections
+    }
+
+    // MARK: - /proc/uptime
+
+    /// Parses the first field of `/proc/uptime` ("773229.50 1531748.20").
+    static func parseUptime(_ intake: String) -> Double {
+        Double(splitWhitespaceRuns(intake).first ?? "") ?? 0
+    }
+
     // MARK: - /etc/os-release
 
     static func stripSurroundingQuotes(_ str: String) -> String {
