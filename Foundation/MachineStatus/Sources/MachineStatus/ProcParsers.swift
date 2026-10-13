@@ -109,7 +109,10 @@ enum ProcParsers {
         var sections = [String: String]()
         var current: String?
         for line in raw.components(separatedBy: "\n") {
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            // whitespacesAndNewlines also eats a stray \r: the channel is
+            // not a pty so markers end in \n, but a payload that slipped a
+            // CR in must not make a marker unrecognizable.
+            let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
             if trimmed.hasPrefix(ServerStatus.sectionMarkerPrefix),
                trimmed.hasSuffix(ServerStatus.sectionMarkerSuffix)
             {

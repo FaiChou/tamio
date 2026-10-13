@@ -192,6 +192,13 @@ final class ProcParsersTests: XCTestCase {
         XCTAssertTrue(sections["df"]?.contains("/mnt/<<<RAYON-SECTION:mem>>>-disk") == true)
     }
 
+    func testSplitMonitorSectionsToleratesCarriageReturns() {
+        let raw = "<<<RAYON-SECTION:hostname>>>\r\nweb-01\r\n<<<RAYON-SECTION:uptime>>>\r\n42 84\r\n"
+        let sections = ProcParsers.splitMonitorSections(raw)
+        XCTAssertEqual(sections["hostname"]?.trimmingCharacters(in: .whitespacesAndNewlines), "web-01")
+        XCTAssertEqual(ProcParsers.parseUptime(sections["uptime"] ?? ""), 42)
+    }
+
     func testMonitorScriptSamplesCountersTwiceAroundOneSleep() {
         let script = ServerStatus.monitorScript(includeStatic: true)
         XCTAssertEqual(script.components(separatedBy: "/bin/cat /proc/stat").count - 1, 2)
