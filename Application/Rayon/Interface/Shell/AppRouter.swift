@@ -58,28 +58,34 @@ final class AppRouter: ObservableObject {
 
     private init() {
         // When a session closes, leave its page.
-        TerminalManager.shared.$sessionContexts
-            .sink { [weak self] contexts in
-                guard let self, case let .terminal(id) = self.route else { return }
-                if !contexts.contains(where: { $0.id == id }) { self.route = self.lastPlace }
-            }
-            .store(in: &cancellables)
-        MonitorCenter.shared.$sessions
+        leaveWhenSessionEnds(TerminalManager.shared.$sessionContexts) {
+            if case let .terminal(id) = $0 { return id }
+            return nil
+        }
+        leaveWhenSessionEnds(MonitorCenter.shared.$sessions) {
+            if case let .monitor(id) = $0 { return id }
+            return nil
+        }
+        leaveWhenSessionEnds(FileTransferManager.shared.$transfers) {
+            if case let .transfer(id) = $0 { return id }
+            return nil
+        }
+        leaveWhenSessionEnds(EditorCenter.shared.$workspaces) {
+            if case let .editor(id) = $0 { return id }
+            return nil
+        }
+    }
+
+    /// Returns to the last non-session place once the open session page's id
+    /// leaves the published list, meaning its session has closed.
+    private func leaveWhenSessionEnds<Element: Identifiable>(
+        _ publisher: Published<[Element]>.Publisher,
+        id routeID: @escaping (Route) -> UUID?
+    ) where Element.ID == UUID {
+        publisher
             .sink { [weak self] sessions in
-                guard let self, case let .monitor(id) = self.route else { return }
+                guard let self, let id = routeID(self.route) else { return }
                 if !sessions.contains(where: { $0.id == id }) { self.route = self.lastPlace }
-            }
-            .store(in: &cancellables)
-        FileTransferManager.shared.$transfers
-            .sink { [weak self] transfers in
-                guard let self, case let .transfer(id) = self.route else { return }
-                if !transfers.contains(where: { $0.id == id }) { self.route = self.lastPlace }
-            }
-            .store(in: &cancellables)
-        EditorCenter.shared.$workspaces
-            .sink { [weak self] workspaces in
-                guard let self, case let .editor(id) = self.route else { return }
-                if !workspaces.contains(where: { $0.id == id }) { self.route = self.lastPlace }
             }
             .store(in: &cancellables)
     }
