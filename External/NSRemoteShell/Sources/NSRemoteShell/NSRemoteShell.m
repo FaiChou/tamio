@@ -1399,7 +1399,14 @@ continue; \
     
     while (libssh2_sftp_closedir(handle) == LIBSSH2_ERROR_EAGAIN) {};
     if (rc < 0) {
-        [self unsafeFileTransferSetErrorForFile:withDirPath pathIsRemote:YES failureReason:@"remote permission denied"];
+        NSString *reason;
+        if (rc == LIBSSH2_ERROR_EAGAIN) {
+            // only reachable when the deadline above expired mid retry
+            reason = @"operation timed out";
+        } else {
+            reason = [[NSString alloc] initWithFormat:@"unable to read directory, libssh2 returns error %lld", rc];
+        }
+        [self unsafeFileTransferSetErrorForFile:withDirPath pathIsRemote:YES failureReason:reason];
         return NULL;
     }
     [contents sortUsingDescriptors: @[
