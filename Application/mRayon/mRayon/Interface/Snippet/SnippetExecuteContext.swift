@@ -74,7 +74,8 @@ class SnippetExecuteContext: ObservableObject {
         defer {
             moveToComplete(for: machine.id)
         }
-        term.setTerminalFontSize(with: RayonStore.shared.terminalFontSize)
+        // Runs on the exec queue; the store read is its worker snapshot.
+        term.setTerminalFontSize(with: RayonStore.shared.workerTerminalFontSize)
         term.write("[*] connecting to host...\r\n")
         let outcome = SnippetExecSession(machine: machine, shell: shell).execute(
             snippet.code,

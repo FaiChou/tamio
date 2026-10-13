@@ -169,7 +169,8 @@ open class TerminalContext: ObservableObject, Identifiable, Equatable {
     }
 
     public func setupShellData() {
-        shell.applyConnection(for: machine, timeout: RayonStore.shared.timeoutNumber)
+        // Called on the session's worker queue; reads the worker snapshot.
+        shell.applyConnection(for: machine, timeout: RayonStore.shared.workerTimeoutNumber)
     }
 
     public static func == (lhs: TerminalContext, rhs: TerminalContext) -> Bool {
@@ -213,7 +214,7 @@ open class TerminalContext: ObservableObject, Identifiable, Equatable {
 
         let identity: RDIdentity?
         if machine.associatedIdentity != nil {
-            guard let resolved = RayonStore.shared.associatedIdentity(for: machine) else {
+            guard let resolved = RayonStore.shared.workerAssociatedIdentity(for: machine) else {
                 putInformation("Malformed machine or identity data")
                 return
             }
@@ -224,7 +225,7 @@ open class TerminalContext: ObservableObject, Identifiable, Equatable {
 
         let result = shell.connectAndAuthenticate(
             identity: identity,
-            autoIdentities: RayonStore.shared.identityGroupForAutoAuth
+            autoIdentities: RayonStore.shared.workerIdentitiesForAutoAuth
         ) { [self] hintText in
             putInformation(hintText)
         }

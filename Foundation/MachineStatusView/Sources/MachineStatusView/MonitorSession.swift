@@ -150,7 +150,8 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
     }
 
     public var refreshInterval: Int {
-        max(1, RayonStore.shared.monitorInterval)
+        // Read from the update loop's task; the store's worker snapshot.
+        max(1, RayonStore.shared.workerMonitorInterval)
     }
 
     private func updateLoop() async {
@@ -212,7 +213,7 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
     private func connectAndAuthenticate() {
         shell.connectAndAuthenticate(
             identity: identity,
-            autoIdentities: RayonStore.shared.identityGroupForAutoAuth
+            autoIdentities: RayonStore.shared.workerIdentitiesForAutoAuth
         )
     }
 

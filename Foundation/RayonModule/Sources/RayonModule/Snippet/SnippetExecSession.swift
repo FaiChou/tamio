@@ -41,11 +41,12 @@ public class SnippetExecSession {
         shell.requestConnectAndWait()
         guard shell.isConnected else { return .connectFailed }
         // A server without an associated identity falls back to the
-        // store's auto identities instead of failing outright.
-        if let identity = RayonStore.shared.associatedIdentity(for: machine) {
+        // store's auto identities instead of failing outright. Reads are
+        // the store's worker snapshot: runs happen on background queues.
+        if let identity = RayonStore.shared.workerAssociatedIdentity(for: machine) {
             identity.callAuthenticationWith(remote: shell)
         } else {
-            shell.authenticateWithAutoIdentities(RayonStore.shared.identityGroupForAutoAuth)
+            shell.authenticateWithAutoIdentities(RayonStore.shared.workerIdentitiesForAutoAuth)
         }
         guard shell.isConnected, shell.isAuthenticated else { return .authenticateFailed }
         shell.beginExecute(

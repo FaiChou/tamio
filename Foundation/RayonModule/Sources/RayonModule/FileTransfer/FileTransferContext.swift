@@ -121,7 +121,8 @@ public class FileTransferContext: ObservableObject, Identifiable, Equatable {
     }
 
     func setupShellData() {
-        shell.applyConnection(for: machine, timeout: RayonStore.shared.timeoutNumber)
+        // Called on the session's worker queue; reads the worker snapshot.
+        shell.applyConnection(for: machine, timeout: RayonStore.shared.workerTimeoutNumber)
     }
 
     public func putInformation(_ str: String) {
@@ -154,7 +155,7 @@ public class FileTransferContext: ObservableObject, Identifiable, Equatable {
         debugPrint("\(self) \(#function) \(machine.id)")
         let result = shell.connectAndAuthenticate(
             identity: identity,
-            autoIdentities: RayonStore.shared.identityGroupForAutoAuth
+            autoIdentities: RayonStore.shared.workerIdentitiesForAutoAuth
         ) { [self] hintText in
             putInformation(hintText)
         }

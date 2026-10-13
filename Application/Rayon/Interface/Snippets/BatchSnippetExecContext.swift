@@ -189,7 +189,7 @@ class BatchSnippetExecContext: ObservableObject {
             return
         }
         defer { shell.requestDisconnectAndWait() }
-        let remote = RayonStore.shared.machineGroup[machine]
+        let remote = RayonStore.shared.workerMachine(for: machine)
         guard remote.isNotPlaceholder() else {
             // the server was removed after the run started
             debugPrint("machine vanished mid-run: \(machine)")

@@ -111,14 +111,16 @@ public class PortForwardContext: ObservableObject, Identifiable {
 
     private func runRound() {
         putLifecycle(.awaitingConnect)
+        // The lifecycle thread reads the store's worker snapshot, never the
+        // main-thread properties.
         shell
-            .applyConnection(for: machine, timeout: RayonStore.shared.timeoutNumber)
+            .applyConnection(for: machine, timeout: RayonStore.shared.workerTimeoutNumber)
             .requestConnectAndWait()
         guard shell.isConnected else {
             putLifecycle(.failedConnect)
             return
         }
-        guard let identity = RayonStore.shared.associatedIdentity(for: machine) else {
+        guard let identity = RayonStore.shared.workerAssociatedIdentity(for: machine) else {
             putLifecycle(.failedAuthenticate)
             return
         }
