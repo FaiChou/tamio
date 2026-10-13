@@ -332,7 +332,7 @@ struct IdentityForm: View {
                         masked: true,
                         placeholder: "No private key loaded",
                         loadTitle: "Load Private Key…",
-                        expectation: "PRIVATE KEY"
+                        matches: { $0.contains("PRIVATE KEY") }
                     )
                 }
                 RXField("Public key", help: "Optional") {
@@ -341,7 +341,7 @@ struct IdentityForm: View {
                         masked: false,
                         placeholder: "No public key loaded",
                         loadTitle: "Load Public Key…",
-                        expectation: "ssh-"
+                        matches: looksLikePublicKey
                     )
                 }
                 RXField("Passphrase") {
@@ -368,13 +368,21 @@ struct IdentityForm: View {
     }
 }
 
+/// An OpenSSH public key starts with its algorithm — and ecdsa-sha2-* and the
+/// FIDO sk-* types contain no "ssh-" for a substring check to find.
+private func looksLikePublicKey(_ string: String) -> Bool {
+    let prefixes = ["ssh-rsa", "ssh-ed25519", "ecdsa-sha2-", "sk-ssh-", "sk-ecdsa-"]
+    let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+    return prefixes.contains { trimmed.hasPrefix($0) }
+}
+
 /// A key shown in `code`, masked when private, with Load, Copy and Clear.
 private struct KeyField: View {
     @Binding var text: String
     let masked: Bool
     let placeholder: String
     let loadTitle: String
-    let expectation: String
+    let matches: (String) -> Bool
 
     var display: String {
         guard !text.isEmpty else { return "" }
@@ -419,7 +427,7 @@ private struct KeyField: View {
                 UIBridge.presentError(with: "The file could not be read as text.")
                 return
             }
-            if string.contains(expectation) {
+            if matches(string) {
                 text = string
             } else {
                 onMainThread(delay: 0.3) {
