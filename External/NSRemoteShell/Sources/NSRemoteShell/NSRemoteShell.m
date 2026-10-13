@@ -1900,7 +1900,7 @@ continue; \
     }
     
     int f = open([localFile.path UTF8String], O_WRONLY | O_CREAT, 0644);
-    if (!f) {
+    if (f < 0) {
         LIBSSH2_CHANNEL_SHUTDOWN(channel);
         libssh2_sftp_close_handle(handle);
         [self unsafeFileTransferSetErrorForFile:atFullPath pathIsRemote:YES failureReason:@"broken connection"];
