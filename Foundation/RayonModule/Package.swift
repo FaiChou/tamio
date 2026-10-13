@@ -15,12 +15,6 @@ let package = Package(
             type: .static,
             targets: ["RayonModule"]
         ),
-        // so we can save disk space for menubar app
-//        .library(
-//            name: "RayonModule-Framework",
-//            type: .dynamic,
-//            targets: ["RayonModule"]
-//        ),
     ],
     dependencies: [
         .package(name: "PropertyWrapper", path: "../PropertyWrapper"),
