@@ -132,7 +132,7 @@ private struct PortForwardRow: View {
     var running: Bool { backend.sessionExists(withPortForwardID: forward.id) }
 
     var body: some View {
-        let status = PortForwardStatus(hint: backend.lastHint[forward.id], running: running)
+        let status = PortForwardPresentation(state: backend.lastStatus[forward.id], running: running)
         HStack(spacing: 0) {
             RXTag(forward.forwardOrientation == .listenLocal ? "Listen local" : "Listen remote")
                 .frame(width: ForwardColumns.orientation, alignment: .leading)
@@ -185,29 +185,6 @@ private struct PortForwardRow: View {
                 .disabled(forward.getCommand() == nil)
             Divider()
             Button("Delete…", role: .destructive) { PortForwardActions.delete(forward.id) }
-        }
-    }
-}
-
-/// Maps the backend's progress hints to a dot and a word.
-struct PortForwardStatus {
-    let status: RXStatus
-    let text: String
-
-    init(hint: String?, running: Bool) {
-        switch hint {
-        case "awaiting connect", "opening channel":
-            (status, text) = (.running, "Connecting")
-        case "forward running":
-            (status, text) = running ? (.success, "Running") : (.off, "Stopped")
-        case "failed connect":
-            (status, text) = (.danger, "Could not connect")
-        case "failed authenticate":
-            (status, text) = (.danger, "Could not sign in")
-        case "forward stopped":
-            (status, text) = running ? (.danger, "Forward ended") : (.off, "Stopped")
-        default:
-            (status, text) = running ? (.running, "Starting") : (.off, "Stopped")
         }
     }
 }

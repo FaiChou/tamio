@@ -16,8 +16,27 @@ public class PortForwardContext: ObservableObject, Identifiable {
     public let machine: RDMachine
     public let shell: NSRemoteShell
 
-    /// Hint sink for the owning backend, called from the lifecycle thread.
-    public var hintHandler: ((String) -> Void)?
+    /// Where the session is in its connect → forward → stop cycle. Views
+    /// match on this instead of the former hint strings, so a copy edit
+    /// cannot silently drop a state onto a default branch; the raw values
+    /// keep the former hint text for logs.
+    public enum Lifecycle: String, CaseIterable {
+        case awaitingConnect = "awaiting connect"
+        case openingChannel = "opening channel"
+        case forwardRunning = "forward running"
+        case forwardStopped = "forward stopped"
+        case failedConnect = "failed connect"
+        case failedAuthenticate = "failed authenticate"
+        case terminating = "terminating"
+        case terminated = "terminated"
+    }
+
+    /// Written from the lifecycle thread; views observe the backend's
+    /// per-forward record fed by the handler below, not this directly.
+    @Published public private(set) var lifecycle: Lifecycle = .awaitingConnect
+
+    /// Lifecycle sink for the owning backend, called from the lifecycle thread.
+    public var lifecycleHandler: ((Lifecycle) -> Void)?
 
     /// Called once on the main thread after the lifecycle exits, so the
     /// backend can drop the context and the switch goes back off.
@@ -51,8 +70,9 @@ public class PortForwardContext: ObservableObject, Identifiable {
         self.shell = shell
     }
 
-    func putHint(_ hint: String) {
-        hintHandler?(hint)
+    func putLifecycle(_ state: Lifecycle) {
+        lifecycle = state
+        lifecycleHandler?(state)
     }
 
     /// Starts the lifecycle on a background queue and returns immediately.
@@ -77,7 +97,7 @@ public class PortForwardContext: ObservableObject, Identifiable {
         defer {
             shell.requestDisconnectAndWait()
             shell.destroyPermanently()
-            putHint("terminated")
+            putLifecycle(.terminated)
             let handler = terminationHandler
             onMainThread { handler?(self) }
         }
@@ -90,24 +110,24 @@ public class PortForwardContext: ObservableObject, Identifiable {
     }
 
     private func runRound() {
-        putHint("awaiting connect")
+        putLifecycle(.awaitingConnect)
         shell
             .applyConnection(for: machine, timeout: RayonStore.shared.timeoutNumber)
             .requestConnectAndWait()
         guard shell.isConnected else {
-            putHint("failed connect")
+            putLifecycle(.failedConnect)
             return
         }
         guard let identity = RayonStore.shared.associatedIdentity(for: machine) else {
-            putHint("failed authenticate")
+            putLifecycle(.failedAuthenticate)
             return
         }
         identity.callAuthenticationWith(remote: shell)
         guard shell.isAuthenticated else {
-            putHint("failed authenticate")
+            putLifecycle(.failedAuthenticate)
             return
         }
-        putHint("opening channel")
+        putLifecycle(.openingChannel)
         switch info.forwardOrientation {
         case .listenRemote:
             shell.createPortForward(
@@ -115,7 +135,7 @@ public class PortForwardContext: ObservableObject, Identifiable {
                 withForwardTargetHost: info.targetHost,
                 withForwardTargetPort: NSNumber(value: info.targetPort)
             ) {
-                self.putHint("forward running")
+                self.putLifecycle(.forwardRunning)
             } withContinuationHandler: {
                 true // we are using shell.disconnect for shutdown
             }
@@ -125,11 +145,11 @@ public class PortForwardContext: ObservableObject, Identifiable {
                 withForwardTargetHost: info.targetHost,
                 withForwardTargetPort: NSNumber(value: info.targetPort)
             ) {
-                self.putHint("forward running")
+                self.putLifecycle(.forwardRunning)
             } withContinuationHandler: {
                 true // we are using shell.disconnect for shutdown
             }
         }
-        putHint("forward stopped")
+        putLifecycle(.forwardStopped)
     }
 }

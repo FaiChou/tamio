@@ -63,15 +63,8 @@ private struct PortForwardRow: View {
 
     var running: Bool { backend.sessionExists(withPortForwardID: forward.id) }
 
-    var status: (RXStatus, String) {
-        switch backend.lastHint[forward.id] {
-        case "awaiting connect", "opening channel": return (.running, "Connecting")
-        case "forward running": return running ? (.success, "Running") : (.off, "Stopped")
-        case "failed connect": return (.danger, "Could not connect")
-        case "failed authenticate": return (.danger, "Could not sign in")
-        case "forward stopped": return running ? (.danger, "Forward ended") : (.off, "Stopped")
-        default: return running ? (.running, "Starting") : (.off, "Stopped")
-        }
+    var presentation: PortForwardPresentation {
+        PortForwardPresentation(state: backend.lastStatus[forward.id], running: running)
     }
 
     var body: some View {
@@ -87,8 +80,8 @@ private struct PortForwardRow: View {
                     .font(.rxCode)
                     .foregroundStyle(.rxInkSecondary)
                     .lineLimit(1)
-                if status.0 == .danger {
-                    Text(status.1)
+                if presentation.status == .danger {
+                    Text(presentation.text)
                         .font(.caption)
                         .foregroundStyle(.rxDanger)
                 }

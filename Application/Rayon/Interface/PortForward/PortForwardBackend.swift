@@ -3,7 +3,7 @@
 //  Rayon (macOS)
 //
 //  The session lifecycle lives in RayonModule.PortForwardContext; this
-//  backend keeps the container, the per-forward hints and validation.
+//  backend keeps the container, the per-forward states and validation.
 //
 
 import Combine
@@ -17,7 +17,7 @@ class PortForwardBackend: ObservableObject {
 
     @Published var container = [PortForwardContext]()
 
-    @Published var lastHint: [RDPortForward.ID: String] = [:]
+    @Published var lastStatus: [RDPortForward.ID: PortForwardContext.Lifecycle] = [:]
 
     func createSession(withPortForwardID pid: RDPortForward.ID) {
         if sessionExists(withPortForwardID: pid) {
@@ -40,8 +40,8 @@ class PortForwardBackend: ObservableObject {
             info: portFwd,
             machine: machine
         )
-        context.hintHandler = { [weak self] hint in
-            self?.putHint(for: pid, with: hint)
+        context.lifecycleHandler = { [weak self] state in
+            self?.putStatus(for: pid, with: state)
         }
         context.terminationHandler = { [weak self] context in
             self?.endLifecycle(for: context)
@@ -50,9 +50,9 @@ class PortForwardBackend: ObservableObject {
         context.begin()
     }
 
-    func putHint(for pid: RDPortForward.ID, with: String) {
+    func putStatus(for pid: RDPortForward.ID, with state: PortForwardContext.Lifecycle) {
         onMainThread {
-            self.lastHint[pid] = with
+            self.lastStatus[pid] = state
         }
     }
 
@@ -68,7 +68,7 @@ class PortForwardBackend: ObservableObject {
 
     func endSession(withPortForwardID pid: RDPortForward.ID) {
         let index = container.firstIndex { $0.info.id == pid }
-        putHint(for: pid, with: "terminating")
+        putStatus(for: pid, with: .terminating)
         if let index = index {
             let context = container.remove(at: index)
             context.terminate()
