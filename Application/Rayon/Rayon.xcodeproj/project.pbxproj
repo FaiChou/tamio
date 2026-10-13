@@ -36,6 +36,7 @@
 		64463CCE868B85BDC0B1728B /* EULA in Resources */ = {isa = PBXBuildFile; fileRef = 22B08C3B69C5BAC4273BE379 /* EULA */; };
 		67ECAB0407DC7A48D42A3307 /* PageScaffold.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09308AD25ADC68C5189598BF /* PageScaffold.swift */; };
 		72941A76D0FDE7D41D0DA2C1 /* UIBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9254634FB92A5B3CB8322692 /* UIBridge.swift */; };
+		76EACB711C3FE8A59910786B /* catussh.icon in Resources */ = {isa = PBXBuildFile; fileRef = 3C868B9C5AED63C2D48EC5B4 /* catussh.icon */; };
 		79A8D37F5321065EC0A9A1EA /* MacBridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7DB52A0A8F903D2B1C42F5 /* MacBridging.swift */; };
 		7E6F0969D5874F9FB79CF3F7 /* MachineStatus in Frameworks */ = {isa = PBXBuildFile; productRef = EBF017679A8CED57F2A003C9 /* MachineStatus */; };
 		81288D417F92BA2EC41F9903 /* Bridge+Dialogs.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C0A0A7C5A7678327CD0358 /* Bridge+Dialogs.swift */; };
@@ -102,6 +103,7 @@
 		2BB4D50A1AD221F0C5FDD35D /* StatusItem+Loop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StatusItem+Loop.swift"; sourceTree = "<group>"; };
 		355C84F7C595E456E988F3AF /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		37F18B8F5430DE1062C8CFA9 /* BatchSnippetExecContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchSnippetExecContext.swift; sourceTree = "<group>"; };
+		3C868B9C5AED63C2D48EC5B4 /* catussh.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = catussh.icon; sourceTree = "<group>"; };
 		3FE12A3721A0B26A5D395DE9 /* CodeMirrorUI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CodeMirrorUI; path = ../../External/CodeMirrorUI; sourceTree = SOURCE_ROOT; };
 		42043523A78202C9249758F9 /* Generic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Generic.swift; sourceTree = "<group>"; };
 		43BEDD24A016BBDEECA941DE /* RayonEditor */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RayonEditor; path = ../../Foundation/RayonEditor; sourceTree = SOURCE_ROOT; };
@@ -187,6 +189,7 @@
 		146F68D44243DB5A6BBBC92B /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				3C868B9C5AED63C2D48EC5B4 /* catussh.icon */,
 				22B08C3B69C5BAC4273BE379 /* EULA */,
 				F9C62A4B03C3299D7281B3BB /* LICENSE */,
 			);
@@ -520,6 +523,7 @@
 				D9F96DF1A1C698C6B677C0BC /* Assets.xcassets in Resources */,
 				64463CCE868B85BDC0B1728B /* EULA in Resources */,
 				D71AE67B4F770FE9DB7711A2 /* LICENSE in Resources */,
+				76EACB711C3FE8A59910786B /* catussh.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -599,7 +603,7 @@
 		607EEC0A6AD53A8C52B33AFD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = catussh;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = macOS/macOS.entitlements;
 				CODE_SIGN_IDENTITY = "-";
@@ -661,7 +665,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 45;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_NS_ASSERTIONS = NO;
@@ -676,7 +680,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 2.4.1;
+				MARKETING_VERSION = 2.4;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -708,7 +712,7 @@
 		C74F9DE1EF178BD8DA9E672D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = catussh;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = macOS/macOS.entitlements;
 				CODE_SIGN_IDENTITY = "-";
@@ -770,7 +774,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 46;
+				CURRENT_PROJECT_VERSION = 45;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = "";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -791,7 +795,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 2.4.1;
+				MARKETING_VERSION = 2.4;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

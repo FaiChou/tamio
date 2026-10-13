@@ -34,6 +34,7 @@
 		5082A1CC27D0AC0900C71C0F /* TerminalContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5082A1CB27D0AC0900C71C0F /* TerminalContext.swift */; };
 		5082A1D327D0E10000C71C0F /* EULA in Resources */ = {isa = PBXBuildFile; fileRef = 5082A1D127D0E10000C71C0F /* EULA */; };
 		5082A1D427D0E10000C71C0F /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 5082A1D227D0E10000C71C0F /* LICENSE */; };
+		5082A1D627D0E10000C71C0F /* catussh.icon in Resources */ = {isa = PBXBuildFile; fileRef = 5082A1D527D0E10000C71C0F /* catussh.icon */; };
 		5082A1D627D1228900C71C0F /* UIViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5082A1D527D1228900C71C0F /* UIViewController.swift */; };
 		5082A1D827D1A95400C71C0F /* PickMachineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5082A1D727D1A95400C71C0F /* PickMachineView.swift */; };
 		5082A1DA27D1B79A00C71C0F /* SnippetExecuteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5082A1D927D1B79A00C71C0F /* SnippetExecuteView.swift */; };
@@ -78,6 +79,7 @@
 		5082A1CB27D0AC0900C71C0F /* TerminalContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalContext.swift; sourceTree = "<group>"; };
 		5082A1D127D0E10000C71C0F /* EULA */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = EULA; path = ../../../../Resources/EULA; sourceTree = "<group>"; };
 		5082A1D227D0E10000C71C0F /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = LICENSE; path = ../../../../Resources/LICENSE; sourceTree = "<group>"; };
+		5082A1D527D0E10000C71C0F /* catussh.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer; name = catussh.icon; path = "../../../../Resources/catussh.icon"; sourceTree = "<group>"; };
 		5082A1D527D1228900C71C0F /* UIViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewController.swift; sourceTree = "<group>"; };
 		5082A1D727D1A95400C71C0F /* PickMachineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickMachineView.swift; sourceTree = "<group>"; };
 		5082A1D927D1B79A00C71C0F /* SnippetExecuteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetExecuteView.swift; sourceTree = "<group>"; };
@@ -233,6 +235,7 @@
 				501FF78E27CEFADD00380D59 /* Assets.xcassets */,
 				5082A1D127D0E10000C71C0F /* EULA */,
 				5082A1D227D0E10000C71C0F /* LICENSE */,
+				5082A1D527D0E10000C71C0F /* catussh.icon */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -379,6 +382,7 @@
 				5082A1D427D0E10000C71C0F /* LICENSE in Resources */,
 				501FF78F27CEFADD00380D59 /* Assets.xcassets in Resources */,
 				5082A1D327D0E10000C71C0F /* EULA in Resources */,
+				5082A1D627D0E10000C71C0F /* catussh.icon in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -558,7 +562,7 @@
 		501FF79627CEFADD00380D59 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = catussh;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = mRayon/mRayon.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -606,7 +610,7 @@
 		501FF79727CEFADD00380D59 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = catussh;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = mRayon/mRayon.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Distribution";
