@@ -160,6 +160,10 @@ struct EditMachineView: View {
             UIBridge.presentError(with: "Empty Port")
             return
         }
+        guard let port = Int(remotePort), (0 ... 65535).contains(port) else {
+            UIBridge.presentError(with: "Invalid Port")
+            return
+        }
 
         var id = UUID()
         if let inEditWith = inEditWith,
