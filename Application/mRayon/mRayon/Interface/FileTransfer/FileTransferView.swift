@@ -75,7 +75,7 @@ struct FileTransferView: View {
                 EmptyStateView(
                     "Connection closed",
                     systemImage: "bolt.horizontal",
-                    message: context.currentHint == "Connection Closed" ? "" : context.currentHint,
+                    message: context.connectionPhase == .closed ? "" : context.currentHint,
                     actionTitle: "Reconnect"
                 ) {
                     context.processBootstrap()

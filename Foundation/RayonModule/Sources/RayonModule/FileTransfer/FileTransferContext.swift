@@ -34,6 +34,23 @@ public class FileTransferContext: ObservableObject, Identifiable, Equatable {
     @Published public var connected: Bool = false
     @Published public var processConnection: Bool = false
 
+    /// Where the session is between bootstrap and shutdown. Views branch
+    /// on this instead of matching `currentHint`, so the hint text below
+    /// stays display-only and a copy edit cannot silently change behavior.
+    public enum ConnectionPhase {
+        /// Fresh context; the first connect attempt has not run yet.
+        case idle
+        /// A connect attempt is in flight.
+        case connecting
+        /// The session is up; file transfer is available.
+        case connected
+        /// The session ended: connect failed, the link dropped, or the
+        /// user closed it.
+        case closed
+    }
+
+    @Published public private(set) var connectionPhase: ConnectionPhase = .idle
+
     @Published public var currentDir: String = "/" {
         didSet {
             navigationSubtitle = currentDir
@@ -127,7 +144,10 @@ public class FileTransferContext: ObservableObject, Identifiable, Equatable {
 
     func callConnect() {
         putInformation("Connecting...")
-        onMainThread { self.processConnection = true }
+        onMainThread {
+            self.processConnection = true
+            self.connectionPhase = .connecting
+        }
         defer { onMainThread { self.processConnection = false } }
         setupShellData()
 
@@ -160,7 +180,10 @@ public class FileTransferContext: ObservableObject, Identifiable, Equatable {
 
         debugPrint("sftp session for \(machine.name) is now connected")
         // don't tag progress because we will tag it at loadCurrentFileList
-        onMainThread { self.connected = true }
+        onMainThread {
+            self.connected = true
+            self.connectionPhase = .connected
+        }
         loadCurrentFileList()
     }
 
@@ -174,6 +197,7 @@ public class FileTransferContext: ObservableObject, Identifiable, Equatable {
             self.currentFileList = []
             self.processConnection = false
             self.isProgressRunning = false
+            self.connectionPhase = .closed
         }
         DispatchQueue.global().async { [weak shell] in
             shell?.requestDisconnectAndWait()
