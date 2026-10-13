@@ -147,7 +147,7 @@ final class ConfigEditorModel: ObservableObject {
 
 /// Shared by existing and future SSH surfaces. Updating this controller preserves the backend and scrollback.
 @MainActor
-public enum RayonTerminalConfiguration {
+enum RayonTerminalConfiguration {
     static let didApply = Notification.Name("RayonTerminalConfigurationDidApply")
     static var appliedFontSize: Double? = ConfigEditorModel.storedDocument().overrides["font-size"]?.first.flatMap(Double.init)
     static let controller: TerminalController = {

@@ -9,11 +9,6 @@ struct ConfigCatalog: Decodable, Sendable {
 
     // Derived once at decode time: views read these on every render.
     let settings: [ConfigSetting]
-    /// Settings that take effect in Rayon's terminal. Everything else in the
-    /// upstream catalog (windows, tabs, GTK, Linux, app icons, quick terminal…)
-    /// belongs to standalone Ghostty and is not shown. Settings arranges these
-    /// with `ConfigLayout`, not the upstream navigation.
-    let rayonSettings: [ConfigSetting]
     let themeNames: [String]
     private let byKey: [String: ConfigSetting]
 
@@ -25,6 +20,10 @@ struct ConfigCatalog: Decodable, Sendable {
         return catalog
     }()
 
+    /// Settings that take effect in Rayon's terminal. Everything else in the
+    /// upstream catalog (windows, tabs, GTK, Linux, app icons, quick terminal…)
+    /// belongs to standalone Ghostty and is not shown. Settings arranges these
+    /// with `ConfigLayout`, not the upstream navigation.
     static let rayonKeys: Set<String> = RayonTerminalConfiguration.supportedKeys.subtracting(ConfigLayout.hiddenKeys)
 
     private enum CodingKeys: String, CodingKey { case revision, registry, navigation, themes }
@@ -37,7 +36,6 @@ struct ConfigCatalog: Decodable, Sendable {
         themes = try c.decode([String: ConfigTheme].self, forKey: .themes)
 
         settings = registry.values.sorted { $0.key < $1.key }
-        rayonSettings = settings.filter { Self.rayonKeys.contains($0.key) }
         byKey = Dictionary(settings.map { ($0.key, $0) }, uniquingKeysWith: { first, _ in first })
         themeNames = themes.keys.sorted()
     }
