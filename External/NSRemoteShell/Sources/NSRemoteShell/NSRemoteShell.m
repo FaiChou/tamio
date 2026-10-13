@@ -1490,7 +1490,11 @@ continue; \
     }
     struct stat fi;
     memset(&fi, 0, sizeof(fi));
-    stat([localFile.path UTF8String], &fi);
+    if (stat([localFile.path UTF8String], &fi) != 0) {
+        fclose(f);
+        [self unsafeFileTransferSetErrorForFile:localFile.path pathIsRemote:NO failureReason:@"failed to read"];
+        return NO;
+    }
     LIBSSH2_CHANNEL *channel = NULL;
     NSDate *date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
     while (true) {
@@ -1500,7 +1504,7 @@ continue; \
         }
         LIBSSH2_CHANNEL *channelBuilder = libssh2_scp_send64(session,
                                                              [remoteFile.path UTF8String],
-                                                             fi.st_mode & 0644,
+                                                             fi.st_mode & 0777,
                                                              (unsigned long)fi.st_size,
                                                              0,
                                                              0);
