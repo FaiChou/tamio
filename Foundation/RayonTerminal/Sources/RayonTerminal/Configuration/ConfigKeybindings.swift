@@ -61,6 +61,11 @@ struct ConfigKeybinding: Equatable {
         default: break
         }
     }
+    /// "KeyK"/"F1" style keys arrive camel-cased from some configs; the
+    /// catalog spells them snake_cased. Compiled once, used per step.
+    private static let lowerDigitToUpperRegex = try! NSRegularExpression(pattern: "([a-z0-9])([A-Z])")
+    private static let letterToDigitRegex = try! NSRegularExpression(pattern: "([a-zA-Z])([0-9])")
+
     static func splitStep(_ step: String) -> ([String], String) {
         var mods: [String] = []
         var key = step
@@ -71,8 +76,12 @@ struct ConfigKeybinding: Equatable {
         mods = mods.filter { !$0.isEmpty }.map { aliases[$0.lowercased()] ?? $0.lowercased() }
         let lowered = key.lowercased()
         if !ConfigKeybindingCatalog.shared.keys.contains(lowered), key.unicodeScalars.count > 1, !lowered.hasPrefix("physical:") {
-            key = key.replacingOccurrences(of: "([a-z0-9])([A-Z])", with: "$1_$2", options: .regularExpression)
-                .replacingOccurrences(of: "([a-zA-Z])([0-9])", with: "$1_$2", options: .regularExpression)
+            key = lowerDigitToUpperRegex.stringByReplacingMatches(
+                in: key, range: NSRange(key.startIndex..., in: key), withTemplate: "$1_$2"
+            )
+            key = letterToDigitRegex.stringByReplacingMatches(
+                in: key, range: NSRange(key.startIndex..., in: key), withTemplate: "$1_$2"
+            )
         }
         return (mods, key.lowercased())
     }
