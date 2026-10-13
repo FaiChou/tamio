@@ -39,13 +39,25 @@ class BatchSnippetExecContext: ObservableObject {
             buildNames[machine] = object.name
         }
         names = buildNames
-        DispatchQueue.global().async {
-            self.beingExecution()
-        }
     }
 
     deinit {
         debugPrint("\(self) \(#function)")
+    }
+
+    private var didStart = false
+
+    /// Starts the run on every server. The sheet calls this from onAppear, so
+    /// creating the context alone never touches a server.
+    func start() {
+        accessLock.lock()
+        let shouldStart = !didStart
+        didStart = true
+        accessLock.unlock()
+        guard shouldStart else { return }
+        DispatchQueue.global().async {
+            self.beingExecution()
+        }
     }
 
     var shellObjects: [RDMachine.ID: NSRemoteShell] = [:]

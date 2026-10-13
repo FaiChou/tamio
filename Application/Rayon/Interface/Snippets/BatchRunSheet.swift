@@ -73,6 +73,7 @@ struct BatchRunSheet: View {
             .keyboardShortcut(.defaultAction)
         }
         .frame(width: 820)
+        .onAppear { context.start() }
         .onReceive(timer) { tick = $0 }
     }
 
