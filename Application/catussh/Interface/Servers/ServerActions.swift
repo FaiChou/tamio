@@ -58,6 +58,20 @@ enum ServerActions {
         }
     }
 
+    /// For a server whose keys were replaced: its next host key is saved.
+    static func forgetHostKey(_ machine: RDMachine.ID) {
+        let read = CatusshStore.shared.machineGroup[machine]
+        guard read.isNotPlaceholder() else { return }
+        UIBridge.requiresConfirmation(
+            message: "Forget the host key of \(read.name)?",
+            informative: "The key the server presents on the next connection is saved as its key. Do this only when you know its keys were replaced.",
+            confirmTitle: "Forget"
+        ) { confirmed in
+            guard confirmed else { return }
+            read.forgetHostKey()
+        }
+    }
+
     static func copyAddress(_ machine: RDMachine.ID) {
         let read = CatusshStore.shared.machineGroup[machine]
         UIBridge.sendPasteboard(str: "\(read.remoteAddress):\(read.remotePort)")
@@ -126,7 +140,7 @@ enum ServerTool: CaseIterable, Identifiable {
 }
 
 /// Terminal, Files, Monitor, Show in Menu Bar, Edit, Duplicate, Copy Address,
-/// Copy SSH Command, Delete.
+/// Copy SSH Command, Forget Host Key, Delete.
 struct ServerContextMenu: View {
     let machine: RDMachine.ID
     /// False where the tools already sit beside the menu (a tile's ⋯ button).
@@ -187,6 +201,11 @@ struct ServerContextMenu: View {
                 ServerActions.copyCommand(machine)
             } label: {
                 Label("Copy SSH Command", systemImage: "chevron.left.forwardslash.chevron.right")
+            }
+            Button {
+                ServerActions.forgetHostKey(machine)
+            } label: {
+                Label("Forget Host Key…", systemImage: "key.slash")
             }
             Divider()
             Button(role: .destructive) {

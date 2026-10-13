@@ -35,7 +35,7 @@ struct SettingsView: View {
                 ConfigHostSettingsSection(id: "general.sync", keywords: "icloud sync cloud encrypted passphrase servers identities credentials devices") {
                     CloudSyncSettings()
                 },
-                ConfigHostSettingsSection(id: "connection.ssh", keywords: "ssh timeout connect wait") {
+                ConfigHostSettingsSection(id: "connection.ssh", keywords: "ssh timeout connect wait host key known hosts fingerprint") {
                     SSHSettings().environmentObject(store)
                 },
                 ConfigHostSettingsSection(id: "connection.monitor", keywords: "monitor refresh interval status") {
@@ -149,13 +149,43 @@ private struct SSHSettings: View {
     @EnvironmentObject var store: CatusshStore
 
     var body: some View {
-        NumberFieldRow(
-            "Connection timeout",
-            description: "How long to wait for a server before giving up.",
-            value: $store.timeout,
-            in: 2 ... 30,
-            unit: "s"
-        )
+        RXDividedStack {
+            NumberFieldRow(
+                "Connection timeout",
+                description: "How long to wait for a server before giving up.",
+                value: $store.timeout,
+                in: 2 ... 30,
+                unit: "s"
+            )
+            HostKeysRow()
+        }
+    }
+}
+
+/// How many host keys are saved, and a way to start over.
+private struct HostKeysRow: View {
+    @State private var count = KnownHosts.shared.count
+
+    var body: some View {
+        RXFormRow(
+            "Saved host keys",
+            description: "A server's key is saved the first time you connect; a server that later presents another key is refused. \(count) saved."
+        ) {
+            Button("Forget All…") {
+                UIBridge.requiresConfirmation(
+                    message: "Forget all saved host keys?",
+                    informative: "The key each server presents on its next connection is saved as its key.",
+                    confirmTitle: "Forget All"
+                ) { confirmed in
+                    guard confirmed else { return }
+                    KnownHosts.shared.forgetAll()
+                    count = KnownHosts.shared.count
+                }
+            }
+            .buttonStyle(.rx)
+            .disabled(count == 0)
+        }
+        .onAppear { count = KnownHosts.shared.count }
     }
 }
 

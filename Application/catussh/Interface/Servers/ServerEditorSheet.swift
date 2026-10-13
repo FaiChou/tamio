@@ -194,9 +194,10 @@ struct ServerEditorSheet: View {
             let shell = NSRemoteShell.configured(host: host, port: port, timeout: CatusshStore.shared.timeoutNumber)
             shell.requestConnectAndWait()
             guard shell.isConnected else {
+                let refusal = shell.hostKeyRefusal
                 onMainThread {
                     connecting = false
-                    error = "Could not reach \(host) on port \(port)."
+                    error = refusal ?? "Could not reach \(host) on port \(port)."
                 }
                 return
             }
