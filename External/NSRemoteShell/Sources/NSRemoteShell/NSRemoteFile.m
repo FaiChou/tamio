@@ -60,7 +60,7 @@
 
 - (void)populateAttributes:(LIBSSH2_SFTP_ATTRIBUTES)fileAttributes {
     self.modificationDate = [NSDate dateWithTimeIntervalSince1970:fileAttributes.mtime];
-    self.lastAccess = [NSDate dateWithTimeIntervalSinceNow:fileAttributes.atime];
+    self.lastAccess = [NSDate dateWithTimeIntervalSince1970:fileAttributes.atime];
     self.size = @(fileAttributes.filesize);
     self.ownerUID = fileAttributes.uid;
     self.ownerGID = fileAttributes.gid;
