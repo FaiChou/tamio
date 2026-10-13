@@ -90,20 +90,24 @@
 }
 
 - (void)destroyPermanently {
-    if (self.destroyed) { return; }
-    self.destroyed = YES;
+    @synchronized (self) {
+        if (self.destroyed) { return; }
+        self.destroyed = YES;
+    }
     NSLog(@"shell object at %p destroy permanently", self);
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         [self.requestLoopLock lock];
         [self.associatedLoop destroyLoop];
         [self unsafeDisconnect];
         // so there won't be any connect request semaphore f***ing us
-        for (dispatch_block_t invocation in self.requestInvokations) {
-            if (invocation) { invocation(); }
+        @synchronized (self.requestInvokations) {
+            for (dispatch_block_t invocation in self.requestInvokations) {
+                if (invocation) { invocation(); }
+            }
+            // call again to make sure no connect invocation
+            [self unsafeDisconnect];
+            [self.requestInvokations removeAllObjects];
         }
-        // call again to make sure no connect invocation
-        [self unsafeDisconnect];
-        [self.requestInvokations removeAllObjects];
         // and no more semaphore sitting there in sub channels
         for (id<NSRemoteOperableObject> object in [self.operableObjects copy]) {
             [object unsafeDisconnectAndPrepareForRelease];
