@@ -200,13 +200,17 @@ public struct RXSlider: View {
     }
 }
 
-/// A right-aligned number field with an optional unit.
+/// A right-aligned number field with an optional unit. The field is a draft
+/// while typing; the value is written (clamped to the range) on Return or
+/// when the field loses focus, so "25" can be typed inside 10...60.
 public struct NumberFieldRow: View {
     let title: String
     let description: String?
     @Binding var value: Int
     let range: ClosedRange<Int>
     let unit: String?
+    @State private var text = ""
+    @FocusState private var fieldFocused: Bool
 
     public init(_ title: String, description: String? = nil, value: Binding<Int>, in range: ClosedRange<Int>, unit: String? = nil) {
         self.title = title
@@ -216,13 +220,29 @@ public struct NumberFieldRow: View {
         self.unit = unit
     }
 
+    private func commitText() {
+        let cleaned = text.trimmingCharacters(in: .whitespaces)
+        if let typed = Int(cleaned) {
+            let next = min(range.upperBound, max(range.lowerBound, typed))
+            if next != value { value = next }
+            text = String(next)
+        } else {
+            text = String(value)
+        }
+    }
+
     public var body: some View {
         RXFormRow(title, description: description) {
             HStack(spacing: RX.Space.s2) {
-                TextField(title, value: Binding(get: { value }, set: { value = min(range.upperBound, max(range.lowerBound, $0)) }), format: .number)
+                TextField(title, text: $text)
                     .multilineTextAlignment(.trailing)
                     .textFieldStyle(.rx)
                     .frame(width: 72)
+                    .focused($fieldFocused)
+                    .onSubmit(commitText)
+                    .onChange(of: fieldFocused) { focused in
+                        if !focused { commitText() }
+                    }
                 Stepper(title, value: $value, in: range)
                     .labelsHidden()
                 if let unit {
@@ -231,6 +251,10 @@ public struct NumberFieldRow: View {
                         .foregroundStyle(.rxInkSecondary)
                 }
             }
+        }
+        .onAppear { text = String(value) }
+        .onChange(of: value) { newValue in
+            if !fieldFocused { text = String(newValue) }
         }
     }
 }
