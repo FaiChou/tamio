@@ -2,7 +2,8 @@
 //  BatchSnippetExecContext.swift
 //  Rayon
 //
-//  Created by Lakr Aream on 2022/2/13.
+//  The per-server run lives in RayonModule.SnippetExecSession; this
+//  context keeps the batch: per-machine buffers, state and stop.
 //
 
 import Combine
@@ -28,14 +29,6 @@ class BatchSnippetExecContext: ObservableObject {
             shellObjects[object.id] = NSRemoteShell
                 .configured(for: object, timeout: RayonStore.shared.timeoutNumber)
             shellContinue[object.id] = true
-            if let identity = object.associatedIdentity,
-               let rid = UUID(uuidString: identity)
-            {
-                let identityObject = RayonStore.shared.identityGroup[rid]
-                if identityObject.username.count > 0 {
-                    requiredIdentities[object.id] = identityObject
-                }
-            }
             buildNames[machine] = object.name
         }
         names = buildNames
@@ -62,7 +55,6 @@ class BatchSnippetExecContext: ObservableObject {
 
     var shellObjects: [RDMachine.ID: NSRemoteShell] = [:]
 
-    private var requiredIdentities: [RDMachine.ID: RDIdentity] = [:]
     private var shellContinue: [RDMachine.ID: Bool] = [:]
     private var receivedBuffer: [RDMachine.ID: String] = [:]
     private var completedMachines: [RDMachine.ID] = []
@@ -175,6 +167,12 @@ class BatchSnippetExecContext: ObservableObject {
         droppedBufferCount[machine, default: 0] += excess
     }
 
+    private func appendToBuffer(_ output: String, for machine: RDMachine.ID) {
+        safeAccess {
+            self.lockedAppendToBuffer(output, for: machine)
+        }
+    }
+
     func beginExec(on machine: RDMachine.ID) {
         safeAccess { self.startedAt[machine] = Date() }
         defer {
@@ -191,56 +189,46 @@ class BatchSnippetExecContext: ObservableObject {
             return
         }
         defer { shell.requestDisconnectAndWait() }
-        shell.requestConnectAndWait()
-        guard shell.isConnected else {
+        let remote = RayonStore.shared.machineGroup[machine]
+        guard remote.isNotPlaceholder() else {
+            // the server was removed after the run started
+            debugPrint("machine vanished mid-run: \(machine)")
+            safeAccess { self.failedMachines.insert(machine) }
+            return
+        }
+        let outcome = SnippetExecSession(machine: remote, shell: shell).execute(
+            snippet.code,
+            onBegin: {
+                debugPrint("channel begin")
+                self.appendToBuffer("[*] Execute Begin\r\n", for: machine)
+            },
+            onOutput: { output in
+                self.appendToBuffer(output, for: machine)
+            },
+            withContinuationHandler: {
+                // safeAccess executes synchronously under the lock; wrapping it in
+                // a semaphore only adds deadlock surface without any benefit.
+                self.safeAccessShellContinue[machine] ?? false
+            }
+        )
+        switch outcome {
+        case .completed:
+            safeAccess {
+                self.shellObjects.removeValue(forKey: machine)
+                self.lockedAppendToBuffer("\r\n[*] Execution completed\r\n", for: machine)
+            }
+        case .connectFailed:
             debugPrint("failed to connect to remote machine: \(machine)")
             safeAccess {
                 self.lockedAppendToBuffer("\r\n[E] Could not connect to the server\r\n", for: machine)
                 self.failedMachines.insert(machine)
             }
-            return
-        }
-        guard let identity = requiredIdentities[machine] else {
-            debugPrint("auto auth is not supported on batch exec")
-            safeAccess {
-                self.lockedAppendToBuffer("\r\n[E] Set an identity on this server to run snippets on it\r\n", for: machine)
-                self.failedMachines.insert(machine)
-            }
-            return
-        }
-        identity.callAuthenticationWith(remote: shell)
-        guard shell.isConnected, shell.isAuthenticated else {
+        case .authenticateFailed:
             debugPrint("auth failed for machine: \(machine)")
             safeAccess {
                 self.lockedAppendToBuffer("\r\n[E] The identity could not sign in\r\n", for: machine)
                 self.failedMachines.insert(machine)
             }
-            return
-        }
-        shell.beginExecute(
-            withCommand: snippet.code,
-            withTimeout: 0
-        ) {
-            debugPrint("channel begin")
-            self.safeAccess {
-                self.lockedAppendToBuffer("[*] Execute Begin\r\n", for: machine)
-            }
-        } withOutput: { output in
-            // because the output is picked up by xterm, we need to replace \n to \r\n
-            let output = output
-                .replacingOccurrences(of: "\n", with: "\r\n") // \n -> \r\n, \r\n -> \r\r\n
-                .replacingOccurrences(of: "\r\r\n", with: "\r\n") // \r\r -> \n
-            self.safeAccess {
-                self.lockedAppendToBuffer(output, for: machine)
-            }
-        } withContinuationHandler: {
-            // safeAccess executes synchronously under the lock; wrapping it in
-            // a semaphore only adds deadlock surface without any benefit.
-            self.safeAccessShellContinue[machine] ?? false
-        }
-        safeAccess {
-            self.shellObjects.removeValue(forKey: machine)
-            self.lockedAppendToBuffer("\r\n[*] Execution completed\r\n", for: machine)
         }
     }
 }
