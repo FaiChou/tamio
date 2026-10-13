@@ -111,11 +111,11 @@ final class EditorDocument: ObservableObject, Identifiable {
     }
 
     private func waitForConnection() async throws {
-        var waited = 0.0
-        while !context.connected, context.processConnection, !context.destroyedSession, waited < 30 {
-            try await Task.sleep(nanoseconds: 150_000_000)
-            waited += 0.15
-        }
+        _ = await context.$connected
+            .combineLatest(context.$processConnection)
+            .timeout(.seconds(30), scheduler: DispatchQueue.main)
+            .values
+            .first(where: { $0 || !$1 || context.destroyedSession })
     }
 }
 
