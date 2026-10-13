@@ -45,6 +45,7 @@
 		8BCAACD7136B86580D602065 /* FileTransferPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69392C86070B7FB4213CB6A2 /* FileTransferPage.swift */; };
 		8DFA7D4A3BA74D62B66DBACD /* ServerActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5040999EA7140DCDE990E310 /* ServerActions.swift */; };
 		9296D11CFC9B4484D3F06FFD /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D015C9736BABBB2B0EE2306C /* SidebarView.swift */; };
+		9AD610462662111F507266E8 /* FileTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58F4A7816AE9FD4B7B384D47 /* FileTable.swift */; };
 		9B67C6083405A9F909889B08 /* ServerEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5A4476AA96D6D08312C4CEF /* ServerEditorSheet.swift */; };
 		9DD7959D5A757D58F918C4C2 /* Generic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42043523A78202C9249758F9 /* Generic.swift */; };
 		9F7D13F4364A914566F0D935 /* StatusItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8910D14A56A4A4273BDAE945 /* StatusItem.swift */; };
@@ -106,6 +107,7 @@
 		43BEDD24A016BBDEECA941DE /* RayonEditor */ = {isa = PBXFileReference; lastKnownFileType = folder; name = RayonEditor; path = ../../Foundation/RayonEditor; sourceTree = SOURCE_ROOT; };
 		4BC3A70EB202868EEE385F30 /* PortForwardBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortForwardBackend.swift; sourceTree = "<group>"; };
 		5040999EA7140DCDE990E310 /* ServerActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerActions.swift; sourceTree = "<group>"; };
+		58F4A7816AE9FD4B7B384D47 /* FileTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTable.swift; sourceTree = "<group>"; };
 		5CFC7EDD1B82602B3EB434CE /* EditorWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorWorkspace.swift; sourceTree = "<group>"; };
 		6536341CB6765519E7D119A9 /* ServersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServersView.swift; sourceTree = "<group>"; };
 		69392C86070B7FB4213CB6A2 /* FileTransferPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTransferPage.swift; sourceTree = "<group>"; };
@@ -269,6 +271,7 @@
 		61F9645888758F98B513FDE8 /* FileTransfer */ = {
 			isa = PBXGroup;
 			children = (
+				58F4A7816AE9FD4B7B384D47 /* FileTable.swift */,
 				69392C86070B7FB4213CB6A2 /* FileTransferPage.swift */,
 			);
 			path = FileTransfer;
@@ -548,6 +551,7 @@
 				D6F0B7761A17413C1B3A672F /* DoubleConfirm.swift in Sources */,
 				041F6D2B8B0C4E14112BE969 /* EditorPage.swift in Sources */,
 				49C1EFC0CC91708B2B1CEC72 /* EditorWorkspace.swift in Sources */,
+				9AD610462662111F507266E8 /* FileTable.swift in Sources */,
 				8BCAACD7136B86580D602065 /* FileTransferPage.swift in Sources */,
 				9DD7959D5A757D58F918C4C2 /* Generic.swift in Sources */,
 				1054063F81F40392825EF495 /* HomeView.swift in Sources */,
