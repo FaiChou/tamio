@@ -166,6 +166,8 @@ struct FileTransferView: View {
                         dismiss()
                     }
                 }
+                // stays available while a connection attempt hangs
+                .environment(\.isEnabled, true)
                 Divider().frame(height: 20)
                 makeFloatingButton("doc.viewfinder") {
                     UIBridge.openFileContainer()
