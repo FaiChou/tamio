@@ -234,7 +234,13 @@ struct ConfigWidgetView: View {
                         .help(feature.description ?? "")
                     }
                 }
-            case "dual-number", "scroll-multiplier": ConfigPairInput(value: value, scroll: widget?.type == "scroll-multiplier", labels: widget?.labels ?? ["First", "Second"])
+            case "dual-number", "scroll-multiplier":
+                ConfigPairInput(
+                    value: value,
+                    scroll: widget?.type == "scroll-multiplier",
+                    labels: widget?.labels ?? ["First", "Second"],
+                    scrollDefaults: ConfigPairCodec.parse(setting.defaultValue.text, scroll: true).values
+                )
             case "duration": ConfigDurationInput(value: value, allowEmpty: widget?.allowEmpty == true)
             case "number-units": ConfigUnitInput(value: value, units: ["px", "%"])
             default:
@@ -388,8 +394,10 @@ struct ConfigPairInput: View {
     @Binding var value: String
     let scroll: Bool
     let labels: [String]
-    private var parts: [String] { ConfigPairCodec.parse(value, scroll: scroll).values }
-    private var linked: Bool { ConfigPairCodec.parse(value, scroll: scroll).linked }
+    /// The catalog's own scroll multipliers, so an upstream default change follows through.
+    var scrollDefaults: [String] = ["1", "3"]
+    private var parts: [String] { ConfigPairCodec.parse(value, scroll: scroll, fallback: scrollDefaults).values }
+    private var linked: Bool { ConfigPairCodec.parse(value, scroll: scroll, fallback: scrollDefaults).linked }
     private var names: [String] { scroll ? ["Trackpad", "Wheel"] : labels }
 
     var body: some View {
@@ -468,9 +476,9 @@ struct ConfigRepeatableEditor: View {
 }
 
 struct ConfigPairCodec {
-    static func parse(_ raw: String, scroll: Bool) -> (values: [String], linked: Bool) {
+    static func parse(_ raw: String, scroll: Bool, fallback: [String] = ["1", "3"]) -> (values: [String], linked: Bool) {
         if scroll && (raw.isEmpty || raw.contains(":")) {
-            var values = ["1", "3"]
+            var values = fallback
             for item in raw.components(separatedBy: ",") {
                 let pair = item.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
                 if pair.count == 2, Double(pair[1]) != nil {
