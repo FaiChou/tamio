@@ -36,7 +36,7 @@ DEVELOPMENT_TEAM="${DEVELOPMENT_TEAM:-}"
 
 xcodebuild \
     -workspace "$ROOT_DIR/App.xcworkspace" \
-    -scheme Rayon \
+    -scheme catussh \
     -configuration "$CONFIGURATION" \
     -destination 'generic/platform=macOS,variant=Mac Catalyst' \
     -derivedDataPath "$DERIVED_DATA_PATH" \

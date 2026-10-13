@@ -2,13 +2,13 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:Application/Rayon/Rayon.xcodeproj">
+      location = "group:Application/catussh/catussh.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:Application/mRayon/mRayon.xcodeproj">
+      location = "group:Application/mCatussh/mCatussh.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:Foundation/RayonModule">
+      location = "group:Foundation/CatusshModule">
    </FileRef>
    <FileRef
       location = "group:Foundation/MachineStatus">
@@ -41,12 +41,12 @@
       location = "group:Foundation/XMLCoder">
    </FileRef>
    <FileRef
-      location = "group:Foundation/RayonTerminal">
+      location = "group:Foundation/CatusshTerminal">
    </FileRef>
    <FileRef
-      location = "group:Foundation/RayonDesign">
+      location = "group:Foundation/CatusshDesign">
    </FileRef>
    <FileRef
-      location = "group:Foundation/RayonEditor">
+      location = "group:Foundation/CatusshEditor">
    </FileRef>
 </Workspace>

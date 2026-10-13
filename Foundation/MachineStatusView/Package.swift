@@ -18,12 +18,12 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "MachineStatus", path: "../MachineStatus"),
-        .package(name: "RayonModule", path: "../RayonModule"),
+        .package(name: "CatusshModule", path: "../CatusshModule"),
     ],
     targets: [
         .target(
             name: "MachineStatusView",
-            dependencies: ["MachineStatus", "RayonModule"],
+            dependencies: ["MachineStatus", "CatusshModule"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
     ]

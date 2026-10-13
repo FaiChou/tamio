@@ -38,7 +38,7 @@ jobs:
       - name: Check the tag against the app's version
         if: env.IS_TAG == 'true'
         run: |
-          version="$(sed -n 's/^[[:space:]]*MARKETING_VERSION = \(.*\);/\1/p' Application/Rayon/Rayon.xcodeproj/project.pbxproj | head -1)"
+          version="$(sed -n 's/^[[:space:]]*MARKETING_VERSION = \(.*\);/\1/p' Application/catussh/catussh.xcodeproj/project.pbxproj | head -1)"
           if [[ "$GITHUB_REF_NAME" != "v$version" ]]; then
             echo "::error::The tag is $GITHUB_REF_NAME but the app's version is $version. Set MARKETING_VERSION, or tag v$version."
             exit 1

@@ -4,7 +4,7 @@
 //
 
 import MachineStatus
-import RayonModule
+import CatusshModule
 import SwiftUI
 
 /// The monitor's card grid. Two columns when there is room (Load, Processor,

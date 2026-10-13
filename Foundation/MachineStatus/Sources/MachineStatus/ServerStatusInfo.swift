@@ -1,6 +1,6 @@
 //
 //  ServerInfo.swift
-//  Rayon
+//  catussh
 //
 //  Created by Lakr Aream on 2022/2/12.
 //
@@ -9,8 +9,8 @@ import Combine
 import Foundation
 import NSRemoteShell
 
-/// Mirror of RayonModule's `onMainThread`; MachineStatus sits below
-/// RayonModule in the package graph and cannot import it.
+/// Mirror of CatusshModule's `onMainThread`; MachineStatus sits below
+/// CatusshModule in the package graph and cannot import it.
 /// - Parameter run: the job to be fired on the main thread
 func onMainThread(delay: Double = 0, run: @escaping () -> Void) {
     // Preserve the legacy model callbacks without claiming the models are Sendable.
@@ -55,7 +55,7 @@ public class ServerStatus: ObservableObject, Equatable {
     /// section on a full-line match, which kernel /proc payloads, df rows
     /// and os-release assignments can never produce. That is what the old
     /// "[*******]" token could not promise inside two samples of one file.
-    static let sectionMarkerPrefix = "<<<RAYON-SECTION:"
+    static let sectionMarkerPrefix = "<<<CATUSSH-SECTION:"
     static let sectionMarkerSuffix = ">>>"
 
     /// `nvidia-smi` stays a command of its own: it is slow and missing on

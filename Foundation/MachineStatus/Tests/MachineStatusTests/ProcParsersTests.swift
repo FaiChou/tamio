@@ -151,21 +151,21 @@ final class ProcParsersTests: XCTestCase {
     // MARK: - merged monitor script
 
     private let mergedOutputFixture = """
-    <<<RAYON-SECTION:cpu-a>>>
+    <<<CATUSSH-SECTION:cpu-a>>>
     cpu  100 0 200 1600 50 0 10 0 0 0
     cpu0 50 0 100 800 25 0 5 0 0 0
-    <<<RAYON-SECTION:net-a>>>
+    <<<CATUSSH-SECTION:net-a>>>
     Inter-|   Receive                                                |  Transmit
      face |bytes    packets errs drop fifo frame compressed multicast|bytes    packets errs drop fifo colls carrier compressed
         lo: 1000      10    0    0    0     0          0         0     1000      10    0    0    0     0       0          0
       eth0: 5000      50    0    0    0     0          0         0     2000      20    0    0    0     0       0          0
-    <<<RAYON-SECTION:wait>>>
-    <<<RAYON-SECTION:cpu-b>>>
+    <<<CATUSSH-SECTION:wait>>>
+    <<<CATUSSH-SECTION:cpu-b>>>
     cpu  200 0 300 3200 100 0 20 0 0 0
     cpu0 100 0 150 1600 50 0 10 0 0 0
-    <<<RAYON-SECTION:uptime>>>
+    <<<CATUSSH-SECTION:uptime>>>
     773229.50 1531748.20
-    <<<RAYON-SECTION:hostname>>>
+    <<<CATUSSH-SECTION:hostname>>>
     web-01
     """
 
@@ -184,16 +184,16 @@ final class ProcParsersTests: XCTestCase {
         // Only a full-line marker opens a section; payload text containing
         // the marker inside a longer line must not split.
         let raw = """
-        <<<RAYON-SECTION:df>>>
-        /dev/sda1 100 50 50 50% /mnt/<<<RAYON-SECTION:mem>>>-disk
+        <<<CATUSSH-SECTION:df>>>
+        /dev/sda1 100 50 50 50% /mnt/<<<CATUSSH-SECTION:mem>>>-disk
         """
         let sections = ProcParsers.splitMonitorSections(raw)
         XCTAssertNil(sections["mem"])
-        XCTAssertTrue(sections["df"]?.contains("/mnt/<<<RAYON-SECTION:mem>>>-disk") == true)
+        XCTAssertTrue(sections["df"]?.contains("/mnt/<<<CATUSSH-SECTION:mem>>>-disk") == true)
     }
 
     func testSplitMonitorSectionsToleratesCarriageReturns() {
-        let raw = "<<<RAYON-SECTION:hostname>>>\r\nweb-01\r\n<<<RAYON-SECTION:uptime>>>\r\n42 84\r\n"
+        let raw = "<<<CATUSSH-SECTION:hostname>>>\r\nweb-01\r\n<<<CATUSSH-SECTION:uptime>>>\r\n42 84\r\n"
         let sections = ProcParsers.splitMonitorSections(raw)
         XCTAssertEqual(sections["hostname"]?.trimmingCharacters(in: .whitespacesAndNewlines), "web-01")
         XCTAssertEqual(ProcParsers.parseUptime(sections["uptime"] ?? ""), 42)
