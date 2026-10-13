@@ -32,15 +32,11 @@ extension UIBridge {
     static func presentError(with message: String, delay: Double = 0) {
         debugPrint("<InterfaceError> \(message)")
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            #if DEBUG
-                // Banner-style errors need short titles; keep debugging builds
-                // informative without crashing on long server-provided text.
-                if message.count > 25 {
-                    assertionFailure("error message too long for banner presentation")
-                }
-            #endif
+            // Banner-style errors need short titles; server-provided text can
+            // be any length.
+            let title = message.count > 25 ? String(message.prefix(25)) + "…" : message
             SPIndicator.present(
-                title: message,
+                title: title,
                 message: "",
                 preset: .error,
                 haptic: .error,
