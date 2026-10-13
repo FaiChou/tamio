@@ -15,7 +15,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <plist version="1.0"><dict>
 <key>CFBundleIdentifier</key><string>me.mizorewww.rayon.configuration-preview</string>
 <key>CFBundleExecutable</key><string>RayonConfigurationPreview</string>
-<key>CFBundleName</key><string>Rayon Configuration Preview</string>
+<key>CFBundleName</key><string>catussh Configuration Preview</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>LSMinimumSystemVersion</key><string>13.0</string>
 <key>NSHighResolutionCapable</key><true/>

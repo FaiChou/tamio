@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build Rayon in Release configuration and install it to /Applications.
+# Build catussh in Release configuration and install it to /Applications.
 #
 # Usage:
 #   bash Workflow/Scripts/install-macos.sh
@@ -12,7 +12,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-APP_NAME="Rayon.app"
+APP_NAME="catussh.app"
 INSTALL_DIR="${INSTALL_DIR:-/Applications}"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-$ROOT_DIR/DerivedData}"
 

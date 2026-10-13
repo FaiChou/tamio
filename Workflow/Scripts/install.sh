@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build Rayon and install it on this Mac and on every iPhone and iPad that is
+# Build catussh and install it on this Mac and on every iPhone and iPad that is
 # paired with it and reachable (over USB or the local network).
 #
 # Usage:
@@ -69,7 +69,7 @@ report_former_mac_data() {
     done
     if [[ -e "$seed" ]]; then
         printf 'The data saved as %s was NOT carried over: the system left it at %s.\n' "$FORMER_BUNDLE_ID" "$seed" >&2
-        printf 'Quit Rayon, run `defaults delete %s; defaults import %s "%s"`, delete that file and open Rayon again.\n' "$BUNDLE_ID" "$BUNDLE_ID" "$seed" >&2
+        printf 'Quit catussh, run `defaults delete %s; defaults import %s "%s"`, delete that file and open catussh again.\n' "$BUNDLE_ID" "$BUNDLE_ID" "$seed" >&2
         failed+=("Mac (former data not carried over)")
     else
         printf 'Carried over the data saved as %s.\n' "$FORMER_BUNDLE_ID"
@@ -78,22 +78,22 @@ report_former_mac_data() {
 
 install_mac() {
     step "Mac: building and installing to /Applications"
-    if pgrep -f "/Applications/Rayon.app/Contents/MacOS/Rayon" >/dev/null; then
-        printf 'Rayon is running; asking it to quit.\n'
-        osascript -e 'tell application "/Applications/Rayon.app" to quit' >/dev/null 2>&1 || true
+    if pgrep -f "/Applications/catussh.app/Contents/MacOS/catussh" >/dev/null; then
+        printf 'catussh is running; asking it to quit.\n'
+        osascript -e 'tell application "/Applications/catussh.app" to quit' >/dev/null 2>&1 || true
         for _ in $(seq 1 60); do
-            pgrep -f "/Applications/Rayon.app/Contents/MacOS/Rayon" >/dev/null || break
+            pgrep -f "/Applications/catussh.app/Contents/MacOS/catussh" >/dev/null || break
             sleep 1
         done
-        if pgrep -f "/Applications/Rayon.app/Contents/MacOS/Rayon" >/dev/null; then
-            printf 'Rayon is still running (is it asking something?). Quit it and run again.\n' >&2
-            failed+=("Mac (Rayon did not quit)")
+        if pgrep -f "/Applications/catussh.app/Contents/MacOS/catussh" >/dev/null; then
+            printf 'catussh is still running (is it asking something?). Quit it and run again.\n' >&2
+            failed+=("Mac (catussh did not quit)")
             return
         fi
     fi
     if bash "$ROOT_DIR/Workflow/Scripts/install-macos.sh"; then
         adopt_former_mac_data
-        open "/Applications/Rayon.app"
+        open "/Applications/catussh.app"
         report_former_mac_data
     else
         failed+=("Mac (build or install failed)")
@@ -178,7 +178,7 @@ install_ios() {
     fi
 
     step "iOS: signing ($identity, team $team)"
-    local app="$ios_data/Signed/Rayon.app"
+    local app="$ios_data/Signed/catussh.app"
     rm -rf "$ios_data/Signed"
     mkdir -p "$ios_data/Signed"
     ditto "$ios_data/Build/Products/Release-iphoneos/mRayon.app" "$app"

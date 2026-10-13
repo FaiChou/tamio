@@ -49,7 +49,7 @@ xcodebuild \
     PROVISIONING_PROFILE_SPECIFIER= \
     build
 
-APP_PATH="$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION-maccatalyst/Rayon.app"
+APP_PATH="$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION-maccatalyst/catussh.app"
 
 # The profile goes into the app, and what it grants into the signature: the
 # app asks its own signature whether it may sync.

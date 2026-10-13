@@ -5,8 +5,8 @@
 #
 # Usage:
 #   bash Workflow/Scripts/release.sh            # both
-#   bash Workflow/Scripts/release.sh mac        # Rayon-<version>.dmg
-#   bash Workflow/Scripts/release.sh ios        # Rayon-<version>.ipa
+#   bash Workflow/Scripts/release.sh mac        # catussh-<version>.dmg
+#   bash Workflow/Scripts/release.sh ios        # catussh-<version>.ipa
 #
 # Products are written to $DERIVED_DATA_PATH/Release.
 #
@@ -110,11 +110,11 @@ release_mac() {
         exit 1
     }
 
-    local built="$DERIVED_DATA_PATH/Build/Products/Release-maccatalyst/Rayon.app"
+    local built="$DERIVED_DATA_PATH/Build/Products/Release-maccatalyst/catussh.app"
     local version stage app
     version="$(version_of "$built/Contents/Info.plist")"
     stage="$OUTPUT_DIR/mac"
-    app="$stage/Rayon.app"
+    app="$stage/catussh.app"
     rm -rf "$stage"
     mkdir -p "$stage"
     ditto "$built" "$app"
@@ -137,10 +137,10 @@ release_mac() {
     /usr/bin/codesign --verify --deep --strict --all-architectures "$app"
 
     step "Mac: making the disk image"
-    local image="$OUTPUT_DIR/Rayon-$version.dmg"
+    local image="$OUTPUT_DIR/catussh-$version.dmg"
     rm -f "$image"
     ln -s /Applications "$stage/Applications"
-    hdiutil create -volname "Rayon $version" -srcfolder "$stage" -fs HFS+ -format UDZO -ov "$image" >/dev/null
+    hdiutil create -volname "catussh $version" -srcfolder "$stage" -fs HFS+ -format UDZO -ov "$image" >/dev/null
     if [[ "$identity" == "-" ]]; then
         printf 'Signed ad hoc: %s will not open on another Mac.\n' "$(basename "$image")"
     else
@@ -174,10 +174,10 @@ release_ios() {
     local version stage archive
     version="$(version_of "$built/Info.plist")"
     stage="$OUTPUT_DIR/ios"
-    archive="$OUTPUT_DIR/Rayon-$version.ipa"
+    archive="$OUTPUT_DIR/catussh-$version.ipa"
     rm -rf "$stage" "$archive"
     mkdir -p "$stage/Payload"
-    ditto "$built" "$stage/Payload/Rayon.app"
+    ditto "$built" "$stage/Payload/catussh.app"
     (cd "$stage" && /usr/bin/zip -qry "$archive" Payload)
     rm -rf "$stage"
     printf '%s\n' "$archive"
@@ -187,4 +187,4 @@ release_ios() {
 [[ "$TARGET" == all || "$TARGET" == ios ]] && release_ios
 
 step "Done"
-ls -lh "$OUTPUT_DIR"/Rayon-* | awk '{print "  " $5 "  " $9}'
+ls -lh "$OUTPUT_DIR"/catussh-* | awk '{print "  " $5 "  " $9}'
