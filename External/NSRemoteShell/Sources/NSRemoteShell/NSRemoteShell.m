@@ -195,10 +195,9 @@ continue; \
 - (void)requestConnectAndWait {
     if (self.destroyed) return;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            [magic unsafeConnect];
+            [self unsafeConnect];
             DISPATCH_SEMAPHORE_CHECK_SIGNLE(sem);
         } copy];
         [self.requestInvokations addObject:block];
@@ -222,10 +221,9 @@ continue; \
     self.authenticated = NO;
     
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            [magic unsafeDisconnect];
+            [self unsafeDisconnect];
             DISPATCH_SEMAPHORE_CHECK_SIGNLE(sem);
         } copy];
         [self.requestInvokations addObject:block];
@@ -237,10 +235,9 @@ continue; \
 - (void)authenticateWith:(NSString*)username andPassword:(NSString*)password {
     if (self.destroyed) return;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            [magic unsafeAuthenticateWith:username
+            [self unsafeAuthenticateWith:username
                               andPassword:password];
             DISPATCH_SEMAPHORE_CHECK_SIGNLE(sem);
         } copy];
@@ -253,10 +250,9 @@ continue; \
 - (void)authenticateWith:(NSString*)username andPublicKey:(NSString*)publicKey andPrivateKey:(NSString*)privateKey andPassword:(NSString*)password {
     if (self.destroyed) return;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            [magic unsafeAuthenticateWith:username
+            [self unsafeAuthenticateWith:username
                              andPublicKey:publicKey
                             andPrivateKey:privateKey
                               andPassword:password];
@@ -279,10 +275,9 @@ continue; \
     __block int exitCode = 0;
     NSLog(@"requesting execute: %@", withCommand);
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            [magic unsafeExecuteRemote:withCommand
+            [self unsafeExecuteRemote:withCommand
                        withExecTimeout:withTimeoutSecond
                           withOnCreate:withOnCreate
                             withOutput:withOutput
@@ -306,10 +301,9 @@ continue; \
 {
     if (self.destroyed) return;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            [magic unsafeOpenShellWithTerminal:withTerminalType
+            [self unsafeOpenShellWithTerminal:withTerminalType
                               withTerminalSize:withRequestTerminalSize
                                  withWriteData:withWriteDataBuffer
                                     withOutput:withOutputDataBuffer
@@ -333,10 +327,9 @@ continue; \
 {
     if (self.destroyed) return;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            [magic unsafeCreatePortForwardWithLocalPort:localPort
+            [self unsafeCreatePortForwardWithLocalPort:localPort
                                   withForwardTargetHost:targetHost
                                   withForwardTargetPort:targetPort
                                            withOnCreate:withOnCreate
@@ -357,10 +350,9 @@ continue; \
 {
     if (self.destroyed) return;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            [magic unsafeCreatePortForwardWithRemotePort:remotePort
+            [self unsafeCreatePortForwardWithRemotePort:remotePort
                                    withForwardTargetHost:targetHost
                                    withForwardTargetPort:targetPort
                                             withOnCreate:withOnCreate
@@ -378,10 +370,9 @@ continue; \
 - (void)requestConnectFileTransferAndWait {
     if (self.destroyed) return;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            [magic unsafeConnectFileTransferWithCompleteBlock:^{
+            [self unsafeConnectFileTransferWithCompleteBlock:^{
                 DISPATCH_SEMAPHORE_CHECK_SIGNLE(sem);
             }];
         } copy];
@@ -409,11 +400,10 @@ continue; \
 - (nullable NSArray<NSRemoteFile *>*)requestFileListAt:(NSString*)atDirPath {
     if (self.destroyed) return NULL;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     __block NSArray<NSRemoteFile*>* result = NULL;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            result = [magic unsafeGetDirFileListAt:atDirPath];
+            result = [self unsafeGetDirFileListAt:atDirPath];
             DISPATCH_SEMAPHORE_CHECK_SIGNLE(sem);
         } copy];
         [self.requestInvokations addObject:block];
@@ -425,11 +415,10 @@ continue; \
 - (nullable NSRemoteFile*)requestFileInfoAt:(NSString*)atPath {
     if (self.destroyed) return NULL;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     __block NSRemoteFile *result = NULL;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            result = [magic unsafeGetFileInfo:atPath];
+            result = [self unsafeGetFileInfo:atPath];
             DISPATCH_SEMAPHORE_CHECK_SIGNLE(sem);
         } copy];
         [self.requestInvokations addObject:block];
@@ -444,11 +433,10 @@ continue; \
 {
     if (self.destroyed) return NO;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     __block BOOL success = NO;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            success = [magic unsafeRenameFileAndWait:atPath
+            success = [self unsafeRenameFileAndWait:atPath
                                          withNewPath:newPath];
             DISPATCH_SEMAPHORE_CHECK_SIGNLE(sem);
         } copy];
@@ -466,11 +454,10 @@ continue; \
 {
     if (self.destroyed) return NO;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     __block BOOL success = NO;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            success = [magic unsafeUploadRecursiveForFile:atPath
+            success = [self unsafeUploadRecursiveForFile:atPath
                                               toDirectory:toDirectory
                                                onProgress:onProgress
                                   withContinuationHandler:continuationBlock
@@ -490,11 +477,10 @@ continue; \
 {
     if (self.destroyed) return NO;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     __block BOOL success = NO;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            success = [magic unsafeDeleteForFile:atPath
+            success = [self unsafeDeleteForFile:atPath
                                withProgressBlock:onProgress
                          withContinuationHandler:continuationBlock];
             DISPATCH_SEMAPHORE_CHECK_SIGNLE(sem);
@@ -510,11 +496,10 @@ continue; \
 {
     if (self.destroyed) return NO;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     __block BOOL success = NO;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            success = [magic unsafeCreateDirAndWait:atPath];
+            success = [self unsafeCreateDirAndWait:atPath];
             DISPATCH_SEMAPHORE_CHECK_SIGNLE(sem);
         } copy];
         [self.requestInvokations addObject:block];
@@ -531,11 +516,10 @@ continue; \
 {
     if (self.destroyed) return NO;
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
-    __weak typeof(self) magic = self;
     __block BOOL success = NO;
     @synchronized (self.requestInvokations) {
         id block = [^{
-            success = [magic unsafeDownloadRecursiveAtPath:atPath
+            success = [self unsafeDownloadRecursiveAtPath:atPath
                                                toLocalPath:toPath
                                                 onProgress:onProgress
                                    withContinuationHandler:continuationBlock
