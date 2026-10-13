@@ -6,14 +6,13 @@
     {
       "layers" : [
         {
-          "glass" : false,
-          "image-name" : "cat-portrait-transparent.svg",
-          "name" : "cat-portrait-transparent",
+          "image-name" : "cat-girl-lines-transparent.svg",
+          "name" : "cat-girl-lines-transparent",
           "position" : {
-            "scale" : 0.9,
+            "scale" : 1,
             "translation-in-points" : [
-              0,
-              0
+              8.140625,
+              53.78125
             ]
           }
         }
