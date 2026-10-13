@@ -210,13 +210,16 @@ public class FileTransferContext: ObservableObject, Identifiable, Equatable {
         DispatchQueue.global().async { [self] in
             putInformation("Loading... \(currentDir)")
             onMainThread { self.isProgressRunning = true }
-            let files = shell.requestFileList(at: self.currentDir)
+            let files = shell.requestFileList(at: currentDir)
             var builder = [RemoteFile]()
             for file in files ?? [] {
                 builder.append(.init(base: currentUrl, name: file.name, fstat: file))
             }
             putInformation("Load Complete")
             onMainThread {
+                // A navigation that happened meanwhile issues its own load;
+                // this one's result belongs to a directory already left.
+                guard self.currentDir == currentDir else { return }
                 self.isProgressRunning = false
                 self.currentFileList = builder
             }
