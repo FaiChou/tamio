@@ -29,14 +29,14 @@
                                                       object:NULL];
         NSString *threadName = [[NSString alloc] initWithFormat:@"me.mizorewww.shell.%p", parent];
         [_associatedThread setName:threadName];
-        NSLog(@"opening thread %@", threadName);
+        NSRLog(@"opening thread %@", threadName);
         [_associatedThread start];
     }
     return self;
 }
 
 - (void)dealloc {
-    NSLog(@"TSEventLoop object at %p deallocating", self);
+    NSRLog(@"TSEventLoop object at %p deallocating", self);
     [self destroyLoop];
 }
 
@@ -61,7 +61,7 @@
                                                      repeats:YES];
     [self.associatedRunLoop addTimer:self.associatedTimer forMode:NSRunLoopCommonModes];
     [self.associatedRunLoop run];
-    NSLog(@"thread %@ exiting", [[NSThread currentThread] name]);
+    NSRLog(@"thread %@ exiting", [[NSThread currentThread] name]);
 }
 
 - (void)handleMachMessage:(void *)msg {
@@ -78,11 +78,11 @@
     NSString *name = [[NSThread currentThread] name];
     NSString *want = [[NSString alloc] initWithFormat:@"me.mizorewww.shell.%p", self.parent];
     if (![name isEqualToString:want]) {
-        NSLog(@"\n\n");
-        NSLog(@"[E] shell name mismatch");
-        NSLog(@"expect: %@", want);
-        NSLog(@" found: %@", name);
-        NSLog(@"\n\n");
+        NSRLog(@"\n\n");
+        NSRLog(@"[E] shell name mismatch");
+        NSRLog(@"expect: %@", want);
+        NSRLog(@" found: %@", name);
+        NSRLog(@"\n\n");
     }
 #endif
     [self.parent handleRequestsIfNeeded];

@@ -81,13 +81,13 @@
         if (rc != LIBSSH2_ERROR_EAGAIN) { self.forwardCompleted = YES; }
         return;
     }
-    NSLog(@"channel forward accepted a channel");
+    NSRLog(@"channel forward accepted a channel");
     int socket = [GenericNetworking createSocketWithTargetHost:self.targetHost
                                                 withTargetPort:self.targetPort
                                           requireNonblockingIO:YES
                                             withConnectTimeout:self.timeout];
     if (!socket) {
-        NSLog(@"failed to create socket to target");
+        NSRLog(@"failed to create socket to target");
         LIBSSH2_CHANNEL_SHUTDOWN(channel);
         return;
     }

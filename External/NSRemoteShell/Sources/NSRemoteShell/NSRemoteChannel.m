@@ -46,7 +46,7 @@
 }
 
 - (void)dealloc {
-    NSLog(@"channel object at %p deallocating", self);
+    NSRLog(@"channel object at %p deallocating", self);
     [self unsafeDisconnectAndPrepareForRelease];
 }
 
@@ -75,7 +75,7 @@
 - (void)setChannelTimeoutWith:(double)timeoutValueFromNowInSecond {
     if (timeoutValueFromNowInSecond <= 0) {
 #if DEBUG
-        NSLog(@"setChannelTimeoutWith was called with negative value or zero, setChannelTimeoutWithScheduled skipped");
+        NSRLog(@"setChannelTimeoutWith was called with negative value or zero, setChannelTimeoutWithScheduled skipped");
 #endif
     } else {
         NSDate *schedule = [[NSDate alloc] initWithTimeIntervalSinceNow:timeoutValueFromNowInSecond];
@@ -144,7 +144,7 @@
     }
     NSData *data = [requestedBuffer dataUsingEncoding:NSUTF8StringEncoding];
     if (!data || [data length] < 1) {
-        NSLog(@"error occurred during message encode, ignoring empty data");
+        NSRLog(@"error occurred during message encode, ignoring empty data");
         return;
     }
     while (true) {
@@ -157,11 +157,11 @@
             continue;
         }
         if (rc < 0) {
-            NSLog(@"error occurred during message write, consider terminated channel");
+            NSRLog(@"error occurred during message write, consider terminated channel");
             break;
         }
         if (rc != [data length]) {
-            NSLog(@"written data was smaller than giving, data might broke");
+            NSRLog(@"written data was smaller than giving, data might broke");
             break;
         }
         // do not deal with error?
@@ -172,7 +172,7 @@
 - (BOOL)unsafeChannelShouldTerminate {
     do {
         if (self.scheduledTermination && [self.scheduledTermination timeIntervalSinceNow] < 0) {
-            NSLog(@"channel terminating due to timeout schedule");
+            NSRLog(@"channel terminating due to timeout schedule");
             break;
         }
         if (self.continuationDecisionBlock && !self.continuationDecisionBlock()) {
@@ -243,7 +243,7 @@
     while (libssh2_channel_close(channel) == LIBSSH2_ERROR_EAGAIN) {};
     while (libssh2_channel_wait_closed(channel) == LIBSSH2_ERROR_EAGAIN) {};
     int es = libssh2_channel_get_exit_status(channel);
-    NSLog(@"channel get exit status returns: %d", es);
+    NSRLog(@"channel get exit status returns: %d", es);
     self.exitStatus = es;
     while (libssh2_channel_free(channel) == LIBSSH2_ERROR_EAGAIN) {};
     if (self.terminationBlock) { self.terminationBlock(); }

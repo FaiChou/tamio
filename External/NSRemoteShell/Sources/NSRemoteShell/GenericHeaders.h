@@ -20,6 +20,16 @@
 #import <Foundation/Foundation.h>
 
 /*
+ debug logging records hostnames, addresses and full paths on every
+ connection event, keep it compiled into debug builds only
+ */
+#if DEBUG
+#define NSRLog(...) NSLog(__VA_ARGS__)
+#else
+#define NSRLog(...) do { } while (0)
+#endif
+
+/*
  the buffer size define the size that should read from a socket at a time
  is required to be larger then socket opt size
  
@@ -63,7 +73,7 @@
 #define MakeDispatchSemaphoreWaitWithTimeout(SEM) do { \
 dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, DISPATCH_SEMAPHORE_MAX_WAIT * NSEC_PER_SEC); \
 if (dispatch_semaphore_wait((SEM), timeout)) { \
-NSLog(@"dispatch semaphore wait timeout for %d second, exiting blocked operation", DISPATCH_SEMAPHORE_MAX_WAIT); \
+NSRLog(@"dispatch semaphore wait timeout for %d second, exiting blocked operation", DISPATCH_SEMAPHORE_MAX_WAIT); \
 } \
 } while (0);
 

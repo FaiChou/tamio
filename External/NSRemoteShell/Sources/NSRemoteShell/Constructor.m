@@ -33,7 +33,7 @@ __attribute__((constructor)) void libssh2_constructor(void) {
     int ret = libssh2_init(0); // flag 1 == no crypto
     if (ret == 0) {
         kLIBSSH2_CONSTRUCTOR_SUCCESS = 1;
-        NSLog(@"libssh2 init success");
+        NSRLog(@"libssh2 init success");
     }
 #if TARGET_OS_OSX
     activity = [[NSProcessInfo processInfo] beginActivityWithOptions:NSActivityLatencyCritical reason:@"NSRemoteShell is latency critical"];

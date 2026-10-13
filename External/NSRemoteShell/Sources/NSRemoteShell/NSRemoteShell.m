@@ -82,7 +82,7 @@
 
 - (void)dealloc {
     self.destroyed = YES;
-    NSLog(@"shell object at %p deallocating", self);
+    NSRLog(@"shell object at %p deallocating", self);
     [self.requestLoopLock lock];
     [self unsafeDisconnect];
     [self.associatedLoop destroyLoop];
@@ -94,7 +94,7 @@
         if (self.destroyed) { return; }
         self.destroyed = YES;
     }
-    NSLog(@"shell object at %p destroy permanently", self);
+    NSRLog(@"shell object at %p destroy permanently", self);
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         [self.requestLoopLock lock];
         [self.associatedLoop destroyLoop];
@@ -135,9 +135,9 @@
 
 - (instancetype)setupConnectionTimeout:(NSNumber*)timeout {
     if (timeout.doubleValue < 1) {
-        NSLog(@"setting timeout value %@ below 1 is not supported", [timeout stringValue]);
+        NSRLog(@"setting timeout value %@ below 1 is not supported", [timeout stringValue]);
 #if DEBUG
-        NSLog(@"for debug purpose, call ivar setter on operationTimeout with a NSNumber");
+        NSRLog(@"for debug purpose, call ivar setter on operationTimeout with a NSNumber");
 #endif
         return self;
     }
@@ -273,7 +273,7 @@ continue; \
        withContinuationHandler:(nullable BOOL (^)(void))withContinuationBlock {
     if (self.destroyed) return 0;
     __block int exitCode = 0;
-    NSLog(@"requesting execute: %@", withCommand);
+    NSRLog(@"requesting execute: %@", withCommand);
     dispatch_semaphore_t sem = dispatch_semaphore_create(0);
     @synchronized (self.requestInvokations) {
         id block = [^{
@@ -571,7 +571,7 @@ continue; \
                                         requireNonblockingIO:NO
                                           withConnectTimeout:self.operationTimeout];
     if (!sock) {
-        NSLog(@"failed to create socket to host");
+        NSRLog(@"failed to create socket to host");
         return;
     }
     self.associatedSocket = sock;
@@ -635,7 +635,7 @@ continue; \
     libssh2_keepalive_config(constructorSession, 0, 2);
     
     self.connected = YES;
-    NSLog(@"constructed libssh2 session to %@ with %@", self.remoteHost, self.resolvedRemoteIpAddress);
+    NSRLog(@"constructed libssh2 session to %@ with %@", self.remoteHost, self.resolvedRemoteIpAddress);
 }
 
 - (void)unsafeDisconnect {
@@ -677,7 +677,7 @@ continue; \
                                                                         0,
                                                                         dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0));
             if (!socketDataSource) {
-                NSLog(@"failed to create dispatch source for socket");
+                NSRLog(@"failed to create dispatch source for socket");
                 [self unsafeDisconnect];
                 return;
             }
@@ -721,7 +721,7 @@ continue; \
     } else {
         // treat anything else as error and close if retry too much times
         if (self.keepAliveAttampt > KEEPALIVE_ERROR_TOLERANCE_MAX_RETRY) {
-            NSLog(@"shell object at %p closing session due to broken pipe", self);
+            NSRLog(@"shell object at %p closing session due to broken pipe", self);
             [self unsafeDisconnect];
             return;
         }
@@ -737,11 +737,11 @@ continue; \
     }
     char *msg;
     int len;
-    int rrv = libssh2_session_last_error(self.associatedSession, &msg, &len, 0);
+    libssh2_session_last_error(self.associatedSession, &msg, &len, 0);
     // clear error since we have it
     libssh2_session_set_last_error(self.associatedSession, 0, NULL);
     NSString *message = [[NSString alloc] initWithUTF8String:msg];
-    NSLog(@"shell object at %p setting last error %d %@", self, rrv, message);
+    NSRLog(@"shell object at %p setting last error %@", self, message);
     @synchronized (self) {
         self.lastError = message;
     }
@@ -823,7 +823,7 @@ continue; \
     [self unsafeReadLastError];
     if (authenticated) {
         self.authenticated = YES;
-        NSLog(@"authenticate success");
+        NSRLog(@"authenticate success");
     }
 }
 
@@ -868,7 +868,7 @@ continue; \
     [self unsafeReadLastError];
     if (authenticated) {
         self.authenticated = YES;
-        NSLog(@"authenticate success");
+        NSRLog(@"authenticate success");
     }
 }
 
@@ -917,7 +917,7 @@ continue; \
     }
     [self unsafeReadLastError];
     if (!channel) {
-        NSLog(@"failed to allocate channel");
+        NSRLog(@"failed to allocate channel");
         DISPATCH_SEMAPHORE_CHECK_SIGNLE(completionSemaphore);
         return;
     }
@@ -999,7 +999,7 @@ continue; \
     }
     [self unsafeReadLastError];
     if (!channel) {
-        NSLog(@"failed to allocate channel");
+        NSRLog(@"failed to allocate channel");
         DISPATCH_SEMAPHORE_CHECK_SIGNLE(completionSemaphore);
         return;
     }
@@ -1029,7 +1029,7 @@ continue; \
             break;
         }
         if (!requestedPty) {
-            NSLog(@"failed to request pty");
+            NSRLog(@"failed to request pty");
             [channelObject unsafeDisconnectAndPrepareForRelease];
             DISPATCH_SEMAPHORE_CHECK_SIGNLE(completionSemaphore);
             return;
@@ -1077,14 +1077,14 @@ continue; \
                      withContinuationHandler:(BOOL (^)(void))continuationBlock
                      withCompletionSemaphore:(dispatch_semaphore_t)completionSemaphore
 {
-    NSLog(@"requested port forward from localhost:%@ --tunnel--> %@:%@", [localPort stringValue], targetHost, [targetPort stringValue]);
+    NSRLog(@"requested port forward from localhost:%@ --tunnel--> %@:%@", [localPort stringValue], targetHost, [targetPort stringValue]);
     BOOL invalid = NO ||
     ![GenericNetworking isValidateWithPort:localPort] ||
     ![GenericNetworking isValidateWithPort:targetPort] ||
     [targetHost isEqualToString:@""];
     if (invalid) {
         DISPATCH_SEMAPHORE_CHECK_SIGNLE(completionSemaphore);
-        NSLog(@"invalid parameter was found");
+        NSRLog(@"invalid parameter was found");
         return;
     }
     
@@ -1104,7 +1104,7 @@ continue; \
         return;
     }
     
-    NSLog(@"processing channel startup for direct tcpip");
+    NSRLog(@"processing channel startup for direct tcpip");
     
     LIBSSH2_SESSION *session = self.associatedSession;
     NSLocalForward *operator = [[NSLocalForward alloc] initWithRepresentedSession:session
@@ -1134,14 +1134,14 @@ continue; \
                       withContinuationHandler:(BOOL (^)(void))continuationBlock
                       withCompletionSemaphore:(dispatch_semaphore_t)completionSemaphore
 {
-    NSLog(@"requested port forward from remote:%@ --tunnel--> %@:%@", [remotePort stringValue], targetHost, [targetPort stringValue]);
+    NSRLog(@"requested port forward from remote:%@ --tunnel--> %@:%@", [remotePort stringValue], targetHost, [targetPort stringValue]);
     BOOL invalid = NO ||
     ![GenericNetworking isValidateWithPort:remotePort] ||
     ![GenericNetworking isValidateWithPort:targetPort] ||
     [targetHost isEqualToString:@""];
     if (invalid) {
         DISPATCH_SEMAPHORE_CHECK_SIGNLE(completionSemaphore);
-        NSLog(@"invalid parameter was found");
+        NSRLog(@"invalid parameter was found");
         return;
     }
     
@@ -1184,7 +1184,7 @@ continue; \
     [self unsafeReadLastError];
     if (!listener) {
         DISPATCH_SEMAPHORE_CHECK_SIGNLE(completionSemaphore);
-        NSLog(@"libssh2_channel_forward_listen_ex was not able to receive listener");
+        NSRLog(@"libssh2_channel_forward_listen_ex was not able to receive listener");
         return;
     }
     
@@ -1248,7 +1248,7 @@ continue; \
     
     self.associatedFileTransfer = sftp;
     self.connectedFileTransfer = YES;
-    NSLog(@"libssh2_sftp_init success");
+    NSRLog(@"libssh2_sftp_init success");
     if (withComplete) withComplete();
 }
 
@@ -1460,7 +1460,7 @@ continue; \
     NSURL *remoteFile = [[NSURL alloc] initFileURLWithPath:toDirectory];
     remoteFile = [remoteFile URLByAppendingPathComponent:localFile.lastPathComponent];
     
-//    NSLog(@"uploading %@ to %@", localFile.path, remoteFile.path);
+//    NSRLog(@"uploading %@ to %@", localFile.path, remoteFile.path);
     
     BOOL isDir = NO;
     BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:localFile.path isDirectory:&isDir];
@@ -1478,7 +1478,7 @@ continue; \
                                   failureReason:@"this function does not support upload directory"];
         return NO;
     }
-//    NSLog(@"requesting upload file at %@ to %@", localFile.path, remoteFile.path);
+//    NSRLog(@"requesting upload file at %@ to %@", localFile.path, remoteFile.path);
     FILE *f = fopen([localFile.path UTF8String], "rb");
     if (!f) {
         [self unsafeFileTransferSetErrorForFile:localFile.path pathIsRemote:NO failureReason:@"failed to read"];
@@ -1597,7 +1597,7 @@ continue; \
     
     fclose(f);
     LIBSSH2_CHANNEL_SHUTDOWN(channel);
-//    NSLog(@"upload %@ to %@ done", localFile.path, remoteFile.path);
+//    NSRLog(@"upload %@ to %@ done", localFile.path, remoteFile.path);
     if (onProgress) {
         NSProgress *progress = [[NSProgress alloc] init];
         [progress setTotalUnitCount:total_size];
@@ -1688,7 +1688,7 @@ continue; \
     if (![self unsafeValidateSessionSFTP]) { return NO; }
     LIBSSH2_SESSION *session = self.associatedSession;
     LIBSSH2_SFTP *sftp = self.associatedFileTransfer;
-//    NSLog(@"removing file %@", atPath);
+//    NSRLog(@"removing file %@", atPath);
     
     return [self unsafeDeleteRecursivelyForPathAndReturnContinue:atPath
                                                      withSession:session
@@ -1715,7 +1715,7 @@ continue; \
     }
     LIBSSH2_SESSION *session = self.associatedSession;
     LIBSSH2_SFTP *sftp = self.associatedFileTransfer;
-//    NSLog(@"creating dir %@", atPath);
+//    NSRLog(@"creating dir %@", atPath);
     
     // before we create, ask to check if already exists
     NSRemoteFile *file = [self unsafeGetFileInfo:atPath];
@@ -1786,7 +1786,7 @@ continue; \
                                                      withContinuationHandler:continuationBlock];
             if (!ret) { return NO; }
         }
-//        NSLog(@"calling rmdir at %@", atPath);
+//        NSRLog(@"calling rmdir at %@", atPath);
         if (onProgress) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 onProgress(atPath);
@@ -1814,7 +1814,7 @@ continue; \
         }
         return YES;
     } else {
-//        NSLog(@"calling unlink at %@", atPath);
+//        NSRLog(@"calling unlink at %@", atPath);
         if (onProgress) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 onProgress(atPath);
@@ -1856,7 +1856,7 @@ continue; \
 //    NSString *toPath = toFullPath;
     NSURL *remoteFile = [[NSURL alloc] initFileURLWithPath:atFullPath];
     
-    //    NSLog(@"%@ to %@", remoteFile.path, localFile.path);
+    //    NSRLog(@"%@ to %@", remoteFile.path, localFile.path);
     
     if (![self unsafeValidateSessionSFTP]) {
         [self unsafeFileTransferSetErrorForFile:atFullPath pathIsRemote:YES failureReason:@"broken connection"];
@@ -1873,7 +1873,7 @@ continue; \
         [self unsafeFileTransferSetErrorForFile:atFullPath pathIsRemote:YES failureReason:@"broken connection"];
         return NO;
     }
-//    NSLog(@"downloading file %@ to %@", atPath, toPath);
+//    NSRLog(@"downloading file %@ to %@", atPath, toPath);
     
     struct stat fi;
     memset(&fi, 0, sizeof(fi));
@@ -1953,11 +1953,11 @@ continue; \
         if (recv_write_size > 0) {
             long long f_write_size = write(f, buff, recv_write_size);
             if (f_write_size < 0) {
-                NSLog(@"failed to write returns %lld", f_write_size);
+                NSRLog(@"failed to write returns %lld", f_write_size);
                 break;
             }
             if (f_write_size < recv_write_size) {
-                NSLog(@"write call failed to write all buffer, required %lld returns %lld",
+                NSRLog(@"write call failed to write all buffer, required %lld returns %lld",
                       f_write_size,
                       recv_write_size);
                 break;
@@ -2063,7 +2063,7 @@ continue; \
             // now because it is a directory, we create one on our local path
             NSURL *localBase = localFile; // don't remove this, it will make code cleaner
             // TODO: Copy All File Attribute
-//            NSLog(@"creating dir %@ to %@", remoteFile.path, localBase.path);
+//            NSRLog(@"creating dir %@ to %@", remoteFile.path, localBase.path);
             [NSFileManager.defaultManager createDirectoryAtURL:localBase
                                    withIntermediateDirectories:YES
                                                     attributes:NULL
@@ -2125,7 +2125,7 @@ continue; \
     }
     LIBSSH2_SESSION *session = self.associatedSession;
     LIBSSH2_SFTP *sftp = self.associatedFileTransfer;
-//    NSLog(@"rename %@ to %@", atPath, newPath);
+//    NSRLog(@"rename %@ to %@", atPath, newPath);
     
     NSDate *date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
     long long rc = 0;
@@ -2168,7 +2168,7 @@ continue; \
                              pathIsRemote ? @"remote" : @"local",
                              failureReason,
                              filePath];
-    NSLog(@"%@", description);
+    NSRLog(@"%@", description);
     @synchronized (self) {
         self.lastFileTransferError = description;
     }

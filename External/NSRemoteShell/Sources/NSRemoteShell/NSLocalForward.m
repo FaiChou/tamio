@@ -99,7 +99,7 @@
         int forwardsock = accept(self.representedSocket, (struct sockaddr *)&peeraddr, &peeraddrlen);
         if (forwardsock <= 0) { return; }
         setsockopt(forwardsock, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int));
-        NSLog(@"accept is returning child socket %d", forwardsock);
+        NSRLog(@"accept is returning child socket %d", forwardsock);
         NSDate *date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.timeout intValue]];
         LIBSSH2_CHANNEL *channel = NULL;
         while (true) {
@@ -123,12 +123,12 @@
             break;
         }
         if (!channel) {
-            NSLog(@"accepted connection failed to open channel");
+            NSRLog(@"accepted connection failed to open channel");
             close(forwardsock);
             [self unsafeDisconnectAndPrepareForRelease];
             return;
         }
-        NSLog(@"created channel for forward socket %d %p", forwardsock, channel);
+        NSRLog(@"created channel for forward socket %d %p", forwardsock, channel);
         NSRemoteChannelSocketPair *pair = [[NSRemoteChannelSocketPair alloc] initWithSocket:forwardsock
                                                                                 withChannel:channel];
         [self.forwardSocketPair addObject:pair];

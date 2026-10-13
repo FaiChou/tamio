@@ -62,7 +62,7 @@ static BOOL NSRWaitForSocketWritable(int sock, double timeoutSeconds) {
     struct addrinfo *addrs = NULL, *addr;
     int rc = getaddrinfo([candidateHost UTF8String], NULL, &hints, &addrs);
     if (rc != 0) {
-        NSLog(@"resolving host %@ failed: %s", candidateHost, gai_strerror(rc));
+        NSRLog(@"resolving host %@ failed: %s", candidateHost, gai_strerror(rc));
         return [[NSArray alloc] init];
     }
     for (addr = addrs; addr; addr = addr->ai_next) {
@@ -70,7 +70,7 @@ static BOOL NSRWaitForSocketWritable(int sock, double timeoutSeconds) {
         getnameinfo(addr->ai_addr, addr->ai_addrlen, host, sizeof(host), NULL, 0, NI_NUMERICHOST);
         if (strlen(host) <= 0) { continue; }
         NSString *hostStr = [[NSString alloc] initWithUTF8String:host];
-        NSLog(@"resolving host %@ loading result: %@", candidateHost, hostStr);
+        NSRLog(@"resolving host %@ loading result: %@", candidateHost, hostStr);
         NSData *build = [[NSData alloc] initWithBytes:addr->ai_addr length: addr->ai_addrlen];
         candidateHostData = [candidateHostData arrayByAddingObject:build];
     }
@@ -90,7 +90,7 @@ static BOOL NSRWaitForSocketWritable(int sock, double timeoutSeconds) {
 + (int)createSocketNonblockingListenerWithLocalPort:(NSNumber*)localPort
 {
     if (![GenericNetworking isValidateWithPort:localPort]) {
-        NSLog(@"invalid port %@", [localPort stringValue]);
+        NSRLog(@"invalid port %@", [localPort stringValue]);
         return 0;
     }
     
@@ -98,36 +98,36 @@ static BOOL NSRWaitForSocketWritable(int sock, double timeoutSeconds) {
     struct sockaddr_in server4;
     int socket_desc4 = socket(AF_INET, SOCK_STREAM, 0);
     if (socket_desc4 <= 0) {
-        NSLog(@"failed to create socket for ipv4 at port %d", port);
+        NSRLog(@"failed to create socket for ipv4 at port %d", port);
         return 0;
     }
     server4.sin_family = AF_INET;
     server4.sin_addr.s_addr = inet_addr("127.0.0.1"); // for security?
     server4.sin_port = htons(port);
     if (setsockopt(socket_desc4, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) == -1) {
-        NSLog(@"failed to setsockopt for ipv4 at port %d", port);
+        NSRLog(@"failed to setsockopt for ipv4 at port %d", port);
         close(socket_desc4);
         return 0;
     }
     if (bind(socket_desc4, (struct sockaddr*)&server4, sizeof(server4)) < 0) {
-        NSLog(@"failed to bind socket for ipv4 at port %d", port);
+        NSRLog(@"failed to bind socket for ipv4 at port %d", port);
         close(socket_desc4);
         return 0;
     } else {
-        NSLog(@"bound listener v4 for port %d", port);
+        NSRLog(@"bound listener v4 for port %d", port);
     }
     if (fcntl(socket_desc4, F_SETFL, fcntl(socket_desc4, F_GETFL, 0) | O_NONBLOCK) == -1) {
-        NSLog(@"failed to call fcntl for none-blocking ipv4 at port %d", port);
+        NSRLog(@"failed to call fcntl for none-blocking ipv4 at port %d", port);
         close(socket_desc4);
         return 0;
     }
     if (listen(socket_desc4, SOCKET_QUEUE_MAXSIZE) == -1) {
-        NSLog(@"failed to call fcntl for none-blocking ipv6 at port %d", port);
+        NSRLog(@"failed to call fcntl for none-blocking ipv6 at port %d", port);
         close(socket_desc4);
         return 0;
     }
     
-    NSLog(@"socket listener for port %d booted", port);
+    NSRLog(@"socket listener for port %d booted", port);
     return socket_desc4;
 }
 
@@ -159,7 +159,7 @@ static BOOL NSRWaitForSocketWritable(int sock, double timeoutSeconds) {
             inet_ntop(AF_INET, &(address4.sin_addr), str, INET_ADDRSTRLEN);
             int forwardsock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
             if (forwardsock <= 0) {
-                NSLog(@"socket failed to create, trying next");
+                NSRLog(@"socket failed to create, trying next");
                 continue;
             }
             setsockopt(forwardsock, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int));
@@ -167,29 +167,29 @@ static BOOL NSRWaitForSocketWritable(int sock, double timeoutSeconds) {
             // blocking socket, otherwise a dropped packet parks us for the
             // full kernel tcp timeout; blocking mode is restored afterwards
             if (fcntl(forwardsock, F_SETFL, fcntl(forwardsock, F_GETFL, 0) | O_NONBLOCK) == -1) {
-                NSLog(@"failed to call fcntl for none-blocking for socket %d", forwardsock);
+                NSRLog(@"failed to call fcntl for none-blocking for socket %d", forwardsock);
                 close(forwardsock);
                 continue;
             }
             int rv = connect(forwardsock, (struct sockaddr*)&address4, sizeof(struct sockaddr_in));
             if (rv != 0) {
                 if (errno != EINPROGRESS && errno != EINTR) {
-                    NSLog(@"socket failed to connect, trying next address");
+                    NSRLog(@"socket failed to connect, trying next address");
                     close(forwardsock);
                     continue;
                 }
                 if (!NSRWaitForSocketWritable(forwardsock, [connectTimeout doubleValue])) {
-                    NSLog(@"socket failed to connect before deadline, trying next address");
+                    NSRLog(@"socket failed to connect before deadline, trying next address");
                     close(forwardsock);
                     continue;
                 }
             }
             if (!useNonblocking && fcntl(forwardsock, F_SETFL, fcntl(forwardsock, F_GETFL, 0) & ~O_NONBLOCK) == -1) {
-                NSLog(@"failed to restore blocking io for socket %d", forwardsock);
+                NSRLog(@"failed to restore blocking io for socket %d", forwardsock);
                 close(forwardsock);
                 continue;
             }
-            NSLog(@"created socket %d to address %s", forwardsock, str);
+            NSRLog(@"created socket %d to address %s", forwardsock, str);
             return forwardsock;
         } else if ([candidateHostData length] == sizeof(struct sockaddr_in6)) {
             struct sockaddr_in6 address6;
@@ -199,37 +199,37 @@ static BOOL NSRWaitForSocketWritable(int sock, double timeoutSeconds) {
             inet_ntop(AF_INET6, &(address6.sin6_addr), str, INET6_ADDRSTRLEN);
             int forwardsock = socket(PF_INET6, SOCK_STREAM, IPPROTO_TCP);
             if (forwardsock <= 0) {
-                NSLog(@"socket failed to create, trying next");
+                NSRLog(@"socket failed to create, trying next");
                 continue;
             }
             setsockopt(forwardsock, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int));
             if (fcntl(forwardsock, F_SETFL, fcntl(forwardsock, F_GETFL, 0) | O_NONBLOCK) == -1) {
-                NSLog(@"failed to call fcntl for none-blocking for socket %d", forwardsock);
+                NSRLog(@"failed to call fcntl for none-blocking for socket %d", forwardsock);
                 close(forwardsock);
                 continue;
             }
             int rv = connect(forwardsock, (struct sockaddr*)&address6, sizeof(struct sockaddr_in6));
             if (rv != 0) {
                 if (errno != EINPROGRESS && errno != EINTR) {
-                    NSLog(@"socket failed to connect, trying next address");
+                    NSRLog(@"socket failed to connect, trying next address");
                     close(forwardsock);
                     continue;
                 }
                 if (!NSRWaitForSocketWritable(forwardsock, [connectTimeout doubleValue])) {
-                    NSLog(@"socket failed to connect before deadline, trying next address");
+                    NSRLog(@"socket failed to connect before deadline, trying next address");
                     close(forwardsock);
                     continue;
                 }
             }
             if (!useNonblocking && fcntl(forwardsock, F_SETFL, fcntl(forwardsock, F_GETFL, 0) & ~O_NONBLOCK) == -1) {
-                NSLog(@"failed to restore blocking io for socket %d", forwardsock);
+                NSRLog(@"failed to restore blocking io for socket %d", forwardsock);
                 close(forwardsock);
                 continue;
             }
-            NSLog(@"created socket %d to address %s", forwardsock, str);
+            NSRLog(@"created socket %d to address %s", forwardsock, str);
             return forwardsock;
         } else {
-            NSLog(@"unrecognized address candidate size");
+            NSRLog(@"unrecognized address candidate size");
             continue;
         }
     }
@@ -238,7 +238,7 @@ static BOOL NSRWaitForSocketWritable(int sock, double timeoutSeconds) {
 
 + (void)destroyNativeSocket:(int)socketDescriptor {
     if (socketDescriptor > 0) {
-        NSLog(@"closing socket fd %d", socketDescriptor);
+        NSRLog(@"closing socket fd %d", socketDescriptor);
         close(socketDescriptor);
     }
 }

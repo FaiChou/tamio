@@ -42,7 +42,7 @@
                 long i = libssh2_channel_write(self.channel, buf + wr, len - wr);
                 if (LIBSSH2_ERROR_EAGAIN == i) { continue; }
                 if (i <= 0) {
-                    NSLog(@"libssh2_channel_write returns failure %ld", len);
+                    NSRLog(@"libssh2_channel_write returns failure %ld", len);
                     self.completed = YES;
                     return;
                 }
@@ -62,7 +62,7 @@
                 wr += i;
             }
         } else if (len != LIBSSH2_ERROR_EAGAIN) {
-            NSLog(@"libssh2_channel_read returns failure %ld", len);
+            NSRLog(@"libssh2_channel_read returns failure %ld", len);
             self.completed = YES;
             return;
         }
