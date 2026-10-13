@@ -190,23 +190,31 @@ public enum RXFormat {
         return "\(pair.value) \(pair.unit)"
     }
 
-    /// "41 days, 3 h" style uptime.
-    public static func duration(_ seconds: Double) -> String {
-        guard seconds.isFinite, seconds > 0 else { return "—" }
+    private static let durationFormatter: DateComponentsFormatter = {
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.day, .hour, .minute]
         formatter.unitsStyle = .abbreviated
         formatter.maximumUnitCount = 2
-        return formatter.string(from: seconds) ?? "—"
+        return formatter
+    }()
+
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        formatter.dateTimeStyle = .named
+        return formatter
+    }()
+
+    /// "41 days, 3 h" style uptime.
+    public static func duration(_ seconds: Double) -> String {
+        guard seconds.isFinite, seconds > 0 else { return "—" }
+        return durationFormatter.string(from: seconds) ?? "—"
     }
 
     /// "2 min ago", "Yesterday" style relative dates; "Never" before 1971.
     public static func relative(_ date: Date) -> String {
         if date.timeIntervalSince1970 < 86400 * 365 { return "Never" }
         if abs(date.timeIntervalSinceNow) < 60 { return "Now" }
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .full
-        formatter.dateTimeStyle = .named
-        return formatter.localizedString(for: date, relativeTo: Date())
+        return relativeFormatter.localizedString(for: date, relativeTo: Date())
     }
 }
