@@ -169,23 +169,44 @@ struct ConfigKeybindingList: View {
         var visible: [(index: Int, binding: ConfigKeybinding)] = []
         var hiddenCount = 0
         var repeated: Set<String> = []
+
+        init(entries: [String], filter: String) {
+            var seen: [String: Int] = [:]
+            for (index, entry) in entries.enumerated() {
+                let binding = ConfigKeybinding(entry)
+                seen[binding.canonical, default: 0] += 1
+                guard KeybindingNames.applies(binding) else { hiddenCount += 1; continue }
+                if !filter.isEmpty {
+                    let text = "\(KeybindingNames.trigger(binding)) \(KeybindingNames.summary(binding)) \(entry)"
+                    guard text.localizedCaseInsensitiveContains(filter) else { continue }
+                }
+                visible.append((index, binding))
+            }
+            repeated = Set(seen.filter { $0.value > 1 }.keys)
+        }
     }
 
-    private var listing: Listing {
-        var result = Listing()
-        var seen: [String: Int] = [:]
-        for (index, entry) in entries.enumerated() {
-            let binding = ConfigKeybinding(entry)
-            seen[binding.canonical, default: 0] += 1
-            guard KeybindingNames.applies(binding) else { result.hiddenCount += 1; continue }
-            if !filter.isEmpty {
-                let text = "\(KeybindingNames.trigger(binding)) \(KeybindingNames.summary(binding)) \(entry)"
-                guard text.localizedCaseInsensitiveContains(filter) else { continue }
-            }
-            result.visible.append((index, binding))
+    /// Parses every shortcut once per (entries, filter) pair: body runs on
+    /// each sheet and search state change, the parsed list rarely does.
+    private final class ListingCache {
+        private var entries: [String] = []
+        private var filter = ""
+        private var value: Listing?
+
+        func listing(entries: [String], filter: String) -> Listing {
+            if let value, self.entries == entries, self.filter == filter { return value }
+            let built = Listing(entries: entries, filter: filter)
+            self.entries = entries
+            self.filter = filter
+            value = built
+            return built
         }
-        result.repeated = Set(seen.filter { $0.value > 1 }.keys)
-        return result
+    }
+
+    @State private var listingCache = ListingCache()
+
+    private var listing: Listing {
+        listingCache.listing(entries: entries, filter: filter)
     }
 
     var body: some View {
