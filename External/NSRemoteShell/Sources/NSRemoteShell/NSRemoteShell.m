@@ -1893,6 +1893,10 @@ continue; \
             // error occurred
             break;
         }
+        if (recv_write_size == 0) {
+            // remote sent eof, no more data will arrive
+            break;
+        }
         if (recv_write_size > 0) {
             long long f_write_size = write(f, buff, recv_write_size);
             if (f_write_size < 0) {
