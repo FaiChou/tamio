@@ -4,6 +4,7 @@
 //
 
 @testable import RayonModule
+import CryptoKit
 import XCTest
 
 /// A device as sync sees it: its items, what it last knew, and its passphrase.
@@ -345,6 +346,46 @@ final class SyncTests: XCTestCase {
 
         var garbage: Data? = Data("not an envelope".utf8)
         guard case .unreadable = mac.sync(&garbage, at: time(40)) else { return XCTFail("expected unreadable") }
+    }
+
+    func testOpenTellsAWrongPassphraseFromDamagedData() throws {
+        let plain = Data("the document".utf8)
+        let key = SyncCipher.key(passphrase: "the passphrase", salt: SyncCipher.newSalt(), rounds: 1000)
+        let sealed = try SyncCipher.seal(plain, with: key)
+        let envelope = try JSONDecoder().decode(SyncEnvelope.self, from: sealed)
+        XCTAssertEqual(try SyncCipher.open(envelope, with: key), plain)
+
+        let wrong = SyncCipher.key(passphrase: "another passphrase", salt: envelope.salt, rounds: envelope.rounds)
+        XCTAssertThrowsError(try SyncCipher.open(envelope, with: wrong)) {
+            XCTAssertEqual($0 as? SyncCipher.OpenError, .wrongPassphrase)
+        }
+
+        // Sealed under the right key, but what is inside is not a document:
+        // it opens and then fails to decompress.
+        var damaged = envelope
+        damaged.sealed = try XCTUnwrap(CryptoKit.AES.GCM.seal(
+            Data("not compressed".utf8), using: key.key, authenticating: SyncCipher.context
+        ).combined)
+        XCTAssertThrowsError(try SyncCipher.open(damaged, with: key)) {
+            XCTAssertEqual($0 as? SyncCipher.OpenError, .corruptedData)
+        }
+    }
+
+    func testDamagedStoredDataIsUnreadableNotLocked() throws {
+        var cloud: Data?
+        var mac = Device()
+        mac.machines = [machine("alpha")]
+        mac.sync(&cloud, at: time(0))
+
+        var envelope = try JSONDecoder().decode(SyncEnvelope.self, from: XCTUnwrap(cloud))
+        let key = try XCTUnwrap(mac.key)
+        envelope.sealed = try XCTUnwrap(CryptoKit.AES.GCM.seal(
+            Data("not compressed".utf8), using: key.key, authenticating: SyncCipher.context
+        ).combined)
+        var damaged: Data? = try JSONEncoder().encode(envelope)
+        guard case .unreadable = mac.sync(&damaged, at: time(10)) else {
+            return XCTFail("expected unreadable, not locked: another passphrase cannot help")
+        }
     }
 
     func testAnOldDeletionIsForgotten() {

@@ -59,7 +59,7 @@ enum SyncSession {
                let envelope = try? JSONDecoder().decode(SyncEnvelope.self, from: remote),
                envelope.version == SyncEnvelope.currentVersion,
                envelope.salt == old.salt, envelope.rounds == old.rounds,
-               let plain = SyncCipher.open(envelope, with: old),
+               let plain = try? SyncCipher.open(envelope, with: old),
                let decoded = try? JSONDecoder().decode(SyncDocument.self, from: plain)
             {
                 document = decoded
@@ -75,7 +75,17 @@ enum SyncSession {
             if key?.salt != envelope.salt || key?.rounds != envelope.rounds {
                 key = SyncCipher.key(passphrase: input.passphrase, salt: envelope.salt, rounds: envelope.rounds)
             }
-            guard let key, let plain = SyncCipher.open(envelope, with: key) else { return .locked }
+            guard let key else { return .locked }
+            let plain: Data
+            do {
+                plain = try SyncCipher.open(envelope, with: key)
+            } catch SyncCipher.OpenError.wrongPassphrase {
+                return .locked
+            } catch {
+                // Damaged data is not a wrong passphrase: asking for another
+                // one would not help.
+                return .unreadable
+            }
             guard let decoded = try? JSONDecoder().decode(SyncDocument.self, from: plain) else {
                 return .unreadable
             }

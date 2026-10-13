@@ -23,6 +23,14 @@ struct SyncEnvelope: Codable {
 }
 
 enum SyncCipher {
+    /// Why an envelope did not open.
+    enum OpenError: Error {
+        /// The key does not fit: the passphrase is wrong.
+        case wrongPassphrase
+        /// It opened, but what is inside is damaged.
+        case corruptedData
+    }
+
     /// A key, and the salt and rounds it came from.
     struct Key: Sendable {
         let salt: Data
@@ -36,7 +44,7 @@ enum SyncCipher {
     static let minimumRounds = 100_000
     static let maximumRounds = 10_000_000
 
-    private static let context = Data("me.mizorewww.rayon.sync.v1".utf8)
+    static let context = Data("me.mizorewww.rayon.sync.v1".utf8)
 
     static func newSalt() -> Data {
         Data((0 ..< 16).map { _ in UInt8.random(in: .min ... .max) })
@@ -68,11 +76,15 @@ enum SyncCipher {
         return try JSONEncoder().encode(SyncEnvelope(salt: key.salt, rounds: key.rounds, sealed: sealed))
     }
 
-    /// Nil when the key does not open it.
-    static func open(_ envelope: SyncEnvelope, with key: Key) -> Data? {
+    /// Throws `OpenError.wrongPassphrase` when the key does not open it,
+    /// `OpenError.corruptedData` when what it opened is damaged.
+    static func open(_ envelope: SyncEnvelope, with key: Key) throws -> Data {
         guard let box = try? CryptoKit.AES.GCM.SealedBox(combined: envelope.sealed),
               let packed = try? CryptoKit.AES.GCM.open(box, using: key.key, authenticating: context)
-        else { return nil }
-        return try? (packed as NSData).decompressed(using: .zlib) as Data
+        else { throw OpenError.wrongPassphrase }
+        guard let plain = try? (packed as NSData).decompressed(using: .zlib) as Data else {
+            throw OpenError.corruptedData
+        }
+        return plain
     }
 }

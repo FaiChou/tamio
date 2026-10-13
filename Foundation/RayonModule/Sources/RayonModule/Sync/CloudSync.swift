@@ -220,7 +220,15 @@ public final class CloudSync: ObservableObject {
     /// Removes what is in iCloud and stops syncing here. A device that still
     /// syncs will store its data again.
     public func deleteStoredData() {
-        try? transport.write(nil)
+        do {
+            try transport.write(nil)
+        } catch {
+            debugPrint("CloudSync: failed to delete stored data: \(error.localizedDescription)")
+            // Staying on, with the failure showing: turning off would say
+            // the data is gone when it is not.
+            status = .failed("The data in iCloud could not be removed: \(error.localizedDescription)")
+            return
+        }
         turnOff()
     }
 
