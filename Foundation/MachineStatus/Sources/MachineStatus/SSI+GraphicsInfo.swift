@@ -12,7 +12,7 @@ import XMLCoder
 
 public extension ServerStatus {
     /// 服务器 GPU 信息
-    struct GraphicsInfo: Codable, Equatable, Identifiable, DynamicNodeEncoding {
+    struct GraphicsInfo: Codable, Equatable, Identifiable {
         public var id = UUID()
 
         public let version: String // CUDA version, like '11.2'
@@ -23,13 +23,6 @@ public extension ServerStatus {
             case units = "gpu"
         }
 
-        public static func nodeEncoding(for key: CodingKey) -> XMLEncoder.NodeEncoding {
-            switch key {
-            case GraphicsInfo.CodingKeys.version: return .both
-            default: return .element
-            }
-        }
-
         public init() {
             version = "unknown"
             units = []
@@ -37,15 +30,15 @@ public extension ServerStatus {
 
         public init?(withRemote shell: NSRemoteShell, timeout: Double) {
             let downloadResult = downloadResultFrom(shell: shell, command: .obtainGraphicsInfo, timeout: timeout)
-            guard let coder = (
-                try? XMLDecoder().decode(
+            do {
+                self = try XMLDecoder().decode(
                     GraphicsInfo.self,
                     from: Data(downloadResult.utf8)
                 )
-            ) else {
+            } catch {
+                debugPrint("[GraphicsInfo] nvidia-smi XML decode failed: \(error)")
                 return nil
             }
-            self = coder
         }
     }
 
