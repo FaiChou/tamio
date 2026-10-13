@@ -165,12 +165,12 @@
 
 + (NSString*)getResolvedIpAddressWith:(int)socket {
     if (!socket) { return @""; }
-    struct sockaddr_in sin;
+    struct sockaddr_storage sin;
     socklen_t len = sizeof(sin);
     getpeername(socket, (struct sockaddr*)&sin, &len);
     char buf[255];
     memset(buf, 0, sizeof(buf));
-    switch(sin.sin_family) {
+    switch(sin.ss_family) {
         case AF_INET: {
             struct sockaddr_in *addr_in = (struct sockaddr_in *)&sin;
             inet_ntop(AF_INET, &(addr_in->sin_addr), buf, INET_ADDRSTRLEN);
