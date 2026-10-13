@@ -5,16 +5,15 @@ struct ConfigThemePicker: View {
     @Binding var value: String
     @State private var search = ""
     @State private var darkSide = false
-    private var dual: Bool { value.hasPrefix("light:") && value.contains(",dark:") }
+    private var sides: (light: String, dark: String)? { ConfigDocument.themeSides(value) }
+    private var dual: Bool { sides != nil }
     private var selected: String {
-        guard dual else { return value }
-        return value.components(separatedBy: ",")[darkSide ? 1 : 0].components(separatedBy: ":").dropFirst().joined(separator: ":")
+        guard let sides else { return value }
+        return darkSide ? sides.dark : sides.light
     }
     private func select(_ name: String) {
-        if dual {
-            var parts = value.components(separatedBy: ",")
-            parts[darkSide ? 1 : 0] = (darkSide ? "dark:" : "light:") + name
-            value = parts.joined(separator: ",")
+        if let sides {
+            value = "light:\(darkSide ? sides.light : name),dark:\(darkSide ? name : sides.dark)"
         } else { value = name }
     }
     var body: some View {

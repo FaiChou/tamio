@@ -113,14 +113,20 @@ struct ConfigDocument: Codable, Equatable, Sendable {
         return decoded
     }
 
-    func effectiveTheme(dark: Bool) -> ConfigTheme? {
-        let raw = text("theme")
-        var name = raw
-        if raw.contains("light:") || raw.contains("dark:") {
-            let prefix = dark ? "dark:" : "light:"
-            name = raw.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+    /// The two sides of a "light:A,dark:B" theme value, wherever the parts
+    /// appear in the list; nil when the value names a single theme.
+    static func themeSides(_ raw: String) -> (light: String, dark: String)? {
+        guard raw.contains("light:") || raw.contains("dark:") else { return nil }
+        func side(_ prefix: String) -> String {
+            raw.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }
                 .first(where: { $0.hasPrefix(prefix) }).map { String($0.dropFirst(prefix.count)) } ?? ""
         }
+        return (side("light:"), side("dark:"))
+    }
+
+    func effectiveTheme(dark: Bool) -> ConfigTheme? {
+        let raw = text("theme")
+        let name = Self.themeSides(raw).map { dark ? $0.dark : $0.light } ?? raw
         return ConfigCatalog.shared.themes[name]
     }
     func effectiveColor(_ key: String, dark: Bool) -> String {
