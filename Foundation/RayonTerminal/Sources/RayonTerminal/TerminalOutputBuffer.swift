@@ -12,18 +12,21 @@ final class TerminalOutputBuffer: @unchecked Sendable {
 
     func write(_ data: Data) {
         guard !data.isEmpty else { return }
-        lock.withLock {
-            if attached { receive(data) } else { pending.append(data) }
+        let deliverNow = lock.withLock {
+            if attached { return true }
+            pending.append(data)
+            return false
         }
+        if deliverNow { receive(data) }
     }
 
     func setAttached(_ value: Bool) {
-        lock.withLock {
+        let replay: [Data] = lock.withLock {
             attached = value
-            if value {
-                for data in pending { receive(data) }
-                pending.removeAll(keepingCapacity: false)
-            }
+            guard value else { return [] }
+            defer { pending.removeAll(keepingCapacity: false) }
+            return pending
         }
+        for data in replay { receive(data) }
     }
 }
