@@ -760,13 +760,24 @@ continue; \
 
 - (void)unsafeFileTransferCloseFor:(LIBSSH2_SFTP*)sftp {
     if (!sftp) return;
-    while (libssh2_sftp_shutdown(sftp) == LIBSSH2_ERROR_EAGAIN) {};
+    NSDate *date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
+    while (libssh2_sftp_shutdown(sftp) == LIBSSH2_ERROR_EAGAIN) {
+        if ([date timeIntervalSinceNow] < 0) { break; }
+        usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
+    }
 }
 
 - (void)unsafeSessionCloseFor:(LIBSSH2_SESSION*)session {
     if (!session) return;
-    while (libssh2_session_disconnect(session, "closed by client") == LIBSSH2_ERROR_EAGAIN) {};
-    while (libssh2_session_free(session) == LIBSSH2_ERROR_EAGAIN) {};
+    NSDate *date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
+    while (libssh2_session_disconnect(session, "closed by client") == LIBSSH2_ERROR_EAGAIN) {
+        if ([date timeIntervalSinceNow] < 0) { break; }
+        usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
+    }
+    while (libssh2_session_free(session) == LIBSSH2_ERROR_EAGAIN) {
+        if ([date timeIntervalSinceNow] < 0) { break; }
+        usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
+    }
 }
 
 - (BOOL)unsafeValidateSession {
@@ -806,7 +817,12 @@ continue; \
     }
     LIBSSH2_SESSION *session = self.associatedSession;
     BOOL authenticated = NO;
+    NSDate *date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
     while (true) {
+        if ([date timeIntervalSinceNow] < 0) {
+            libssh2_session_set_last_error(session, LIBSSH2_ERROR_TIMEOUT, NULL);
+            break;
+        }
         long long rc = libssh2_userauth_password(session, [username UTF8String], [password UTF8String]);
         if (rc == LIBSSH2_ERROR_EAGAIN) {
             usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
@@ -835,7 +851,12 @@ continue; \
     }
     LIBSSH2_SESSION *session = self.associatedSession;
     BOOL authenticated = NO;
+    NSDate *date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
     while (true) {
+        if ([date timeIntervalSinceNow] < 0) {
+            libssh2_session_set_last_error(session, LIBSSH2_ERROR_TIMEOUT, NULL);
+            break;
+        }
         const char *name = username ? [username UTF8String] : NULL;
         unsigned int nl = username ? (unsigned int)strlen(name) : 0;
         const char *pub = publicKey ? [publicKey UTF8String] : NULL;
@@ -915,7 +936,12 @@ continue; \
                                                                    withRepresentedChanel:channel];
     
     BOOL channelStartupCompleted = NO;
+    date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
     while (true) {
+        if ([date timeIntervalSinceNow] < 0) {
+            libssh2_session_set_last_error(session, LIBSSH2_ERROR_TIMEOUT, NULL);
+            break;
+        }
         long rc = libssh2_channel_exec(channel, [command UTF8String]);
         if (rc == LIBSSH2_ERROR_EAGAIN) { usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT); continue; }
         channelStartupCompleted = (rc == 0);
@@ -999,7 +1025,12 @@ continue; \
         NSString *requestPseudoTermial = @"xterm";
         if (terminalType) { requestPseudoTermial = terminalType; }
         BOOL requestedPty = NO;
+        date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
         while (true) {
+            if ([date timeIntervalSinceNow] < 0) {
+                libssh2_session_set_last_error(session, LIBSSH2_ERROR_TIMEOUT, NULL);
+                break;
+            }
             long rc = libssh2_channel_request_pty(channel, [requestPseudoTermial UTF8String]);
             if (rc == LIBSSH2_ERROR_EAGAIN) {
                 usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
@@ -1020,7 +1051,12 @@ continue; \
     
     do {
         BOOL channelStartupCompleted = NO;
+        date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
         while (true) {
+            if ([date timeIntervalSinceNow] < 0) {
+                libssh2_session_set_last_error(session, LIBSSH2_ERROR_TIMEOUT, NULL);
+                break;
+            }
             long rc = libssh2_channel_shell(channel);
             if (rc == LIBSSH2_ERROR_EAGAIN) { usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT); continue; }
             channelStartupCompleted = (rc == 0);
@@ -1506,10 +1542,16 @@ continue; \
         }
         ptr = buff;
         long long rc = LIBSSH2_ERROR_EAGAIN;
-        // we are not really count the timeout here tho
+        date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
         while (rc == LIBSSH2_ERROR_EAGAIN || read_size) {
+            if ([date timeIntervalSinceNow] < 0) {
+                libssh2_session_set_last_error(session, LIBSSH2_ERROR_TIMEOUT, NULL);
+                rc = LIBSSH2_ERROR_TIMEOUT;
+                break;
+            }
             rc = libssh2_channel_write(channel, ptr, read_size);
             if (rc == LIBSSH2_ERROR_EAGAIN) {
+                usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
                 continue;
             } else if (rc > 0) {
                 // rc indicates how many bytes were written this time
