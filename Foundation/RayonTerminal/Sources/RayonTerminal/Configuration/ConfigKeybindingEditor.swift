@@ -480,7 +480,9 @@ struct ConfigKeybindingBuilder: View {
     }
 
     private func format(_ number: Double) -> String {
-        number.rounded() == number ? String(Int(number)) : String(number)
+        // beyond this the Int conversion would trap; keep the free-form text as typed
+        guard number.isFinite, abs(number) <= 9e15 else { return String(number) }
+        return number.rounded() == number ? String(Int(number)) : String(number)
     }
 }
 

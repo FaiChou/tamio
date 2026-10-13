@@ -557,16 +557,24 @@ struct ConfigByteInput: View {
     @Binding var value: String
     let fallback: String
 
+    /// Inputs are clamped far below Int.max so the Int conversion can never trap.
+    private static let maxMegabytes: Double = 1e12
+
     private var megabytes: Double { (Double(value.isEmpty ? fallback : value) ?? 0) / 1_000_000 }
+
+    private func set(megabytes: Double) {
+        let clamped = min(max(0, megabytes), Self.maxMegabytes)
+        value = String(Int(clamped * 1_000_000))
+    }
 
     var body: some View {
         HStack(spacing: RX.Space.s1) {
-            TextField("MB", value: Binding(get: { megabytes }, set: { value = String(Int(max(0, $0) * 1_000_000)) }), format: .number.precision(.fractionLength(0 ... 1)))
+            TextField("MB", value: Binding(get: { megabytes }, set: { set(megabytes: $0) }), format: .number.precision(.fractionLength(0 ... 1)))
                 .multilineTextAlignment(.trailing)
                 .textFieldStyle(.rx)
                 .frame(width: 96)
-            Stepper("Megabytes", onIncrement: { value = String(Int((megabytes + 1) * 1_000_000)) },
-                    onDecrement: { value = String(Int(max(0, megabytes - 1) * 1_000_000)) })
+            Stepper("Megabytes", onIncrement: { set(megabytes: megabytes + 1) },
+                    onDecrement: { set(megabytes: megabytes - 1) })
                 .labelsHidden()
             Text("MB")
                 .font(.rxBody)
