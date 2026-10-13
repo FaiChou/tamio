@@ -29,6 +29,9 @@ public class CatusshStore: ObservableObject, @unchecked Sendable {
         // former names.
         Self.adoptFormerDefaults()
 
+        // Before any connection: every one is checked against the saved host keys.
+        KnownHosts.install()
+
         // bool(forKey:) also reads "YES"/"1" from the argument domain
         // (`-licenseAgreed YES`), and is false when the key is missing.
         licenseAgreed = UserDefaults.standard.bool(forKey: UserDefaultKey.licenseAgreed.rawValue)

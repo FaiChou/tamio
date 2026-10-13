@@ -233,7 +233,11 @@ open class TerminalContext: ObservableObject, Identifiable, Equatable {
         case .success:
             break
         case .connectFailed:
-            putInformation("Unable to connect for \(machine.remoteAddress):\(machine.remotePort)")
+            if let refusal = shell.hostKeyRefusal {
+                putInformation(refusal.replacingOccurrences(of: "\n", with: "\r\n"))
+            } else {
+                putInformation("Unable to connect for \(machine.remoteAddress):\(machine.remotePort)")
+            }
             return
         case .authenticateFailed:
             putInformation("Failed to authenticate connection")

@@ -26,7 +26,8 @@ public extension NSRemoteShell {
     /// Applies connection parameters to an existing shell, returning self for chaining.
     @discardableResult
     func applyConnection(host: String, port: String, timeout: NSNumber) -> NSRemoteShell {
-        setupConnectionHost(host)
+        KnownHosts.install()
+        return setupConnectionHost(host)
             .setupConnectionPort(NSNumber(value: Int(port) ?? 0))
             .setupConnectionTimeout(timeout)
     }
@@ -80,6 +81,7 @@ public extension NSRemoteShell {
         autoIdentities: [RDIdentity],
         hint: ((String) -> Void)? = nil
     ) -> ConnectAndAuthenticateResult {
+        KnownHosts.install()
         requestConnectAndWait()
         guard isConnected else { return .connectFailed }
         if let identity {
