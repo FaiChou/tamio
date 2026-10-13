@@ -20,7 +20,7 @@ struct ServersView: View {
     var filtered: [RDMachine] {
         let machines = store.machineGroup.machines
         guard !searchText.isEmpty else { return machines }
-        return machines.filter { $0.isQualifiedForSearch(text: searchText.lowercased()) }
+        return machines.filter { $0.isQualifiedForSearch(text: searchText) }
     }
 
     var groups: [(name: String, machines: [RDMachine])] {
