@@ -98,6 +98,7 @@
         socklen_t peeraddrlen = sizeof(peeraddr);
         int forwardsock = accept(self.representedSocket, (struct sockaddr *)&peeraddr, &peeraddrlen);
         if (forwardsock <= 0) { return; }
+        setsockopt(forwardsock, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int));
         NSLog(@"accept is returning child socket %d", forwardsock);
         NSDate *date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.timeout intValue]];
         LIBSSH2_CHANNEL *channel = NULL;

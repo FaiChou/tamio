@@ -17,6 +17,7 @@
         _socket = socket;
         _channel = channel;
         _completed = NO;
+        setsockopt(socket, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int));
     }
     return self;
 }

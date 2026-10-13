@@ -109,6 +109,7 @@
                 NSLog(@"socket failed to create, trying next");
                 continue;
             }
+            setsockopt(forwardsock, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int));
             int rv = connect(forwardsock, (struct sockaddr*)&address4, sizeof(struct sockaddr_in));
             if (rv != 0) {
                 NSLog(@"socket failed to connect, trying next address");
@@ -133,6 +134,7 @@
                 NSLog(@"socket failed to create, trying next");
                 continue;
             }
+            setsockopt(forwardsock, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int));
             int rv = connect(forwardsock, (struct sockaddr*)&address6, sizeof(struct sockaddr_in6));
             if (rv != 0) {
                 NSLog(@"socket failed to connect, trying next address");
