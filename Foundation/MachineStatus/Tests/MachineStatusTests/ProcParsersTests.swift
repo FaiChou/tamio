@@ -20,6 +20,7 @@ final class ProcParsersTests: XCTestCase {
     SwapCached:            0 kB
     SwapTotal:       2097152 kB
     SwapFree:        1048576 kB
+    HugePages_Total:       0
     Hugepagesize:       2048 kB
     """
 
@@ -31,8 +32,10 @@ final class ProcParsersTests: XCTestCase {
         XCTAssertEqual(info["CACHED"], 4_096_000)
         XCTAssertEqual(info["SWAPTOTAL"], 2_097_152)
         XCTAssertEqual(info["SWAPFREE"], 1_048_576)
+        // A kB-suffixed line parses under its uppercased, colon-stripped key.
+        XCTAssertEqual(info["HUGEPAGESIZE"], 2048)
         // Lines without a kB suffix are ignored.
-        XCTAssertNil(info["HUGE_PAGESIZE:"])
+        XCTAssertNil(info["HUGEPAGES_TOTAL"])
     }
 
     func testSwapUsageIsRelativeToSwapTotal() {
