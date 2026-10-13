@@ -102,12 +102,14 @@ public class ServerStatus: ObservableObject, Equatable {
             lhs.graphics == rhs.graphics
     }
 
+    private static let queue = DispatchQueue(label: "me.mizorewww.rayon.info", attributes: .concurrent)
+
     /// Refreshes every info group, bounding each remote command by
     /// `timeout` seconds so a hung probe (a driverless `nvidia-smi`, say)
     /// cannot freeze the monitor loop forever.
     public func requestInfoAndWait(with remote: NSRemoteShell, timeout: Double) {
         let group = DispatchGroup()
-        let queue = DispatchQueue(label: "me.mizorewww.rayon.info", attributes: .concurrent)
+        let queue = Self.queue
         group.enter()
         queue.async { [weak self] in
             defer { group.leave() }
