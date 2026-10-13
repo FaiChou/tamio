@@ -10,18 +10,20 @@
 import Foundation
 
 enum ProcParsers {
+    /// Splits on runs of whitespace: /proc files and tool outputs pad
+    /// columns with variable-width spaces.
+    static func splitWhitespaceRuns(_ line: String) -> [Substring] {
+        line.split(whereSeparator: \.isWhitespace)
+    }
+
     // MARK: - /proc/meminfo
 
     /// Parses `/proc/meminfo` content into a keyed dictionary (values in kB).
     static func parseMeminfo(_ raw: String) -> [String: Double] {
         var info = [String: Double]()
         for line in raw.components(separatedBy: "\n") where line.count > 0 {
-            var line = line
-            while line.contains("  ") {
-                line = line.replacingOccurrences(of: "  ", with: " ")
-            }
-            line = line.replacingOccurrences(of: ":", with: "")
-            let cut = line.components(separatedBy: " ")
+            let line = line.replacingOccurrences(of: ":", with: "")
+            let cut = splitWhitespaceRuns(line)
             guard cut.count == 3, cut[2].uppercased() == "KB" else {
                 continue
             }
@@ -40,18 +42,15 @@ enum ProcParsers {
         var result = [String: ServerStatus.ProcessInfoElement]()
         var summary: ServerStatus.ProcessInfoElement?
         for line in raw.components(separatedBy: "\n") {
-            var line = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            let line = line.trimmingCharacters(in: .whitespacesAndNewlines)
             guard line.hasPrefix("cpu") else {
                 continue
             }
-            while line.contains("  ") {
-                line = line.replacingOccurrences(of: "  ", with: " ")
-            }
-            let lineElement = line.components(separatedBy: " ")
+            let lineElement = splitWhitespaceRuns(line)
             guard lineElement.count == 11 else {
                 continue
             }
-            let key = lineElement[0]
+            let key = String(lineElement[0])
             let element = ServerStatus.ProcessInfoElement(
                 user: Float(lineElement[1]) ?? 0,
                 nice: Float(lineElement[2]) ?? 0,
@@ -137,11 +136,7 @@ enum ProcParsers {
     /// load averages and process counters.
     static func parseLoadavg(_ intake: String) -> ServerStatus.SystemLoadInternal {
         var ret = ServerStatus.SystemLoadInternal()
-        var get = intake
-        while get.contains("  ") {
-            get = get.replacingOccurrences(of: "  ", with: " ")
-        }
-        let cut = get.components(separatedBy: " ")
+        let cut = splitWhitespaceRuns(intake)
         guard cut.count == 5 else { return .init() }
         if let l1 = Float(cut[0]), l1 != .infinity { ret.load1avg = l1 } else { return .init() }
         if let l5 = Float(cut[1]), l5 != .infinity { ret.load5avg = l5 } else { return .init() }

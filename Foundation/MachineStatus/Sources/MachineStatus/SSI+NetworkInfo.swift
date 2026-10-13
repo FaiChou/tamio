@@ -62,27 +62,13 @@ public extension ServerStatus {
                     if sepName.count != 2 {
                         continue go
                     }
-                    guard var key = sepName.first,
-                          var payload = sepName.last
+                    guard let name = sepName.first,
+                          let payload = sepName.last
                     else {
                         continue go
                     }
-                    while key.hasPrefix(" ") {
-                        key.removeFirst()
-                    }
-                    while key.hasSuffix(" ") {
-                        key.removeLast()
-                    }
-                    while payload.contains("  ") {
-                        payload = payload.replacingOccurrences(of: "  ", with: " ")
-                    }
-                    while payload.hasPrefix(" ") {
-                        payload.removeFirst()
-                    }
-                    while payload.hasSuffix(" ") {
-                        payload.removeLast()
-                    }
-                    let split = payload.components(separatedBy: " ")
+                    let key = name.trimmingCharacters(in: .whitespaces)
+                    let split = ProcParsers.splitWhitespaceRuns(payload)
                     if split.count < 10 {
                         continue go
                     }
