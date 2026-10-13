@@ -103,22 +103,6 @@ public class ServerStatus: ObservableObject, Equatable {
     }
 
     public func requestInfoAndWait(with remote: NSRemoteShell) {
-        #if DEBUG
-            for script in ScriptCollection.allCases {
-                guard script.rawValue.hasPrefix(" ") else {
-                    fatalError(
-                        """
-
-                        [E] Script: [\(script)]
-                            All script within the app should start with space ' '
-                            to avoid storing into remote history
-
-                        """
-                    )
-                }
-            }
-        #endif
-
         let group = DispatchGroup()
         let queue = DispatchQueue(label: "me.mizorewww.rayon.info", attributes: .concurrent)
         group.enter()
