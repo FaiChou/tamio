@@ -62,7 +62,7 @@
     server4.sin_family = AF_INET;
     server4.sin_addr.s_addr = inet_addr("127.0.0.1"); // for security?
     server4.sin_port = htons(port);
-    if (setsockopt(socket_desc4, SOL_SOCKET, SO_REUSEPORT, &(int){1}, sizeof(int)) == -1) {
+    if (setsockopt(socket_desc4, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) == -1) {
         NSLog(@"failed to setsockopt for ipv4 at port %d", port);
         close(socket_desc4);
         return 0;
