@@ -111,6 +111,14 @@ final class EditorDocument: ObservableObject, Identifiable {
     }
 
     private func waitForConnection() async throws {
+        nonisolated(unsafe) let context = context
+        await Self.waitForConnection(of: context)
+    }
+
+    /// Resolves on the first published value that settles the wait: connected,
+    /// the attempt gave up, or 30 seconds passed. Nonisolated because the
+    /// publisher's async sequence and its predicate are not Sendable.
+    private nonisolated static func waitForConnection(of context: FileTransferContext) async {
         _ = await context.$connected
             .combineLatest(context.$processConnection)
             .timeout(.seconds(30), scheduler: DispatchQueue.main)
