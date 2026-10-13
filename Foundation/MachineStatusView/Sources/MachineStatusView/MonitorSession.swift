@@ -227,9 +227,11 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
     }
 }
 
-/// Owns the open monitors of the app.
+/// Owns the open monitors of the app. Main thread, like the views and
+/// menu bar items that show the sessions.
+@MainActor
 public final class MonitorCenter: ObservableObject {
-    nonisolated(unsafe) public static let shared = MonitorCenter()
+    public static let shared = MonitorCenter()
 
     @Published public private(set) var sessions: [MonitorSession] = []
 

@@ -7,8 +7,9 @@
 //
 
 import Foundation
+import os
 
-public protocol TerminalUIHandler: AnyObject {
+public protocol TerminalUIHandler: AnyObject, Sendable {
     /// Called on the first connection bootstrap when the store asks to open
     /// interfaces automatically; iOS uses it to auto-present the terminal.
     /// Called on the main thread.
@@ -22,7 +23,12 @@ public extension TerminalUIHandler {
 private final class DefaultTerminalUIHandler: TerminalUIHandler {}
 
 public enum TerminalInterface {
-    // Registered once at app launch and only read afterwards;
-    // nonisolated(unsafe) matches the codebase's singleton conventions.
-    nonisolated(unsafe) public static var uiHandler: TerminalUIHandler = DefaultTerminalUIHandler()
+    private static let storage = OSAllocatedUnfairLock<TerminalUIHandler>(initialState: DefaultTerminalUIHandler())
+
+    /// Registered once at app launch and only read afterwards; the lock
+    /// keeps a late read from racing the registration.
+    public static var uiHandler: TerminalUIHandler {
+        get { storage.withLock { $0 } }
+        set { storage.withLock { $0 = newValue } }
+    }
 }

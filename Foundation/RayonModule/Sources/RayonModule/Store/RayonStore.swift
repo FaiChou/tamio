@@ -16,7 +16,10 @@ import PropertyWrapper
     import AppKit
 #endif
 
-public class RayonStore: ObservableObject {
+/// @unchecked Sendable: what the store keeps is written on the main
+/// thread only (enforced in `storeEncryptedDefault`), and what a worker
+/// queue may read is mirrored into `workerState` under its lock.
+public class RayonStore: ObservableObject, @unchecked Sendable {
     public init() {
         defer {
             debugPrint("RayonStore init completed")
@@ -83,14 +86,13 @@ public class RayonStore: ObservableObject {
 
         // Property observers do not run during init; seed the worker
         // snapshot with what was just loaded.
-        let loaded = WorkerState(
-            machines: machineGroup.machines,
-            identities: identityGroup.identities,
-            timeout: timeout,
-            monitorInterval: monitorInterval,
-            terminalFontSize: terminalFontSize
-        )
-        workerState.withLock { $0 = loaded }
+        workerState.withLock {
+            $0.machines = machineGroup.machines
+            $0.identities = identityGroup.identities
+            $0.timeout = timeout
+            $0.monitorInterval = monitorInterval
+            $0.terminalFontSize = terminalFontSize
+        }
 
         // Storing is debounced; leaving the foreground writes what is
         // still waiting.
@@ -115,8 +117,8 @@ public class RayonStore: ObservableObject {
     /// in step by the property observers below. See RayonStore+Worker.
     let workerState = OSAllocatedUnfairLock(initialState: WorkerState())
 
-    // Preserve legacy access from the existing UI and worker queues.
-    nonisolated(unsafe) public static let shared = RayonStore()
+    /// First touched on the main thread at launch.
+    public static let shared = RayonStore()
 
     @Published public var licenseAgreed: Bool = false {
         didSet {
@@ -140,7 +142,6 @@ public class RayonStore: ObservableObject {
     @Published public var timeout: Int = 0 {
         didSet {
             UDTimeout = timeout
-            let timeout = timeout
             workerState.withLock { $0.timeout = timeout }
         }
     }
@@ -150,7 +151,6 @@ public class RayonStore: ObservableObject {
     @Published public var monitorInterval: Int = 0 {
         didSet {
             UDMonitorInterval = monitorInterval
-            let monitorInterval = monitorInterval
             workerState.withLock { $0.monitorInterval = monitorInterval }
         }
     }
@@ -171,8 +171,7 @@ public class RayonStore: ObservableObject {
 
     @Published public var identityGroup: RDIdentityGroup = .init() {
         didSet {
-            let identities = identityGroup.identities
-            workerState.withLock { $0.identities = identities }
+            workerState.withLock { $0.identities = identityGroup.identities }
             storeEncryptedDefault(
                 to: .identityGroupEncrypted,
                 with: identityGroup
@@ -200,8 +199,7 @@ public class RayonStore: ObservableObject {
 
     @Published public var machineGroup: RDMachineGroup = .init() {
         didSet {
-            let machines = machineGroup.machines
-            workerState.withLock { $0.machines = machines }
+            workerState.withLock { $0.machines = machineGroup.machines }
             storeEncryptedDefault(
                 to: .machineGroupEncrypted,
                 with: machineGroup
@@ -266,7 +264,6 @@ public class RayonStore: ObservableObject {
     @Published public var terminalFontSize: Int = 14 {
         didSet {
             UDTerminalFontSize = terminalFontSize
-            let terminalFontSize = terminalFontSize
             workerState.withLock { $0.terminalFontSize = terminalFontSize }
         }
     }

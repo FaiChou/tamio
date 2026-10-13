@@ -9,6 +9,7 @@ import CommonCrypto
 import CryptoKit
 import Foundation
 import Keychain
+import os
 
 #if os(macOS) || targetEnvironment(macCatalyst)
     import IOKit
@@ -51,7 +52,14 @@ public struct AES: Sendable {
     /// key can still read.
     public private(set) var isEphemeral = false
 
-    nonisolated(unsafe) public static var legacyKeyStore: LegacyKeyStore?
+    private static let legacyKeyStoreStorage = OSAllocatedUnfairLock<LegacyKeyStore?>(initialState: nil)
+
+    /// Set before `AES.shared` (and so `RayonStore.shared`) is first used;
+    /// the lock keeps a late read from racing the one-time registration.
+    public static var legacyKeyStore: LegacyKeyStore? {
+        get { legacyKeyStoreStorage.withLock { $0 } }
+        set { legacyKeyStoreStorage.withLock { $0 = newValue } }
+    }
 
     public static let shared: AES = {
         #if DEBUG && (os(macOS) || targetEnvironment(macCatalyst))

@@ -7,8 +7,9 @@
 //
 
 import Foundation
+import os
 
-public protocol FileTransferUIHandler: AnyObject {
+public protocol FileTransferUIHandler: AnyObject, Sendable {
     /// Present an error message to the user.
     func presentError(_ message: String)
 
@@ -40,7 +41,12 @@ public extension FileTransferUIHandler {
 private final class DefaultFileTransferUIHandler: FileTransferUIHandler {}
 
 public enum FileTransferInterface {
-    // Registered once at app launch and only read afterwards;
-    // nonisolated(unsafe) matches the codebase's singleton conventions.
-    nonisolated(unsafe) public static var uiHandler: FileTransferUIHandler = DefaultFileTransferUIHandler()
+    private static let storage = OSAllocatedUnfairLock<FileTransferUIHandler>(initialState: DefaultFileTransferUIHandler())
+
+    /// Registered once at app launch and read afterwards from any queue;
+    /// the lock keeps a late read from racing the registration.
+    public static var uiHandler: FileTransferUIHandler {
+        get { storage.withLock { $0 } }
+        set { storage.withLock { $0 = newValue } }
+    }
 }

@@ -19,10 +19,10 @@ private let storeQueue = DispatchQueue(label: "me.mizorewww.rayon.store")
 private let storeWriteDebounce: TimeInterval = 1.5
 
 /// Coalesces encrypted writes per key. The in-memory value changes at
-/// once; only storing is deferred. Main thread only.
-private final class DeferredStoreWrites {
-    // Main-thread confined by contract, like the store itself.
-    nonisolated(unsafe) static let shared = DeferredStoreWrites()
+/// once; only storing is deferred. Main thread only, like the store
+/// itself: callers reach it through the store's main-thread write path.
+private final class DeferredStoreWrites: @unchecked Sendable {
+    static let shared = DeferredStoreWrites()
 
     private var pending: [RayonStore.UserDefaultKey: (item: DispatchWorkItem, write: () -> Void)] = [:]
 

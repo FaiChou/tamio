@@ -10,16 +10,17 @@
 import Foundation
 import SwiftUI
 
+/// The registry and its transfers are main-thread state, like the
+/// interface showing them.
+@MainActor
 public class FileTransferManager: ObservableObject {
-    // Preserve the existing UI/transfer queue contract.
-    nonisolated(unsafe) public static let shared = FileTransferManager()
+    public static let shared = FileTransferManager()
 
     private init() {}
 
     @Published public var transfers: [FileTransferContext] = []
 
     public func begin(for machineId: RDMachine.ID, force: Bool = false) {
-        assert(Thread.isMainThread, "accessing to property transfers requires main thread")
         debugPrint("\(self) \(#function) \(machineId)")
         if !force {
             for transfer in transfers where transfer.machine.id == machineId {
