@@ -87,7 +87,7 @@ class CodeEditorCore: CodeEditor {
         let request = URLRequest(url: resources)
         associatedWebView.load(request)
         DispatchQueue.global().asyncAfter(deadline: .now() + 5) {
-            // WebKit will have 3 second to load before getting suck
+            // WebKit will have 5 second to load before getting suck
             self.associatedWebDelegate.navigateCompleted = true
         }
     }

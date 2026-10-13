@@ -11,103 +11,154 @@ import SwiftUI
     import AppKit
 
     public struct SCodeEditor: NSViewRepresentable, CodeEditor {
-        public init() {
-            correspondingView = CodeEditorView()
+        public init() {}
+
+        /// Builds the web view when SwiftUI asks for it, not when this value
+        /// is initialized: SwiftUI recreates representable values on every
+        /// update, and a web view is far too expensive for that. Calls made
+        /// before the view exists are replayed on creation.
+        final class Factory {
+            var view: CodeEditorView?
+            var pending: [(CodeEditorView) -> Void] = []
+
+            func obtain() -> CodeEditorView {
+                if let view { return view }
+                let created = CodeEditorView()
+                view = created
+                for work in pending { work(created) }
+                pending.removeAll()
+                return created
+            }
+
+            func apply(_ work: @escaping (CodeEditorView) -> Void) {
+                if let view {
+                    work(view)
+                } else {
+                    pending.append(work)
+                }
+            }
         }
 
-        nonisolated(unsafe) let correspondingView: CodeEditorView
+        nonisolated(unsafe) let factory = Factory()
 
         public func makeNSView(context _: Context) -> some NSView {
-            correspondingView
+            factory.obtain()
         }
 
         public func updateNSView(_: NSViewType, context _: Context) {}
 
         @discardableResult
         nonisolated public func onContentChange(callback: ((String) -> Void)?) -> Self {
-            correspondingView.onContentChange(callback: callback)
+            factory.apply { $0.onContentChange(callback: callback) }
             return self
         }
 
         @discardableResult
         nonisolated public func onContentHeightChange(callback: ((Double) -> Void)?) -> Self {
-            correspondingView.onContentHeightChange(callback: callback)
+            factory.apply { $0.onContentHeightChange(callback: callback) }
             return self
         }
 
         nonisolated public func setDocumentData(_ data: String) {
-            correspondingView.setDocumentData(data)
+            factory.apply { $0.setDocumentData(data) }
         }
 
         nonisolated public func setDocumentFont(size: Int) {
-            correspondingView.setDocumentFont(size: size)
+            factory.apply { $0.setDocumentFont(size: size) }
         }
 
         nonisolated public func setDocumentLang(_ lang: String) {
-            correspondingView.setDocumentLang(lang)
+            factory.apply { $0.setDocumentLang(lang) }
         }
 
         nonisolated public func getAvailableLang() -> [String] {
-            correspondingView.getAvailableLang()
+            factory.obtain().getAvailableLang()
         }
 
         nonisolated public func makeReadonly() {
-            correspondingView.makeReadonly()
+            factory.apply { $0.makeReadonly() }
         }
 
         nonisolated public func requestHeightToSend() {
-            correspondingView.requestHeightToSend()
+            factory.apply { $0.requestHeightToSend() }
         }
     }
 #endif
 
 #if canImport(UIKit)
     import UIKit
+
     public struct SCodeEditor: UIViewRepresentable, @preconcurrency CodeEditor {
         public init() {}
 
-        let correspondingView = CodeEditorView()
+        /// Builds the web view when SwiftUI asks for it, not when this value
+        /// is initialized: SwiftUI recreates representable values on every
+        /// update, and a web view is far too expensive for that. Calls made
+        /// before the view exists are replayed on creation.
+        final class Factory {
+            var view: CodeEditorView?
+            var pending: [(CodeEditorView) -> Void] = []
+
+            func obtain() -> CodeEditorView {
+                if let view { return view }
+                let created = CodeEditorView()
+                view = created
+                for work in pending { work(created) }
+                pending.removeAll()
+                return created
+            }
+
+            func apply(_ work: @escaping (CodeEditorView) -> Void) {
+                if let view {
+                    work(view)
+                } else {
+                    pending.append(work)
+                }
+            }
+        }
+
+        let factory = Factory()
 
         public func makeUIView(context _: Context) -> some UIView {
-            correspondingView
+            factory.obtain()
         }
 
         public func updateUIView(_: UIViewType, context _: Context) {}
 
         @discardableResult
         public func onContentChange(callback: ((String) -> Void)?) -> Self {
-            correspondingView.onContentChange(callback: callback)
+            factory.apply { $0.onContentChange(callback: callback) }
             return self
         }
 
         @discardableResult
         public func onContentHeightChange(callback: ((Double) -> Void)?) -> Self {
-            correspondingView.onContentHeightChange(callback: callback)
+            factory.apply { $0.onContentHeightChange(callback: callback) }
             return self
         }
 
         public func setDocumentData(_ data: String) {
-            correspondingView.setDocumentData(data)
+            factory.apply { $0.setDocumentData(data) }
         }
 
         public func setDocumentFont(size: Int) {
-            correspondingView.setDocumentFont(size: size)
+            factory.apply { $0.setDocumentFont(size: size) }
         }
 
         public func setDocumentLang(_ lang: String) {
-            correspondingView.setDocumentLang(lang)
+            factory.apply { $0.setDocumentLang(lang) }
         }
 
         public func getAvailableLang() -> [String] {
-            correspondingView.getAvailableLang()
+            factory.obtain().getAvailableLang()
         }
 
         public func makeReadonly() {
-            correspondingView.makeReadonly()
+            factory.apply { $0.makeReadonly() }
         }
 
         public func requestHeightToSend() {
-            correspondingView.requestHeightToSend()
+            factory.apply { $0.requestHeightToSend() }
         }
     }
 #endif
@@ -118,7 +169,9 @@ public struct DynamicHeightCodeView: View {
     }
 
     var loadCode: () -> (String)
-    let codeView: SCodeEditor = .init()
+    // Pinned in state so the editor's factory and its view stay paired while
+    // SwiftUI recreates this value.
+    @State var codeView: SCodeEditor = .init()
 
     @State var codeWindowHeight: Double = 200
 

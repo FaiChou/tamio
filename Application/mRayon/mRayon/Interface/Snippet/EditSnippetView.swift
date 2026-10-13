@@ -19,7 +19,9 @@ struct EditSnippetView: View {
         inEditWith = requestSnippet
     }
 
-    let editor = SCodeEditor()
+    // Pinned in state so the editor's factory and its view stay paired while
+    // SwiftUI recreates this view.
+    @State var editor = SCodeEditor()
 
     @State var initializedOnce = false
 

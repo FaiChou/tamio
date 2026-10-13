@@ -41,12 +41,12 @@ struct mRayonApp: App {
                 #endif
                 .onAppear {
                     // optimize later on flight exp
-                    let editor = SCodeEditor()
+                    let prewarm = CodeEditorView()
                     AppearancePreference.applyStored()
                     checkAgreement()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        withExtendedLifetime(editor) {
-                            debugPrint("editor \(editor) prewarm done")
+                        withExtendedLifetime(prewarm) {
+                            debugPrint("editor \(prewarm) prewarm done")
                         }
                     }
                 }
