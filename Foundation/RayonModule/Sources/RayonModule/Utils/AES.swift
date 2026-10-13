@@ -6,6 +6,7 @@
 //
 
 import CommonCrypto
+import CryptoKit
 import Foundation
 import Keychain
 
@@ -174,11 +175,7 @@ public struct AES: Sendable {
         while initKey.count > 32 {
             initKey.removeLast()
         }
-        guard initKey.count == kCCKeySizeAES128 || initKey.count == kCCKeySizeAES256,
-              let keyData = initKey.data(using: .utf8)
-        else {
-            return nil
-        }
+        let keyData = Data(initKey.utf8)
         // 修改 iv 到指定长度
         var initIV = initIV
         while initIV.count < kCCBlockSizeAES128 { // 防止意外
@@ -187,10 +184,7 @@ public struct AES: Sendable {
         while initIV.count > kCCBlockSizeAES128 {
             initIV.removeLast()
         }
-        guard initIV.count == kCCBlockSizeAES128, let ivData = initIV.data(using: .utf8) else {
-            debugPrint("Error \(#file) \(#line): Failed to set an initial vector.")
-            return nil
-        }
+        let ivData = Data(initIV.utf8)
         // 储存
         key = keyData
         iv = ivData
@@ -198,15 +192,46 @@ public struct AES: Sendable {
 
     // MARK: - API
 
+    /// Marks the current format: AES-256-GCM under a random nonce, version 1.
+    /// Data without it is the legacy format and is only ever read; the next
+    /// write stores it in the current format.
+    private static let currentFormatPrefix = Data("RGCM1".utf8)
+
     public func encrypt(data: Data) -> Data? {
-        crypt(data: data, option: CCOperation(kCCEncrypt))
+        guard let sealed = try? CryptoKit.AES.GCM.seal(
+            data, using: SymmetricKey(data: key)
+        ).combined else {
+            debugPrint("Error: Failed to encrypt data.")
+            return nil
+        }
+        var result = Self.currentFormatPrefix
+        result.append(sealed)
+        return result
     }
 
     public func decrypt(data: Data) -> Data? {
-        crypt(data: data, option: CCOperation(kCCDecrypt))
+        guard data.starts(with: Self.currentFormatPrefix) else {
+            return legacyDecrypt(data: data)
+        }
+        guard let box = try? CryptoKit.AES.GCM.SealedBox(
+            combined: data.dropFirst(Self.currentFormatPrefix.count)
+        ),
+            let plain = try? CryptoKit.AES.GCM.open(box, using: SymmetricKey(data: key))
+        else {
+            debugPrint("Error: Failed to decrypt data.")
+            return nil
+        }
+        return plain
     }
 
     // MARK: - INTERNAL
+
+    /// The legacy format: AES-CBC with PKCS7 padding, the key doubling as
+    /// IV and no integrity check. Kept to read what was stored before the
+    /// GCM format; it is never written any more.
+    private func legacyDecrypt(data: Data) -> Data? {
+        crypt(data: data, option: CCOperation(kCCDecrypt))
+    }
 
     private func crypt(data: Data, option: CCOperation) -> Data? {
         let cryptLength = data.count + kCCBlockSizeAES128
