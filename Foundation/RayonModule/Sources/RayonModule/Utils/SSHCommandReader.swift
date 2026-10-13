@@ -28,7 +28,16 @@ public struct SSHCommandReader: Codable, Equatable {
             parser = parser.replacingOccurrences(of: "  ", with: " ")
         }
         parser.removeFirst(4) // "ssh "
-        let tokens = parser.components(separatedBy: " ").filter { !$0.isEmpty }
+        var tokens = parser.components(separatedBy: " ").filter { !$0.isEmpty }
+        // A bare `user@host:port` target is read as an explicit port, the
+        // ssh-command syntax Quick Connect accepts next to `-p port`. Only
+        // a lone target gets this reading: with flags around, a colon stays
+        // part of the host, and several colons can still be an IPv6 host.
+        if tokens.count == 1, let token = tokens.first, token.contains("@"),
+           token.filter({ $0 == ":" }).count == 1, let colon = token.lastIndex(of: ":")
+        {
+            tokens = [String(token[..<colon]), "-p", String(token[token.index(after: colon)...])]
+        }
         // "-p <port>" may come before or after user@host.
         var target: String?
         var port: String?
@@ -63,5 +72,26 @@ public struct SSHCommandReader: Codable, Equatable {
         username = name
         remoteAddress = addr
         remotePort = port ?? "22"
+    }
+}
+
+public extension SSHCommandReader {
+    /// Parses what was typed into Quick Connect: `user@host`,
+    /// `user@host:port` or a full ssh command, with or without the
+    /// "ssh " prefix (the prefix match stays case-insensitive).
+    init?(quickConnect input: String) {
+        var trimmed = input.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return nil }
+        if !trimmed.lowercased().hasPrefix("ssh ") { trimmed = "ssh " + trimmed }
+        self.init(command: trimmed)
+    }
+
+    /// The first candidate worth offering as a completion of what was
+    /// typed into Quick Connect: it shares the typed prefix, is not the
+    /// typed string itself, and the input is long enough to mean something.
+    static func suggestion(for input: String, in candidates: some Sequence<String>) -> String? {
+        guard input.count > 2 else { return nil }
+        let typed = input.hasPrefix("ssh ") ? input : "ssh " + input
+        return candidates.lazy.first { !$0.isEmpty && $0.hasPrefix(typed) && $0 != typed }
     }
 }

@@ -76,4 +76,82 @@ final class SSHCommandReaderTests: XCTestCase {
         let reader = SSHCommandReader(command: original)
         XCTAssertEqual(reader?.command, original)
     }
+
+    func testColonPortOnBareTarget() {
+        let reader = SSHCommandReader(command: "ssh root@example.com:2222")
+        XCTAssertEqual(reader?.username, "root")
+        XCTAssertEqual(reader?.remoteAddress, "example.com")
+        XCTAssertEqual(reader?.remotePort, "2222")
+        XCTAssertEqual(reader?.command, "ssh root@example.com -p 2222")
+    }
+
+    func testRejectsBrokenColonPort() {
+        XCTAssertNil(SSHCommandReader(command: "ssh root@example.com:"))
+        XCTAssertNil(SSHCommandReader(command: "ssh root@example.com:abc"))
+        XCTAssertNil(SSHCommandReader(command: "ssh root@example.com:70000"))
+    }
+
+    func testColonStaysInHostWhenNotALoneTarget() {
+        // With flags around, a colon keeps meaning "part of the host".
+        let reader = SSHCommandReader(command: "ssh -p 2222 root@example.com:3333")
+        XCTAssertEqual(reader?.remoteAddress, "example.com:3333")
+        XCTAssertEqual(reader?.remotePort, "2222")
+        // Several colons can be an IPv6 host rather than a port.
+        let v6 = SSHCommandReader(command: "ssh root@2001:db8::1")
+        XCTAssertEqual(v6?.remoteAddress, "2001:db8::1")
+        XCTAssertEqual(v6?.remotePort, "22")
+        // One colon ahead of the @ is nobody's port either.
+        XCTAssertNil(SSHCommandReader(command: "ssh user:name@example.com"))
+    }
+
+    func testQuickConnectAddsMissingPrefix() {
+        let reader = SSHCommandReader(quickConnect: "root@example.com")
+        XCTAssertEqual(reader?.username, "root")
+        XCTAssertEqual(reader?.remoteAddress, "example.com")
+        XCTAssertEqual(reader?.remotePort, "22")
+    }
+
+    func testQuickConnectAcceptsColonPort() {
+        let reader = SSHCommandReader(quickConnect: "root@example.com:2222")
+        XCTAssertEqual(reader?.remotePort, "2222")
+        let prefixed = SSHCommandReader(quickConnect: "ssh root@example.com:2222")
+        XCTAssertEqual(prefixed?.remotePort, "2222")
+    }
+
+    func testQuickConnectKeepsFullCommands() {
+        let reader = SSHCommandReader(quickConnect: "SSH -p 2222 Root@Example.COM")
+        XCTAssertEqual(reader?.username, "Root")
+        XCTAssertEqual(reader?.remoteAddress, "Example.COM")
+        XCTAssertEqual(reader?.remotePort, "2222")
+    }
+
+    func testQuickConnectRejectsEmptyAndAnonymous() {
+        XCTAssertNil(SSHCommandReader(quickConnect: ""))
+        XCTAssertNil(SSHCommandReader(quickConnect: "   "))
+        XCTAssertNil(SSHCommandReader(quickConnect: "example.com"))
+    }
+
+    func testSuggestionCompletesTypedPrefix() {
+        let recent = ["ssh root@alpha -p 22", "ssh ubuntu@beta -p 2222"]
+        XCTAssertEqual(
+            SSHCommandReader.suggestion(for: "roo", in: recent),
+            "ssh root@alpha -p 22"
+        )
+        XCTAssertEqual(
+            SSHCommandReader.suggestion(for: "ssh ubu", in: recent),
+            "ssh ubuntu@beta -p 2222"
+        )
+    }
+
+    func testSuggestionSkipsEmptyAndExactMatches() {
+        let recent = ["", "ssh root@alpha -p 22"]
+        XCTAssertEqual(
+            SSHCommandReader.suggestion(for: "roo", in: recent),
+            "ssh root@alpha -p 22"
+        )
+        XCTAssertNil(SSHCommandReader.suggestion(for: "ssh root@alpha -p 22", in: recent))
+        XCTAssertNil(SSHCommandReader.suggestion(for: "xyz", in: recent))
+        // Too short to mean anything.
+        XCTAssertNil(SSHCommandReader.suggestion(for: "ro", in: recent))
+    }
 }
