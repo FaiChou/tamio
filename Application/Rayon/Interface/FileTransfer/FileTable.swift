@@ -9,6 +9,15 @@
 import RayonModule
 import SwiftUI
 
+/// The page's header and the cells share these, so the columns line up.
+enum FileColumns {
+    static let size: CGFloat = 90
+    static let gap: CGFloat = RX.Space.s4
+    static let modified: CGFloat = 150
+    static let permissions: CGFloat = 110
+    static let owner: CGFloat = 70
+}
+
 /// A folder's rows in a UIKit table. Only the rows on screen exist, however long
 /// the folder is, and a redraw of the page costs the table nothing unless the
 /// list or the selection changed.
@@ -298,11 +307,11 @@ private final class FileCell: UITableViewCell {
             trailing -= width
             view.frame = CGRect(x: trailing, y: 0, width: width, height: height)
         }
-        place(owner, width: 70)
-        place(permissions, width: 110)
-        place(modified, width: 150)
-        trailing -= RX.Space.s4
-        place(size, width: 90)
+        place(owner, width: FileColumns.owner)
+        place(permissions, width: FileColumns.permissions)
+        place(modified, width: FileColumns.modified)
+        trailing -= FileColumns.gap
+        place(size, width: FileColumns.size)
         icon.frame = CGRect(x: RX.Space.s3, y: 0, width: 18, height: height)
         let nameLeading = icon.frame.maxX + RX.Space.s2
         name.frame = CGRect(x: nameLeading, y: 0, width: max(0, trailing - nameLeading), height: height)

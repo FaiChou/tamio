@@ -8,6 +8,14 @@
 import RayonModule
 import SwiftUI
 
+/// Header and rows share these, so the columns line up.
+private enum ForwardColumns {
+    static let orientation: CGFloat = 120
+    static let bind: CGFloat = 90
+    static let status: CGFloat = 200
+    static let toggle: CGFloat = 52
+}
+
 struct PortForwardView: View {
     @EnvironmentObject var store: RayonStore
     @ObservedObject var backend = PortForwardBackend.shared
@@ -86,12 +94,12 @@ struct PortForwardView: View {
     var table: some View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
-                TableHeaderLabel("Orientation").frame(width: 120)
-                TableHeaderLabel("Bind").frame(width: 90)
+                TableHeaderLabel("Orientation").frame(width: ForwardColumns.orientation)
+                TableHeaderLabel("Bind").frame(width: ForwardColumns.bind)
                 TableHeaderLabel("Through").frame(maxWidth: .infinity)
                 TableHeaderLabel("Target").frame(maxWidth: .infinity)
-                Color.clear.frame(width: 200, height: 1)
-                Color.clear.frame(width: 52, height: 1)
+                Color.clear.frame(width: ForwardColumns.status, height: 1)
+                Color.clear.frame(width: ForwardColumns.toggle, height: 1)
             }
             .padding(.horizontal, RX.Space.s3)
             .frame(height: RX.tableHeaderHeight)
@@ -127,11 +135,11 @@ private struct PortForwardRow: View {
         let status = PortForwardStatus(hint: backend.lastHint[forward.id], running: running)
         HStack(spacing: 0) {
             RXTag(forward.forwardOrientation == .listenLocal ? "Listen local" : "Listen remote")
-                .frame(width: 120, alignment: .leading)
+                .frame(width: ForwardColumns.orientation, alignment: .leading)
             Text(":\(forward.bindPort)")
                 .font(.rxCode)
                 .foregroundStyle(.rxInk)
-                .frame(width: 90, alignment: .leading)
+                .frame(width: ForwardColumns.bind, alignment: .leading)
             RedactableText(forward.getMachineName() ?? "No server", redacted: store.machineRedacted == .all)
                 .font(.rxBody)
                 .foregroundStyle(forward.usingMachine == nil ? Color.rxInkSecondary : Color.rxInk)
@@ -147,7 +155,7 @@ private struct PortForwardRow: View {
                 .font(.rxBody)
                 .foregroundStyle(.rxDanger)
                 .lineLimit(1)
-                .frame(width: 200, alignment: .leading)
+                .frame(width: ForwardColumns.status, alignment: .leading)
             Toggle("Running", isOn: Binding(get: { running }, set: { on in
                 if on {
                     backend.createSession(withPortForwardID: forward.id)
@@ -161,7 +169,7 @@ private struct PortForwardRow: View {
             .tint(.rxAccent)
             .disabled(!forward.isValid())
             .help(forward.isValid() ? (running ? "Stop" : "Start") : "Incomplete")
-            .frame(width: 52, alignment: .trailing)
+            .frame(width: ForwardColumns.toggle, alignment: .trailing)
         }
         .padding(.horizontal, RX.Space.s3)
         .frame(height: RX.tableRowHeight)

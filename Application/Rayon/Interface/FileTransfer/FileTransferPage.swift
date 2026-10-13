@@ -186,11 +186,11 @@ struct FileTransferPage: View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
                 TableHeaderLabel("Name").frame(maxWidth: .infinity)
-                TableHeaderLabel("Size", alignment: .trailing).frame(width: 90)
-                Color.clear.frame(width: RX.Space.s4, height: 1)
-                TableHeaderLabel("Modified").frame(width: 150)
-                TableHeaderLabel("Permissions").frame(width: 110)
-                TableHeaderLabel("Owner").frame(width: 70)
+                TableHeaderLabel("Size", alignment: .trailing).frame(width: FileColumns.size)
+                Color.clear.frame(width: FileColumns.gap, height: 1)
+                TableHeaderLabel("Modified").frame(width: FileColumns.modified)
+                TableHeaderLabel("Permissions").frame(width: FileColumns.permissions)
+                TableHeaderLabel("Owner").frame(width: FileColumns.owner)
             }
             .padding(.horizontal, RX.Space.s3)
             .frame(height: RX.tableHeaderHeight)
