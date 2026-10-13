@@ -118,6 +118,7 @@ public extension RayonStore {
     }
 
     func storeDefault(to key: UserDefaultKey, with data: Any) {
+        storeWritePrecondition()
         UserDefaults
             .standard
             .set(data, forKey: key.rawValue)
@@ -127,8 +128,20 @@ public extension RayonStore {
     /// read: the data on disk is left as it is until the key is available again.
     static var savesChanges: Bool { !crypto.isEphemeral }
 
+    /// Writes of what the store keeps land on the main thread: the debounce
+    /// table is main-thread state, and CloudSync's generation counting and
+    /// Combine's synchronous delivery assume a change is published there.
+    /// DEBUG builds crash on a violation instead of hiding it behind the
+    /// main-queue hop.
+    private func storeWritePrecondition() {
+        #if DEBUG
+            dispatchPrecondition(condition: .onQueue(.main))
+        #endif
+    }
+
     func storeEncryptedDefault<T: Codable>(to key: UserDefaultKey, with data: T) {
         guard !crypto.isEphemeral else { return }
+        storeWritePrecondition()
         onMainThread {
             DeferredStoreWrites.shared.schedule(key) {
                 guard let data = try? documentEncoder.encode(data),
@@ -147,6 +160,7 @@ public extension RayonStore {
     /// Stores everything the debounce is still holding. For when the app
     /// goes to the background or is about to terminate.
     func flushPendingWrites() {
+        storeWritePrecondition()
         onMainThread {
             DeferredStoreWrites.shared.flush()
         }
@@ -154,6 +168,7 @@ public extension RayonStore {
 
     /// Removes a stored value, after any write of it that is still queued.
     func removeDefault(_ key: UserDefaultKey) {
+        storeWritePrecondition()
         onMainThread {
             DeferredStoreWrites.shared.cancel(key)
             storeQueue.async {

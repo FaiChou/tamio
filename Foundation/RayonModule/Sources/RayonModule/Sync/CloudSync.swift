@@ -128,7 +128,9 @@ public final class CloudSync: ObservableObject {
             store.$identityGroup.dropFirst().map { _ in () }
         )
         .sink { [weak self] in
-            // Set from the main thread, like everything the interface shows.
+            // The generation count is only meaningful when every change is
+            // published on the main thread; the store enforces that in
+            // DEBUG builds, and this guard keeps RELEASE ones safe.
             guard Thread.isMainThread else { return }
             MainActor.assumeIsolated { self?.generation += 1 }
         }

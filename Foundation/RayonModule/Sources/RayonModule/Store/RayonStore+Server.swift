@@ -11,6 +11,7 @@ import NSRemoteShell
 public extension RayonStore {
     /// The identity referenced by `machine.associatedIdentity`; nil when the
     /// reference is unset, malformed, or resolves to a placeholder.
+    /// Main thread; worker queues read `workerAssociatedIdentity(for:)`.
     func associatedIdentity(for machine: RDMachine) -> RDIdentity? {
         guard let raw = machine.associatedIdentity,
               let uuid = UUID(uuidString: raw)

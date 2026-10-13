@@ -8,6 +8,7 @@
 import Combine
 import Foundation
 import NSRemoteShell
+import os
 import PropertyWrapper
 #if canImport(UIKit)
     import UIKit
@@ -80,6 +81,17 @@ public class RayonStore: ObservableObject {
             portForwardGroup = read
         }
 
+        // Property observers do not run during init; seed the worker
+        // snapshot with what was just loaded.
+        let loaded = WorkerState(
+            machines: machineGroup.machines,
+            identities: identityGroup.identities,
+            timeout: timeout,
+            monitorInterval: monitorInterval,
+            terminalFontSize: terminalFontSize
+        )
+        workerState.withLock { $0 = loaded }
+
         // Storing is debounced; leaving the foreground writes what is
         // still waiting.
         #if canImport(UIKit)
@@ -98,6 +110,10 @@ public class RayonStore: ObservableObject {
     }
 
     private var observers: [NSObjectProtocol] = []
+
+    /// What worker queues read instead of the main-thread properties, kept
+    /// in step by the property observers below. See RayonStore+Worker.
+    let workerState = OSAllocatedUnfairLock(initialState: WorkerState())
 
     // Preserve legacy access from the existing UI and worker queues.
     nonisolated(unsafe) public static let shared = RayonStore()
@@ -124,6 +140,8 @@ public class RayonStore: ObservableObject {
     @Published public var timeout: Int = 0 {
         didSet {
             UDTimeout = timeout
+            let timeout = timeout
+            workerState.withLock { $0.timeout = timeout }
         }
     }
 
@@ -132,9 +150,12 @@ public class RayonStore: ObservableObject {
     @Published public var monitorInterval: Int = 0 {
         didSet {
             UDMonitorInterval = monitorInterval
+            let monitorInterval = monitorInterval
+            workerState.withLock { $0.monitorInterval = monitorInterval }
         }
     }
 
+    /// Main thread; worker queues read `workerTimeoutNumber`.
     public var timeoutNumber: NSNumber {
         NSNumber(value: timeout)
     }
@@ -150,6 +171,8 @@ public class RayonStore: ObservableObject {
 
     @Published public var identityGroup: RDIdentityGroup = .init() {
         didSet {
+            let identities = identityGroup.identities
+            workerState.withLock { $0.identities = identities }
             storeEncryptedDefault(
                 to: .identityGroupEncrypted,
                 with: identityGroup
@@ -157,6 +180,7 @@ public class RayonStore: ObservableObject {
         }
     }
 
+    /// Main thread; worker queues read `workerIdentitiesForAutoAuth`.
     public var identityGroupForAutoAuth: [RDIdentity] {
         identityGroup
             .identities
@@ -176,6 +200,8 @@ public class RayonStore: ObservableObject {
 
     @Published public var machineGroup: RDMachineGroup = .init() {
         didSet {
+            let machines = machineGroup.machines
+            workerState.withLock { $0.machines = machines }
             storeEncryptedDefault(
                 to: .machineGroupEncrypted,
                 with: machineGroup
@@ -240,6 +266,8 @@ public class RayonStore: ObservableObject {
     @Published public var terminalFontSize: Int = 14 {
         didSet {
             UDTerminalFontSize = terminalFontSize
+            let terminalFontSize = terminalFontSize
+            workerState.withLock { $0.terminalFontSize = terminalFontSize }
         }
     }
 
