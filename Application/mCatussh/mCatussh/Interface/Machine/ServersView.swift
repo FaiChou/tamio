@@ -203,6 +203,9 @@ struct ServerMenuItems: View {
             } label: {
                 Label("Copy SSH Command", systemImage: "doc.on.doc")
             }
+            Button { ServerActions.forgetHostKey(machine) } label: {
+                Label("Forget Host Key", systemImage: "key.slash")
+            }
         }
         Section {
             Button(role: .destructive) { ServerActions.delete(machine) } label: {
@@ -239,6 +242,17 @@ enum ServerActions {
         copy.id = UUID()
         copy.name += " copy"
         CatusshStore.shared.machineGroup.insert(copy)
+    }
+
+    /// For a server whose keys were replaced: its next host key is saved.
+    @MainActor
+    static func forgetHostKey(_ machine: RDMachine.ID) {
+        let read = CatusshStore.shared.machineGroup[machine]
+        guard read.isNotPlaceholder() else { return }
+        UIBridge.requiresConfirmation(message: "Forget the host key of \(read.name)? The key it presents next is saved as its key.") { confirmed in
+            guard confirmed else { return }
+            read.forgetHostKey()
+        }
     }
 
     @MainActor
