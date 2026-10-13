@@ -28,7 +28,6 @@ enum UIBridge {
     static let itemSpacing: Double = 10
 
     static func sendPasteboard(str: String) {
-        debugPrint("\(#function) \(str)")
         UIPasteboard.general.string = str
     }
 
