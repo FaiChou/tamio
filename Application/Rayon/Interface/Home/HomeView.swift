@@ -326,6 +326,9 @@ private let serverTileHeight: CGFloat = 168
 struct ServerTile: View {
     let machine: RDMachine.ID
     @EnvironmentObject var store: RayonStore
+    // Observed so the dot follows a terminal opening or closing, the same
+    // subscription SessionTabs makes.
+    @ObservedObject var terminals = TerminalManager.shared
     @State private var hovered = false
 
     var body: some View {
@@ -391,7 +394,7 @@ struct ServerTile: View {
     }
 
     var connected: Bool {
-        TerminalManager.shared.sessionContexts.contains { $0.remoteType == .machine && $0.machine.id == machine && !$0.closed }
+        terminals.sessionContexts.contains { $0.remoteType == .machine && $0.machine.id == machine && !$0.closed }
     }
 
     var actions: some View {
