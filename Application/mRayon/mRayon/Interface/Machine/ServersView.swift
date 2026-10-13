@@ -226,7 +226,7 @@ enum ServerActions {
             host.modalTransitionStyle = .coverVertical
             host.modalPresentationStyle = .formSheet
             host.preferredContentSize = preferredPopOverSize
-            UIWindow.shutUpKeyWindow?.topMostViewController?.present(next: host)
+            PresentationQueue.present(next: host)
         } catch {
             UIBridge.presentError(with: "Cannot open monitor")
         }
@@ -256,7 +256,9 @@ enum ServerActions {
     static func batchStartup() {
         Task {
             let machines = await RayonUtil.selectMachine()
-            onMainThread(delay: 0.6) {
+            // Terminals present themselves through PresentationQueue once
+            // connected, so the picker sheet still animating out is fine.
+            onMainThread {
                 for machine in machines {
                     TerminalManager.shared.begin(for: machine, force: true)
                 }
