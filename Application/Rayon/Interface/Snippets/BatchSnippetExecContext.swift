@@ -49,13 +49,13 @@ class BatchSnippetExecContext: ObservableObject {
     }
 
     var shellObjects: [RDMachine.ID: NSRemoteShell] = [:]
-    var completed: Bool = false
 
     private var requiredIdentities: [RDMachine.ID: RDIdentity] = [:]
     private var shellContinue: [RDMachine.ID: Bool] = [:]
     private var receivedBuffer: [RDMachine.ID: String] = [:]
     private var completedMachines: [RDMachine.ID] = []
-    private var bufferForTermId: [UUID: String] = [:]
+    private var consumedBufferCount: [UUID: Int] = [:]
+    private var droppedBufferCount: [RDMachine.ID: Int] = [:]
     private var startedAt: [RDMachine.ID: Date] = [:]
     private var finishedAt: [RDMachine.ID: Date] = [:]
     private var failedMachines: Set<RDMachine.ID> = []
@@ -90,13 +90,6 @@ class BatchSnippetExecContext: ObservableObject {
         }
     }
 
-    var safeAccessCompleted: Bool {
-        accessLock.lock()
-        let value = completed
-        accessLock.unlock()
-        return value
-    }
-
     var safeAccessShellObjects: [RDMachine.ID: NSRemoteShell] {
         accessLock.lock()
         let value = shellObjects
@@ -104,23 +97,9 @@ class BatchSnippetExecContext: ObservableObject {
         return value
     }
 
-    var safeAccessRequiredIdentities: [RDMachine.ID: RDIdentity] {
-        accessLock.lock()
-        let value = requiredIdentities
-        accessLock.unlock()
-        return value
-    }
-
     var safeAccessShellContinue: [RDMachine.ID: Bool] {
         accessLock.lock()
         let value = shellContinue
-        accessLock.unlock()
-        return value
-    }
-
-    var safeAccessReceivedBuffer: [RDMachine.ID: String] {
-        accessLock.lock()
-        let value = receivedBuffer
         accessLock.unlock()
         return value
     }
@@ -155,24 +134,33 @@ class BatchSnippetExecContext: ObservableObject {
                 }
             }
             group.wait()
-            self.safeAccess {
-                self.completed = true
-            }
         }
     }
 
+    /// A terminal reads by absolute position, so truncating the buffer's front
+    /// never replays output: one behind the truncation point gets what is left.
     func requestBuffer(for terminalId: UUID, machine: UUID) -> String {
         accessLock.lock()
         let buffer = receivedBuffer[machine, default: ""]
-        let current = bufferForTermId[terminalId, default: ""]
-        var write = ""
-        if buffer.count > current.count {
-            write = buffer
-            write.removeFirst(current.count)
-        }
-        bufferForTermId[terminalId] = buffer
+        let dropped = droppedBufferCount[machine, default: 0]
+        let consumed = consumedBufferCount[terminalId, default: 0]
+        let write = consumed <= dropped ? buffer : String(buffer.dropFirst(consumed - dropped))
+        consumedBufferCount[terminalId] = dropped + buffer.count
         accessLock.unlock()
         return write
+    }
+
+    private static let bufferLimit = 1024 * 1024
+
+    /// Keeps a flooding command from growing a machine's buffer without bound.
+    /// Call with accessLock held.
+    private func lockedAppendToBuffer(_ output: String, for machine: RDMachine.ID) {
+        receivedBuffer[machine, default: ""].append(output)
+        let count = receivedBuffer[machine, default: ""].count
+        guard count > Self.bufferLimit else { return }
+        let excess = count - Self.bufferLimit
+        receivedBuffer[machine, default: ""].removeFirst(excess)
+        droppedBufferCount[machine, default: 0] += excess
     }
 
     func beginExec(on machine: RDMachine.ID) {
@@ -184,7 +172,7 @@ class BatchSnippetExecContext: ObservableObject {
                 self.finishedAt[machine] = Date()
             }
         }
-        guard let shell = shellObjects[machine] else {
+        guard let shell = safeAccessShellObjects[machine] else {
             // our error not user's
             debugPrint("missing shell for machine: \(machine)")
             safeAccess { self.failedMachines.insert(machine) }
@@ -195,7 +183,7 @@ class BatchSnippetExecContext: ObservableObject {
         guard shell.isConnected else {
             debugPrint("failed to connect to remote machine: \(machine)")
             safeAccess {
-                self.receivedBuffer[machine, default: ""].append("\r\n[E] Could not connect to the server\r\n")
+                self.lockedAppendToBuffer("\r\n[E] Could not connect to the server\r\n", for: machine)
                 self.failedMachines.insert(machine)
             }
             return
@@ -203,7 +191,7 @@ class BatchSnippetExecContext: ObservableObject {
         guard let identity = requiredIdentities[machine] else {
             debugPrint("auto auth is not supported on batch exec")
             safeAccess {
-                self.receivedBuffer[machine, default: ""].append("\r\n[E] Set an identity on this server to run snippets on it\r\n")
+                self.lockedAppendToBuffer("\r\n[E] Set an identity on this server to run snippets on it\r\n", for: machine)
                 self.failedMachines.insert(machine)
             }
             return
@@ -212,7 +200,7 @@ class BatchSnippetExecContext: ObservableObject {
         guard shell.isConnected, shell.isAuthenticated else {
             debugPrint("auth failed for machine: \(machine)")
             safeAccess {
-                self.receivedBuffer[machine, default: ""].append("\r\n[E] The identity could not sign in\r\n")
+                self.lockedAppendToBuffer("\r\n[E] The identity could not sign in\r\n", for: machine)
                 self.failedMachines.insert(machine)
             }
             return
@@ -223,7 +211,7 @@ class BatchSnippetExecContext: ObservableObject {
         ) {
             debugPrint("channel begin")
             self.safeAccess {
-                self.receivedBuffer[machine, default: ""].append("[*] Execute Begin\r\n")
+                self.lockedAppendToBuffer("[*] Execute Begin\r\n", for: machine)
             }
         } withOutput: { output in
             // because the output is picked up by xterm, we need to replace \n to \r\n
@@ -231,7 +219,7 @@ class BatchSnippetExecContext: ObservableObject {
                 .replacingOccurrences(of: "\n", with: "\r\n") // \n -> \r\n, \r\n -> \r\r\n
                 .replacingOccurrences(of: "\r\r\n", with: "\r\n") // \r\r -> \n
             self.safeAccess {
-                self.receivedBuffer[machine, default: ""].append(output)
+                self.lockedAppendToBuffer(output, for: machine)
             }
         } withContinuationHandler: {
             // safeAccess executes synchronously under the lock; wrapping it in
@@ -240,7 +228,7 @@ class BatchSnippetExecContext: ObservableObject {
         }
         safeAccess {
             self.shellObjects.removeValue(forKey: machine)
-            self.receivedBuffer[machine, default: ""].append("\r\n[*] Execution completed\r\n")
+            self.lockedAppendToBuffer("\r\n[*] Execution completed\r\n", for: machine)
         }
     }
 }
