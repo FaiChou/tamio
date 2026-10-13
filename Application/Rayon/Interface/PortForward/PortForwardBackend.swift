@@ -59,6 +59,15 @@ class PortForwardBackend: ObservableObject {
 
     func beginLifecycle(for context: Context) {
         DispatchQueue.global().async {
+            // However the lifecycle ends — connect or auth failure, or the
+            // channel closing — the session is over: release the shell and
+            // drop the context so the switch goes back off (endSession can
+            // no longer reach it once it leaves the container).
+            defer {
+                context.shell.requestDisconnectAndWait()
+                context.shell.destroyPermanently()
+                self.endLifecycle(for: context)
+            }
             self.putHint(for: context.info.id, with: "awaiting connect")
             context.shell
                 .applyConnection(for: context.machine, timeout: RayonStore.shared.timeoutNumber)
@@ -107,6 +116,13 @@ class PortForwardBackend: ObservableObject {
                 }
             }
             self.putHint(for: context.info.id, with: "forward stopped")
+        }
+    }
+
+    /// Removes a finished session's context, so the row's switch turns off.
+    private func endLifecycle(for context: Context) {
+        onMainThread {
+            self.container.removeAll { $0.id == context.id }
         }
     }
 
