@@ -109,23 +109,20 @@ public final class Keychain {
         if let labelValue { attributes[kSecAttrLabel as String] = labelValue }
         if let commentValue { attributes[kSecAttrComment as String] = commentValue }
 
-        let status = SecItemCopyMatching(lookup as CFDictionary, nil)
-        switch status {
+        // Deliberately no kSecAttrAccessible: items keep the default WhenUnlocked.
+        var insert = lookup
+        attributes.forEach { insert[$0] = $1 }
+        let add = SecItemAdd(insert as CFDictionary, nil)
+        switch add {
         case errSecSuccess:
+            return
+        case errSecDuplicateItem:
             let update = SecItemUpdate(lookup as CFDictionary, attributes as CFDictionary)
             guard update == errSecSuccess else {
                 throw KeychainError(status: update)
             }
-        case errSecItemNotFound:
-            var insert = baseQuery
-            insert[kSecAttrAccount as String] = key
-            attributes.forEach { insert[$0] = $1 }
-            let add = SecItemAdd(insert as CFDictionary, nil)
-            guard add == errSecSuccess else {
-                throw KeychainError(status: add)
-            }
         default:
-            throw KeychainError(status: status)
+            throw KeychainError(status: add)
         }
     }
 
