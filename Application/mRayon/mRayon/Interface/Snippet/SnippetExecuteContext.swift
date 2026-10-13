@@ -22,7 +22,7 @@ class SnippetExecuteContext: ObservableObject {
     @Published var completed: [RDMachine] = []
     @Published var hasError: Bool = false
     @Published var completedProgress: Float = 0
-    @Published var totalProgress: Float = 2_147_483_648 // will update
+    @Published var totalProgress: Float = 0
 
     static let queue = DispatchQueue(label: "me.mizorewww.snippet.exec", attributes: .concurrent)
 
@@ -34,8 +34,9 @@ class SnippetExecuteContext: ObservableObject {
             buildTermUI.append(.init())
         }
         terminalGroup = buildTermUI
+        totalProgress = Float(machineGroup.count)
         shellGroup = machineGroup
-            .map { NSRemoteShell.configured(for: $0, timeout: 6) }
+            .map { NSRemoteShell.configured(for: $0, timeout: RayonStore.shared.timeoutNumber) }
     }
 
     deinit {
