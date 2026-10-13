@@ -71,3 +71,7 @@ public struct RDSnippet: Codable, Identifiable, Equatable {
         return "terminal"
     }
 }
+
+extension RDSnippet: RDGroupItem, RDGroupSectionedItem {
+    public init() { self.init(id: UUID()) }
+}

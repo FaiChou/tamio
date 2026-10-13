@@ -105,3 +105,7 @@ public struct RDPortForward: Codable, Identifiable, Equatable {
         }
     }
 }
+
+extension RDPortForward: RDGroupItem {
+    public init() { self.init(id: UUID()) }
+}

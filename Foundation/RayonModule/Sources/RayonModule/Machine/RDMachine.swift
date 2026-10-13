@@ -114,3 +114,7 @@ public struct RDMachine: Codable, Identifiable, Equatable, Sendable {
         return build
     }
 }
+
+extension RDMachine: RDGroupItem, RDGroupSectionedItem {
+    public init() { self.init(id: UUID()) }
+}

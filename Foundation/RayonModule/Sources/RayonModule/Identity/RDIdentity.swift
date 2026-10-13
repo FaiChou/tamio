@@ -126,3 +126,7 @@ public extension RDIdentity {
         return nil
     }
 }
+
+extension RDIdentity: RDGroupItem {
+    public init() { self.init(id: UUID()) }
+}
