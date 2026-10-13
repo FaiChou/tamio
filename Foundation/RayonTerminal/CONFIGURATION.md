@@ -1,6 +1,6 @@
-# Native Ghostty Config in Rayon
+# Native Ghostty Config in catussh
 
-Rayon's single **Settings** entry contains General, Connection, and all terminal
+catussh's single **Settings** entry contains General, Connection, and all terminal
 categories in one native SwiftUI page, with one category list and shared search.
 General and Connection retain their existing immediate persistence; terminal
 changes retain their explicit apply/discard workflow. A pending terminal draft
@@ -40,7 +40,7 @@ The simulator supports `cat`, `cd`, `clear`, `date`, `echo`, `git`, `grep`,
 `help`, `hostname`, `ls`, `mkdir`, `pwd`, `rm`, `touch`, `uname`, `whoami`.
 It never launches a process, touches real files, or sends data to an SSH session.
 Its sample files, curated git output, and native line wrapping are adapted for
-Rayon rather than byte-identical copies of the web demonstration. The normal
+catussh rather than byte-identical copies of the web demonstration. The normal
 AppKit input field provides selection, cursor movement, deletion, and editing.
 
 ## Applying configuration
@@ -58,13 +58,13 @@ exportable and are marked as standalone Ghostty settings. Process startup,
 shell integration, GTK/Linux application integration, standalone window/tab
 management, update behavior, app icons, custom includes, and global shortcuts
 remain owned by their respective host application. Importing them cannot replace
-Rayon's SSH transport. Unknown/custom theme paths are retained for export;
+catussh's SSH transport. Unknown/custom theme paths are retained for export;
 only bundled themes are materialized by the embedded runtime. Clipboard read/write
 confirmation remains enforced by the existing native terminal delegate.
 
-Rayon keeps its legacy defaults until explicitly changed. Internally, an explicit
+catussh keeps its legacy defaults until explicitly changed. Internally, an explicit
 value is retained even when equal to the upstream default, because that default
-may differ from Rayon's (for example font thickening). Export still removes values
+may differ from catussh's (for example font thickening). Export still removes values
 equal to the Ghostty Config catalog default. Reset removes the explicit override.
 Deleting a default keybinding follows upstream export semantics: use an explicit
 `trigger=unbind` entry when the exported configuration must disable it.
@@ -83,6 +83,6 @@ bash Workflow/Scripts/build-configuration-preview.sh
 ```
 
 This creates `DerivedData/RayonConfigurationPreview.app` with a separate bundle
-identity and preference domain, without opening Rayon's account store.
+identity and preference domain, without opening catussh's account store.
 
 Catalog refresh instructions live in `Workflow/Scripts/GhosttyConfig/README.md`.

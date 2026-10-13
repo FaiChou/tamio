@@ -1,4 +1,4 @@
-# Rayon
+# catussh
 
 A native macOS app for the Linux servers you look after: an SSH terminal built on
 [Ghostty](https://ghostty.org), SFTP file transfer and a live resource monitor, side
@@ -9,15 +9,16 @@ by side for every server.
 ![Swift](https://img.shields.io/badge/Swift-6.2-orange)
 
 > [!NOTE]
-> This repository, [mizorewww/Rayon](https://github.com/mizorewww/Rayon), is where Rayon
-> is maintained. It continues [Lakr233/Rayon](https://github.com/Lakr233/Rayon), which
-> its author has archived. This version is not affiliated with or endorsed by the
+> **catussh is the continuation of Rayon.** This repository,
+> [mizorewww/Rayon](https://github.com/mizorewww/Rayon), is where Rayon was kept alive
+> after its author archived [Lakr233/Rayon](https://github.com/Lakr233/Rayon); the app
+> now goes on under the name catussh. It is not affiliated with or endorsed by the
 > original author. The "Rayon" sold on the App Store belongs to a third party and is
 > unrelated to this code.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./Resources/Screenshots/home-dark.jpg">
-  <img alt="Rayon's Home page: Quick Connect at the top and a grid of saved servers, each with Connect, Files and Monitor buttons." src="./Resources/Screenshots/home-light.jpg">
+  <img alt="catussh's Home page: Quick Connect at the top and a grid of saved servers, each with Connect, Files and Monitor buttons." src="./Resources/Screenshots/home-light.jpg">
 </picture>
 
 ## Contents
@@ -25,7 +26,7 @@ by side for every server.
 - [Features](#features)
 - [Screenshots](#screenshots)
 - [Getting started](#getting-started)
-- [Using Rayon](#using-rayon)
+- [Using catussh](#using-catussh)
 - [Security](#security)
 - [Getting help and contributing](#getting-help-and-contributing)
 - [Credits and license](#credits-and-license)
@@ -62,7 +63,7 @@ documentation addresses.
 
 ## Getting started
 
-There are no prebuilt downloads yet; build Rayon from source.
+There are no prebuilt downloads yet; build catussh from source.
 
 ### Requirements
 
@@ -76,7 +77,7 @@ There are no prebuilt downloads yet; build Rayon from source.
 git clone https://github.com/mizorewww/Rayon.git
 cd Rayon
 
-# Debug build → DerivedData/Build/Products/Debug/Rayon.app
+# Debug build → DerivedData/Build/Products/Debug/catussh.app
 bash Workflow/Scripts/build-macos.sh
 
 # Release build, installed to /Applications
@@ -85,12 +86,12 @@ bash Workflow/Scripts/install-macos.sh
 
 Builds are universal (`arm64` and `x86_64`) and signed ad hoc for running on your own
 Mac; they are not notarized. Set `DERIVED_DATA_PATH` to build elsewhere. To distribute
-Rayon, configure your own team, signing identity and provisioning profile; changing
+catussh, configure your own team, signing identity and provisioning profile; changing
 the signing identity can affect access to existing Keychain items.
 
 You can also open `App.xcworkspace` and run the **Rayon** scheme.
 
-## Using Rayon
+## Using catussh
 
 1. **Add a server**: **New Server** on Home (⇧⌘N). Leave the identity on *Automatic*
    to try your identities in turn, or pick one.
@@ -115,18 +116,16 @@ live in [Application/mRayonUITests](Application/mRayonUITests/README.md).
 
 ## Security
 
-Rayon inherited these unresolved issues. Do not use it with credentials you cannot
-afford to lose until they are fixed.
+catussh inherited this unresolved issue from Rayon. Do not use it with credentials
+you cannot afford to lose until it is fixed.
 
 - **No host-key verification**: `NSRemoteShell.m` records the server fingerprint but
   never checks it against trusted host keys, so connections are open to
   man-in-the-middle attacks.
-- **Weak credential encryption**: `Foundation/RayonModule/Sources/RayonModule/Utils/AES.swift`
-  uses AES with the IV equal to the key and no authentication tag. In Debug builds the
-  key is derived from the machine serial number; in Release builds a failed Keychain
-  write can leave data encrypted under a non-persistent key.
-- **Fragile data import**: `RayonStore.overrideImport` cannot tell missing data from a
-  decryption failure and may overwrite data it cannot decrypt.
+
+Two issues that used to be on this list were fixed in catussh: credential storage
+moved from AES-CBC with a key-equal IV to AES-256-GCM with a random nonce, and a
+failed decrypt can no longer be mistaken for missing data and overwritten.
 
 If you find a new vulnerability, please do not post exploit details in a public issue;
 open an issue asking for a private contact instead.
@@ -150,9 +149,10 @@ for the Ghostty terminal and its settings, `RayonDesign` for the design system,
 
 ## Credits and license
 
-Rayon is maintained by [@mizorewww](https://github.com/mizorewww).
+catussh is maintained by [@mizorewww](https://github.com/mizorewww) as the continuation
+of Rayon.
 
-It was created by [@Lakr233](https://github.com/Lakr233) with
+Rayon was created by [@Lakr233](https://github.com/Lakr233) with
 [@__oquery](https://twitter.com/__oquery), [@zlind0](https://github.com/zlind0),
 [@unixzii](https://twitter.com/unixzii), [@82flex](https://twitter.com/82flex),
 [@xnth97](https://twitter.com/xnth97), [@misakicoca](https://twitter.com/misakicoca) and
@@ -162,7 +162,7 @@ The terminal is [Ghostty](https://github.com/ghostty-org/ghostty) (MIT) through
 [libghostty-spm](https://github.com/Lakr233/libghostty-spm). Third-party licenses,
 including libssh2 and OpenSSL, are listed in [Resources/LICENSE](./Resources/LICENSE).
 
-Rayon is released under the [MIT License — Lakr's Edition](./LICENSE). Image assets
+catussh is released under the [MIT License — Lakr's Edition](./LICENSE). Image assets
 are not licensed for reuse.
 
 Copyright © 2022 Lakr Aream. Copyright © 2026 mizorewww and contributors.
