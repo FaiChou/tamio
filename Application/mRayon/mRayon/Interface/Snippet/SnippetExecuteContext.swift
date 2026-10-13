@@ -2,7 +2,8 @@
 //  SnippetExecuteContext.swift
 //  mRayon
 //
-//  Created by Lakr Aream on 2022/3/4.
+//  The per-server run lives in RayonModule.SnippetExecSession; this
+//  context keeps the batch: terminals, progress and per-server close.
 //
 
 import NSRemoteShell
@@ -75,48 +76,28 @@ class SnippetExecuteContext: ObservableObject {
         }
         term.setTerminalFontSize(with: RayonStore.shared.terminalFontSize)
         term.write("[*] connecting to host...\r\n")
-        shell.requestConnectAndWait()
-        guard shell.isConnected else {
+        let outcome = SnippetExecSession(machine: machine, shell: shell).execute(
+            snippet.code,
+            onBegin: {
+                term.write("[*] Execute Begin\r\n")
+            },
+            onOutput: { output in
+                term.write(output)
+            },
+            withContinuationHandler: {
+                true // close it to cancel the exec
+            }
+        )
+        switch outcome {
+        case .completed:
+            term.write("\r\n\r\n[*] Execution Completed ")
+        case .connectFailed:
             term.write("[E] failed to connect\r\n")
             reportError()
-            return
-        }
-        if let aid = machine.associatedIdentity {
-            guard let uid = UUID(uuidString: aid) else {
-                term.write("[E] failed to authenticate\r\n")
-                reportError()
-                return
-            }
-            let identity = RayonStore.shared.identityGroup[uid]
-            guard !identity.username.isEmpty else {
-                term.write("[E] failed to authenticate\r\n")
-                reportError()
-                return
-            }
-            identity.callAuthenticationWith(remote: shell)
-        } else {
-            shell.authenticateWithAutoIdentities(RayonStore.shared.identityGroupForAutoAuth)
-        }
-        guard shell.isConnected, shell.isAuthenticated else {
+        case .authenticateFailed:
             term.write("[E] failed to authenticate session\r\n")
             reportError()
-            return
         }
-        shell.beginExecute(
-            withCommand: snippet.code,
-            withTimeout: 0
-        ) {
-            term.write("[*] Execute Begin\r\n")
-        } withOutput: { output in
-            // because the output is picked up by xterm, we need to replace \n to \r\n
-            let output = output
-                .replacingOccurrences(of: "\n", with: "\r\n") // \n -> \r\n, \r\n -> \r\r\n
-                .replacingOccurrences(of: "\r\r\n", with: "\r\n") // \r\r -> \n
-            term.write(output)
-        } withContinuationHandler: {
-            true // close it to cancel the exec
-        }
-        term.write("\r\n\r\n[*] Execution Completed ")
     }
 
     func moveToComplete(for mid: RDMachine.ID) {
