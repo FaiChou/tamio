@@ -11,7 +11,7 @@ import SwiftUI
 import RayonTerminal
 
 struct SnippetExecuteView: View {
-    @StateObject var context: SnippetExecuteContext
+    @ObservedObject var context: SnippetExecuteContext
     @Environment(\.dismiss) private var dismiss
 
     @State var widthInstructor: CGSize = .init()

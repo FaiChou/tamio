@@ -14,7 +14,7 @@ import RayonTerminal
 import SwiftUI
 
 struct SettingView: View {
-    @StateObject var store = RayonStore.shared
+    @ObservedObject var store = RayonStore.shared
 
     var body: some View {
         GhosttyConfigurationView(
@@ -108,7 +108,7 @@ private struct AppearanceSettings: View {
 }
 
 private struct SessionSettings: View {
-    @StateObject var store = RayonStore.shared
+    @ObservedObject var store = RayonStore.shared
 
     var body: some View {
         RXDividedStack {
@@ -127,7 +127,7 @@ private struct SessionSettings: View {
 }
 
 private struct RecentSettings: View {
-    @StateObject var store = RayonStore.shared
+    @ObservedObject var store = RayonStore.shared
     @AppStorage("me.mizorewww.rayon.maxRecentRecordCount") private var recentLimit = 8
 
     var body: some View {
@@ -185,7 +185,7 @@ private struct DataSettings: View {
 }
 
 private struct SSHSettings: View {
-    @StateObject var store = RayonStore.shared
+    @ObservedObject var store = RayonStore.shared
 
     var body: some View {
         NumberFieldRow(
@@ -199,7 +199,7 @@ private struct SSHSettings: View {
 }
 
 private struct MonitorSettings: View {
-    @StateObject var store = RayonStore.shared
+    @ObservedObject var store = RayonStore.shared
     private let intervals = [5, 10, 15, 30, 60]
 
     var body: some View {

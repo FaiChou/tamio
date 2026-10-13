@@ -14,13 +14,13 @@ import RayonTerminal
 import SwiftUI
 
 struct TerminalView: View {
-    @StateObject var context: TerminalContext
+    @ObservedObject var context: TerminalContext
 
     @State var interfaceToken = UUID()
 
     @State var terminalSize: CGSize = TerminalContext.defaultTerminalSize
 
-    @StateObject var store = RayonStore.shared
+    @ObservedObject var store = RayonStore.shared
 
     @Environment(\.dismiss) private var dismiss
 

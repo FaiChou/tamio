@@ -9,7 +9,7 @@ import RayonModule
 import SwiftUI
 
 struct PickMachineView: View {
-    @StateObject var store = RayonStore.shared
+    @ObservedObject var store = RayonStore.shared
 
     let canSelectMany: Bool
 

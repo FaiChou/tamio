@@ -11,7 +11,7 @@ import SwiftUI
 import UIKit
 
 struct FileTransferView: View {
-    @StateObject var context: FileTransferContext
+    @ObservedObject var context: FileTransferContext
     @Environment(\.dismiss) private var dismiss
 
     @State var openFilePicker: Bool = false
@@ -270,7 +270,7 @@ struct FileTransferView: View {
 
     struct RemoteFileElement: View {
         let file: FileTransferContext.RemoteFile
-        @StateObject var context: FileTransferContext
+        @ObservedObject var context: FileTransferContext
         let edit: (String) -> Void
 
         private var tooLargeToEdit: Bool {

@@ -9,7 +9,7 @@ import RayonModule
 import SwiftUI
 
 struct PickIdentityView: View {
-    @StateObject var store = RayonStore.shared
+    @ObservedObject var store = RayonStore.shared
 
     @Binding var selection: RDIdentity.ID?
     @State var rawSelection: RDIdentity.ID? = nil
