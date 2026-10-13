@@ -29,11 +29,13 @@
 }
 
 - (void)unsafeProcessReadWrite {
+    // two 128k frames per tick do not belong on the event loop thread stack
+    NSMutableData *bufferData = [[NSMutableData alloc] initWithLength:BUFFER_SIZE];
+    if (!bufferData) { return; }
+    char *buf = [bufferData mutableBytes];
     do {
         long len = 0;
-        char buf[BUFFER_SIZE];
-        memset(buf, 0, sizeof(buf));
-        len = recv(self.socket, buf, sizeof(buf), 0);
+        len = recv(self.socket, buf, BUFFER_SIZE, 0);
         if (len > 0) {
             long wr = 0;
             while(wr < len) {
@@ -49,10 +51,9 @@
         }
     } while (0);
     do {
-        char buf[BUFFER_SIZE];
-        memset(buf, 0, sizeof(buf));
+        memset(buf, 0, BUFFER_SIZE);
         long len = 0;
-        len = libssh2_channel_read(self.channel, buf, sizeof(buf));
+        len = libssh2_channel_read(self.channel, buf, BUFFER_SIZE);
         if (len > 0) {
             long wr = 0;
             while(wr < len) {

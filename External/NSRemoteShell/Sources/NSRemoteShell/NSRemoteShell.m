@@ -1525,8 +1525,14 @@ continue; \
     NSDate *begin = [[NSDate alloc] init];
     NSDate *previousProgressSent = [[NSDate alloc] initWithTimeIntervalSince1970:0];
     
-//    char *buff = (char*)malloc(SFTP_BUFFER_SIZE);
-    char buff[SFTP_BUFFER_SIZE];
+    // 128k per transfer does not belong on the event loop thread stack
+    char *buff = (char*)malloc(SFTP_BUFFER_SIZE);
+    if (!buff) {
+        fclose(f);
+        LIBSSH2_CHANNEL_SHUTDOWN(channel);
+        [self unsafeFileTransferSetErrorForFile:localFile.path pathIsRemote:NO failureReason:@"failed to allocate transfer buffer"];
+        return NO;
+    }
     size_t read_size;
     char *ptr;
     NSUInteger sent_size = 0;
@@ -1534,9 +1540,8 @@ continue; \
     while (sent_size < total_size) {
         if (continuationBlock && !continuationBlock()) { break; }
         if (!self.isConnectedFileTransfer) { break; }
-//        memset(buff, 0, SFTP_BUFFER_SIZE);
-        memset(buff, 0, sizeof(buff));
-        read_size = fread(buff, 1, sizeof(buff), f);
+        memset(buff, 0, SFTP_BUFFER_SIZE);
+        read_size = fread(buff, 1, SFTP_BUFFER_SIZE, f);
         if (read_size <= 0) {
             break; // done or error
         }
@@ -1581,7 +1586,7 @@ continue; \
             });
         }
     };
-//    free(buff);
+    free(buff);
     [self unsafeReadLastError];
     
     if (sent_size < total_size) {
@@ -1913,14 +1918,20 @@ continue; \
     // do note that the file could be empty
     // fi.st_size may be zero, the entire loop is going to be skipped
     long long recv_size = 0;
-//    char *buff = (char*)malloc(SFTP_BUFFER_SIZE);
-    char buff[SFTP_BUFFER_SIZE];
+    // 128k per transfer does not belong on the event loop thread stack
+    char *buff = (char*)malloc(SFTP_BUFFER_SIZE);
+    if (!buff) {
+        close(f);
+        LIBSSH2_CHANNEL_SHUTDOWN(channel);
+        libssh2_sftp_close_handle(handle);
+        [self unsafeFileTransferSetErrorForFile:atFullPath pathIsRemote:YES failureReason:@"failed to allocate transfer buffer"];
+        return NO;
+    }
     while (recv_size < fi.st_size) {
         if (continuationBlock && !continuationBlock()) { break; }
         if (!self.isConnectedFileTransfer) { break; }
-        long long recv_decision = sizeof(buff);
-//        memset(buff, 0, SFTP_BUFFER_SIZE);
-        memset(buff, 0, sizeof(buff));
+        long long recv_decision = SFTP_BUFFER_SIZE;
+        memset(buff, 0, SFTP_BUFFER_SIZE);
         if ((fi.st_size - recv_size) < recv_decision) {
             // do not write over!
             // libssh2_channel_read may have dirty data
@@ -1971,7 +1982,7 @@ continue; \
             }
         }
     }
-//    free(buff);
+    free(buff);
     [self unsafeReadLastError];
     if (onProgress) {
         NSProgress *progress = [[NSProgress alloc] init];

@@ -103,11 +103,15 @@
 }
 
 - (void)unsafeChannelRead {
-    char buffer[BUFFER_SIZE];
-    char errorBuffer[BUFFER_SIZE];
+    // two 128k frames do not belong on the event loop thread stack
+    NSMutableData *bufferData = [[NSMutableData alloc] initWithLength:BUFFER_SIZE];
+    NSMutableData *errorBufferData = [[NSMutableData alloc] initWithLength:BUFFER_SIZE];
+    if (!bufferData || !errorBufferData) { return; }
+    char *buffer = [bufferData mutableBytes];
+    char *errorBuffer = [errorBufferData mutableBytes];
 
-    long rcout = libssh2_channel_read(self.representedChannel, buffer, (ssize_t)sizeof(buffer));
-    long rcerr = libssh2_channel_read_stderr(self.representedChannel, errorBuffer, (ssize_t)sizeof(errorBuffer));
+    long rcout = libssh2_channel_read(self.representedChannel, buffer, BUFFER_SIZE);
+    long rcerr = libssh2_channel_read_stderr(self.representedChannel, errorBuffer, BUFFER_SIZE);
 
     if (rcout != LIBSSH2_ERROR_EAGAIN && rcout > 0) {
         NSString *read = [[NSString alloc] initWithBytes:buffer length:(NSUInteger)rcout encoding:NSUTF8StringEncoding];
