@@ -83,13 +83,7 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
     @Published public private(set) var isRefreshing = false
 
     private var shell: NSRemoteShell
-    /// Written on the main thread by `shutdown`, read on the monitor queue.
-    private let loopLock = NSLock()
-    private var loopContinueStorage = true
-    private var loopContinue: Bool {
-        get { loopLock.lock(); defer { loopLock.unlock() }; return loopContinueStorage }
-        set { loopLock.lock(); defer { loopLock.unlock() }; loopContinueStorage = newValue }
-    }
+    private var updateTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
     private static let queue = DispatchQueue(label: "me.mizorewww.monitor", attributes: .concurrent)
@@ -102,8 +96,8 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
         status.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
-        MonitorSession.queue.async { [weak self] in
-            self?.updateLoop()
+        updateTask = Task.detached { [weak self] in
+            await self?.updateLoop()
         }
     }
 
@@ -118,7 +112,6 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
             self.machine = machine
             identity = nil
             shell = NSRemoteShell()
-            loopContinue = false
             status.objectWillChange
                 .sink { [weak self] _ in self?.objectWillChange.send() }
                 .store(in: &cancellables)
@@ -160,17 +153,17 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
         max(1, RayonStore.shared.monitorInterval)
     }
 
-    private func updateLoop() {
+    private func updateLoop() async {
         var failures = 0
-        while loopContinue {
+        while !Task.isCancelled {
             if !(shell.isConnected && shell.isAuthenticated) {
                 // Statics belong to the connection; a reconnect may land on
                 // a reimaged or different host.
                 status.resetSessionStatics()
                 onMainThread { if self.phase != .connected { self.phase = .connecting } }
-                connectAndAuthenticate()
+                await blocking { self.connectAndAuthenticate() }
             }
-            guard loopContinue else { break }
+            if Task.isCancelled { break }
             if shell.isConnected, shell.isAuthenticated {
                 failures = 0
                 onMainThread {
@@ -183,7 +176,8 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
                         RayonStore.shared.machineGroup[self.machine.id] = read
                     }
                 }
-                status.requestInfoAndWait(with: shell, timeout: max(10, Double(refreshInterval * 2)))
+                let timeout = max(10, Double(refreshInterval * 2))
+                await blocking { self.status.requestInfoAndWait(with: self.shell, timeout: timeout) }
                 // The status updates were queued on main; record after them.
                 onMainThread {
                     self.history.record(self.status)
@@ -196,13 +190,23 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
                 onMainThread { self.phase = .failed(message) }
             }
             let wait = failures > 0 ? min(30, 5 * failures) : refreshInterval
-            var slept = 0
-            while slept < wait, loopContinue {
-                sleep(1)
-                slept += 1
-            }
+            // Parks the task instead of squatting on a thread in sleep(1);
+            // cancellation from shutdown() lands here right away.
+            try? await Task.sleep(nanoseconds: UInt64(wait) * NSEC_PER_SEC)
         }
         onMainThread { self.phase = .closed }
+    }
+
+    /// The SSH API blocks; run it on the monitor queue so the loop's task
+    /// suspends at the await instead of blocking a cooperative-pool thread
+    /// for the whole round.
+    private func blocking(_ work: @escaping () -> Void) async {
+        await withCheckedContinuation { continuation in
+            MonitorSession.queue.async {
+                work()
+                continuation.resume()
+            }
+        }
     }
 
     private func connectAndAuthenticate() {
@@ -213,7 +217,7 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
     }
 
     public func shutdown() {
-        loopContinue = false
+        updateTask?.cancel()
         let shell = shell
         MonitorSession.queue.async {
             shell.requestDisconnectAndWait()
