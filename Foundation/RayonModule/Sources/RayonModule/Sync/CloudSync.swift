@@ -54,7 +54,7 @@ public final class CloudSync: ObservableObject {
 
     /// Why sync cannot be turned on here, if it cannot.
     public var problem: String? {
-        if !RayonStore.savesChanges { return "Rayon could not read its key from the keychain, so nothing is saved or synced." }
+        if !RayonStore.savesChanges { return "catussh could not read its key from the keychain, so nothing is saved or synced." }
         return transport.problem
     }
 
@@ -304,7 +304,7 @@ public final class CloudSync: ObservableObject {
         case .unreadable:
             status = .unreadable
         case .newer:
-            status = .failed("What is in iCloud was written by a newer version of Rayon. Update Rayon on this device.")
+            status = .failed("What is in iCloud was written by a newer version of catussh. Update catussh on this device.")
         case let .done(done):
             key = done.key
             if !done.machines.isEmpty {

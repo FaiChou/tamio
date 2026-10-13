@@ -84,7 +84,7 @@ public struct CloudSyncSettings: View {
                 }
             }
         }
-        .alert("Delete what Rayon keeps in iCloud?", isPresented: $confirmsDelete) {
+        .alert("Delete what catussh keeps in iCloud?", isPresented: $confirmsDelete) {
             Button("Delete", role: .destructive) { sync.deleteStoredData() }
             Button("Cancel", role: .cancel) {}
         } message: {

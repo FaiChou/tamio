@@ -115,8 +115,8 @@ public struct AES: Sendable {
         let keychainServiceID = "me.mizorewww.rayon.kcAccess"
         let masterKeyID = "me.mizorewww.rayon.MasterCrypto"
         let keychain = Keychain(service: keychainServiceID)
-            .label("Rayon Master Crypto Key")
-            .comment("Rayon requires a master crypto key to access your encrypted data on disk and protects your accounts")
+            .label("catussh Master Crypto Key")
+            .comment("catussh requires a master crypto key to access your encrypted data on disk and protects your accounts")
 
         // Where the key was kept while the app was wiki.qaq.ray0n; read
         // when there is none under the names used now.
