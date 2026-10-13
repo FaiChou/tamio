@@ -5,6 +5,7 @@
 //  Created by Lakr Aream on 2022/3/14.
 //
 
+import RayonModule
 import StripedTextTable
 import SwiftUI
 import UIKit
@@ -17,11 +18,17 @@ struct LogView: View {
             .toolbar {
                 ToolbarItem {
                     Button {
-                        if let url = LogRedirect.shared.path,
-                           let str = try? String(contentsOfFile: url.path),
-                           !str.isEmpty
-                        {
-                            UIBridge.sendPasteboard(str: str)
+                        if let url = LogRedirect.shared.path {
+                            DispatchQueue.global().async {
+                                guard let str = try? String(contentsOfFile: url.path),
+                                      !str.isEmpty
+                                else {
+                                    return
+                                }
+                                onMainThread {
+                                    UIBridge.sendPasteboard(str: str)
+                                }
+                            }
                         }
                     } label: {
                         Label("Share Diagnostic Data", systemImage: "doc.on.doc")

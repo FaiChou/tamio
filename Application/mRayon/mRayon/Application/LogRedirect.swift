@@ -24,7 +24,12 @@ class LogRedirect {
             .appendingPathComponent("me.mizorewww.diag.log")
         {
             path = url
-            try? FileManager.default.removeItem(at: url)
+            // Keep the last run's log as .prev.log instead of wiping it: the
+            // diagnostics of a session that crashed survive the relaunch.
+            let prev = url.deletingLastPathComponent()
+                .appendingPathComponent("me.mizorewww.diag.prev.log")
+            try? FileManager.default.removeItem(at: prev)
+            try? FileManager.default.moveItem(at: url, to: prev)
             FileManager.default.createFile(atPath: url.path, contents: nil, attributes: nil)
             handler = try? FileHandle(forWritingTo: url)
             checkPipe()
