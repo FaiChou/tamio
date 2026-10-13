@@ -56,11 +56,9 @@ struct EditMachineView: View {
 
             Section {
                 Button {
-                    DispatchQueue.global().async {
-                        let identity = RayonUtil.selectIdentity()
-                        onMainThread {
-                            self.associatedIdentity = identity
-                        }
+                    Task { @MainActor in
+                        let identity = await RayonUtil.selectIdentity()
+                        associatedIdentity = identity
                     }
                 } label: {
                     Label("Select Identity", systemImage: "arrow.right")

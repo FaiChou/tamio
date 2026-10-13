@@ -252,8 +252,8 @@ enum ServerActions {
 
     /// Pick servers, then open a terminal for each.
     static func batchStartup() {
-        DispatchQueue.global().async {
-            let machines = RayonUtil.selectMachine()
+        Task {
+            let machines = await RayonUtil.selectMachine()
             onMainThread(delay: 0.6) {
                 for machine in machines {
                     TerminalManager.shared.begin(for: machine, force: true)

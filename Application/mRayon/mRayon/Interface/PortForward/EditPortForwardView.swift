@@ -84,11 +84,9 @@ struct EditPortForwardView: View {
 
             Section {
                 Button {
-                    DispatchQueue.global().async {
-                        let machine = RayonUtil.selectOneMachine()
-                        onMainThread {
-                            usingMachine = machine.first
-                        }
+                    Task { @MainActor in
+                        let machine = await RayonUtil.selectOneMachine()
+                        usingMachine = machine.first
                     }
                 } label: {
                     Label("Select Machine", systemImage: "arrow.right")

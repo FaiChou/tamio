@@ -48,72 +48,62 @@ enum RayonUtil {
 
     /// Presents a SwiftUI view in a form-sheet hosting controller over the
     /// topmost view controller. Shared by all modal picker flows.
-    static func presentModalSheet<Content: View>(rootView: Content) {
+    /// - Returns: false when there is no window to present from.
+    @discardableResult
+    static func presentModalSheet<Content: View>(rootView: Content) -> Bool {
         let controller = UIHostingController(rootView: rootView)
         controller.isModalInPresentation = true
         controller.modalTransitionStyle = .coverVertical
         controller.modalPresentationStyle = .formSheet
         controller.preferredContentSize = preferredPopOverSize
-        UIWindow.shutUpKeyWindow?
-            .topMostViewController?
-            .present(controller, animated: true, completion: nil)
+        guard let presenter = UIWindow.shutUpKeyWindow?.topMostViewController else {
+            return false
+        }
+        presenter.present(controller, animated: true, completion: nil)
+        return true
     }
 
-    static func selectIdentity() -> RDIdentity.ID? {
-        assert(!Thread.isMainThread, "select identity must be called from background thread")
-
-        var selection: RDIdentity.ID?
-        let sem = DispatchSemaphore(value: 0)
-
+    static func selectIdentity() async -> RDIdentity.ID? {
         debugPrint("Picking Identity")
-
-        onMainThread {
-            let picker = NavigationStack {
-                PickIdentityView {
-                    selection = $0
-                    sem.signal()
+        return await withCheckedContinuation { continuation in
+            onMainThread {
+                let picker = NavigationStack {
+                    PickIdentityView {
+                        continuation.resume(returning: $0)
+                    }
+                }
+                .expended()
+                if !presentModalSheet(rootView: picker) {
+                    continuation.resume(returning: nil)
                 }
             }
-            .expended()
-            presentModalSheet(rootView: picker)
         }
-
-        sem.wait()
-
-        return selection
     }
 
-    static func selectMachine(canSelectMany: Bool = true) -> [RDMachine.ID] {
-        assert(!Thread.isMainThread, "select machine must be called from background thread")
-
-        var selection: [RDMachine.ID] = []
-        let sem = DispatchSemaphore(value: 0)
-
+    static func selectMachine(canSelectMany: Bool = true) async -> [RDMachine.ID] {
         debugPrint("Picking Machine")
-
-        onMainThread {
-            let picker = NavigationStack {
-                PickMachineView(completion: {
-                    selection = $0
-                    sem.signal()
-                }, canSelectMany: canSelectMany)
+        return await withCheckedContinuation { continuation in
+            onMainThread {
+                let picker = NavigationStack {
+                    PickMachineView(completion: {
+                        continuation.resume(returning: $0)
+                    }, canSelectMany: canSelectMany)
+                }
+                .expended()
+                if !presentModalSheet(rootView: picker) {
+                    continuation.resume(returning: [])
+                }
             }
-            .expended()
-            presentModalSheet(rootView: picker)
         }
-
-        sem.wait()
-
-        return selection
     }
 
-    static func selectOneMachine() -> [RDMachine.ID] {
-        selectMachine(canSelectMany: false)
+    static func selectOneMachine() async -> [RDMachine.ID] {
+        await selectMachine(canSelectMany: false)
     }
 
     static func createExecuteFor(snippet: RDSnippet) {
-        DispatchQueue.global().async {
-            let machineIds = selectMachine()
+        Task {
+            let machineIds = await selectMachine()
             debugPrint(machineIds)
             guard !machineIds.isEmpty else {
                 return
