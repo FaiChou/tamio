@@ -9,24 +9,7 @@ import Foundation
 import RayonModule
 import UIKit
 
-// onMainThread(delay:run:) is provided by RayonModule.
-
-/// Not actually a Actor but I like it
-/// - Parameter run: the job to be fired on main thread
-func mainActorUI(delay: Double = 0, run: @escaping @MainActor () -> Void) {
-    guard delay == 0, Thread.isMainThread else {
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            run()
-        }
-        return
-    }
-    // The guard above establishes the existing main-thread fast path.
-    MainActor.assumeIsolated { run() }
-}
-
 enum UIBridge {
-    static let itemSpacing: Double = 10
-
     static func sendPasteboard(str: String) {
         UIPasteboard.general.string = str
     }

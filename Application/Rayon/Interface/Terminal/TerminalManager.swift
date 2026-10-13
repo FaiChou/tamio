@@ -56,21 +56,6 @@ class TerminalManager: ObservableObject {
         return context
     }
 
-    func sessionExists(for machine: RDMachine.ID) -> Bool {
-        for context in sessionContexts where context.machine.id == machine {
-            return true
-        }
-        return false
-    }
-
-    func sessionAlive(forMachine machineId: RDMachine.ID) -> Bool {
-        !(
-            sessionContexts
-                .first { $0.machine.id == machineId }?
-                .closed ?? true
-        )
-    }
-
     func sessionAlive(forContext contextId: Context.ID) -> Bool {
         !(
             sessionContexts

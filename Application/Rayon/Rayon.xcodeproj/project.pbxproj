@@ -58,7 +58,6 @@
 		D9A96FC6380B5BD2E9DDFB0A /* RayonTerminal in Frameworks */ = {isa = PBXBuildFile; productRef = 08929048713DE59C22E8E2D1 /* RayonTerminal */; };
 		D9F96DF1A1C698C6B677C0BC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E125B54A35FEC716F5D4D843 /* Assets.xcassets */; };
 		EC87DD0712CE787A0F43CE30 /* MonitorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1783DA3F19477EE4B0219BEC /* MonitorPage.swift */; };
-		F704F34E5CF708E76924887E /* GenericComparator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F7F9975F2CF42F7882FCE99 /* GenericComparator.swift */; };
 		F98D576A6F79A246C851A6E3 /* SymbolPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 679D5A8D992D398335F44C83 /* SymbolPicker */; };
 		FB2F4435451DED7B3A6448CB /* ServersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6536341CB6765519E7D119A9 /* ServersView.swift */; };
 		FDA6C38CB76FAD0CD5F3FFD4 /* PickerSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCD3AA01EE3F11A7EAB04474 /* PickerSheets.swift */; };
@@ -96,7 +95,6 @@
 		1583AE5A6D6E5DD41A63C1DE /* SnippetEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEditorSheet.swift; sourceTree = "<group>"; };
 		1783DA3F19477EE4B0219BEC /* MonitorPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitorPage.swift; sourceTree = "<group>"; };
 		1E2E3DDA3CD1EAD35220A9E5 /* Bridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bridge.swift; sourceTree = "<group>"; };
-		1F7F9975F2CF42F7882FCE99 /* GenericComparator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenericComparator.swift; sourceTree = "<group>"; };
 		2149ACAE9A3E09AAC44779A1 /* MachineStatusView */ = {isa = PBXFileReference; lastKnownFileType = folder; name = MachineStatusView; path = ../../Foundation/MachineStatusView; sourceTree = SOURCE_ROOT; };
 		22B08C3B69C5BAC4273BE379 /* EULA */ = {isa = PBXFileReference; path = EULA; sourceTree = "<group>"; };
 		252C18C8658D76A02C02F3B9 /* TerminalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalManager.swift; sourceTree = "<group>"; };
@@ -321,7 +319,6 @@
 			isa = PBXGroup;
 			children = (
 				42043523A78202C9249758F9 /* Generic.swift */,
-				1F7F9975F2CF42F7882FCE99 /* GenericComparator.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -553,7 +550,6 @@
 				49C1EFC0CC91708B2B1CEC72 /* EditorWorkspace.swift in Sources */,
 				8BCAACD7136B86580D602065 /* FileTransferPage.swift in Sources */,
 				9DD7959D5A757D58F918C4C2 /* Generic.swift in Sources */,
-				F704F34E5CF708E76924887E /* GenericComparator.swift in Sources */,
 				1054063F81F40392825EF495 /* HomeView.swift in Sources */,
 				2735FD8D221E26EFFE3674C7 /* IdentitiesView.swift in Sources */,
 				0883D2322B0D1E0744DCBD89 /* MacBridge.swift in Sources */,
