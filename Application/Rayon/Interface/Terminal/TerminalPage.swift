@@ -5,7 +5,6 @@
 //  A terminal inside the main window: tabs for this server's terminals (closing
 //  is the tab's button), the Terminal · Files · Monitor switcher, text size and
 //  Reconnect. Status bar: the endpoint, then live figures while monitored.
-//  Status bar: state, user@host:port, live CPU / memory while monitored, font size.
 //
 
 import MachineStatusView
@@ -15,7 +14,6 @@ import SwiftUI
 
 struct TerminalPage: View {
     @ObservedObject var context: TerminalManager.Context
-    @ObservedObject var terminals = TerminalManager.shared
     @EnvironmentObject var store: RayonStore
 
     @State private var interfaceToken = UUID()
