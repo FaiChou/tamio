@@ -58,7 +58,22 @@ public class FileTransferContext: ObservableObject, Identifiable, Equatable {
     @Published public var currentHint: String = ""
     @Published public var currentSpeed: Int = 0
     @Published public var currentProgressCancelable = false
-    public var continueCurrentProgress: Bool = false
+    private let progressContinuationLock = NSLock()
+    private var progressContinuation = false
+    /// Written on the main thread by the cancel button, read on the transfer
+    /// threads by the continuation handlers; the lock keeps that safe.
+    public var continueCurrentProgress: Bool {
+        get {
+            progressContinuationLock.lock()
+            defer { progressContinuationLock.unlock() }
+            return progressContinuation
+        }
+        set {
+            progressContinuationLock.lock()
+            defer { progressContinuationLock.unlock() }
+            progressContinuation = newValue
+        }
+    }
 
     public struct RemoteFile: Identifiable, Equatable, Hashable {
         public var id: RemoteFile { self }
