@@ -2,11 +2,11 @@
 //  PortForwardBackend.swift
 //  Rayon (macOS)
 //
-//  Created by Lakr Aream on 2022/3/11.
+//  The session lifecycle lives in RayonModule.PortForwardContext; this
+//  backend keeps the container, the per-forward hints and validation.
 //
 
 import Combine
-import NSRemoteShell
 import RayonModule
 
 class PortForwardBackend: ObservableObject {
@@ -15,15 +15,9 @@ class PortForwardBackend: ObservableObject {
 
     private init() {}
 
-    @Published var container = [Context]()
-    struct Context: Identifiable {
-        var id = UUID()
-        let info: RDPortForward
-        let machine: RDMachine
-        let shell: NSRemoteShell
-    }
+    @Published var container = [PortForwardContext]()
 
-    @Published var lastHint: [Context.ID: String] = [:]
+    @Published var lastHint: [RDPortForward.ID: String] = [:]
 
     func createSession(withPortForwardID pid: RDPortForward.ID) {
         if sessionExists(withPortForwardID: pid) {
@@ -42,13 +36,18 @@ class PortForwardBackend: ObservableObject {
             UIBridge.presentError(with: "Invalid Info")
             return
         }
-        let context = Context(
+        let context = PortForwardContext(
             info: portFwd,
-            machine: machine,
-            shell: .init()
+            machine: machine
         )
+        context.hintHandler = { [weak self] hint in
+            self?.putHint(for: pid, with: hint)
+        }
+        context.terminationHandler = { [weak self] context in
+            self?.endLifecycle(for: context)
+        }
         container.append(context)
-        beginLifecycle(for: context)
+        context.begin()
     }
 
     func putHint(for pid: RDPortForward.ID, with: String) {
@@ -57,75 +56,10 @@ class PortForwardBackend: ObservableObject {
         }
     }
 
-    func beginLifecycle(for context: Context) {
-        DispatchQueue.global().async {
-            self.runLifecycle(for: context)
-            // However the lifecycle ended — connect or auth failure, or the
-            // channel closing — the session is over: release the shell and
-            // drop the context so the switch goes back off (endSession can
-            // no longer reach it once it leaves the container).
-            context.shell.requestDisconnectAndWait()
-            context.shell.destroyPermanently()
-            self.endLifecycle(for: context)
-        }
-    }
-
-    private func runLifecycle(for context: Context) {
-        putHint(for: context.info.id, with: "awaiting connect")
-        context.shell
-            .applyConnection(for: context.machine, timeout: RayonStore.shared.timeoutNumber)
-            .requestConnectAndWait()
-        guard context.shell.isConnected else {
-            putHint(for: context.info.id, with: "failed connect")
-            return
-        }
-        guard let str = context.machine.associatedIdentity,
-              let aid = UUID(uuidString: str)
-        else {
-            putHint(for: context.info.id, with: "failed authenticate")
-            return
-        }
-        let identity = RayonStore.shared.identityGroup[aid]
-        guard !identity.username.isEmpty else {
-            putHint(for: context.info.id, with: "failed authenticate")
-            return
-        }
-        identity.callAuthenticationWith(remote: context.shell)
-        guard context.shell.isAuthenticated else {
-            putHint(for: context.info.id, with: "failed authenticate")
-            return
-        }
-        putHint(for: context.info.id, with: "opening channel")
-        switch context.info.forwardOrientation {
-        case .listenRemote:
-            context.shell.createPortForward(
-                withRemotePort: NSNumber(value: context.info.bindPort),
-                withForwardTargetHost: context.info.targetHost,
-                withForwardTargetPort: NSNumber(value: context.info.targetPort)
-            ) {
-                PortForwardBackend.shared.putHint(for: context.info.id, with: "forward running")
-            } withContinuationHandler: {
-                true // we are using shell.disconnect for shutdown
-            }
-        case .listenLocal:
-            context.shell.createPortForward(
-                withLocalPort: NSNumber(value: context.info.bindPort),
-                withForwardTargetHost: context.info.targetHost,
-                withForwardTargetPort: NSNumber(value: context.info.targetPort)
-            ) {
-                PortForwardBackend.shared.putHint(for: context.info.id, with: "forward running")
-            } withContinuationHandler: {
-                true // we are using shell.disconnect for shutdown
-            }
-        }
-        putHint(for: context.info.id, with: "forward stopped")
-    }
-
     /// Removes a finished session's context, so the row's switch turns off.
-    private func endLifecycle(for context: Context) {
-        onMainThread {
-            self.container.removeAll { $0.id == context.id }
-        }
+    /// Called on the main thread by the context's termination handler.
+    private func endLifecycle(for context: PortForwardContext) {
+        container.removeAll { $0.id == context.id }
     }
 
     func sessionExists(withPortForwardID pid: RDPortForward.ID) -> Bool {
@@ -137,10 +71,7 @@ class PortForwardBackend: ObservableObject {
         putHint(for: pid, with: "terminating")
         if let index = index {
             let context = container.remove(at: index)
-            DispatchQueue.global().async {
-                context.shell.requestDisconnectAndWait()
-                context.shell.destroyPermanently()
-            }
+            context.terminate()
         }
     }
 }
