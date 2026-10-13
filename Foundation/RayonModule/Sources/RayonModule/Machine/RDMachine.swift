@@ -32,9 +32,6 @@ public struct RDMachine: Codable, Identifiable, Equatable, Sendable {
     }
 
     public var id = UUID()
-    public static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.id == rhs.id
-    }
 
     // generic authenticate filed required for ssh
     public var remoteAddress: String

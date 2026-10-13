@@ -42,6 +42,18 @@ final class GroupTypeTests: XCTestCase {
         XCTAssertEqual(group.sections, ["alpha", "zeta"])
     }
 
+    func testMachineGroupEqualityReflectsContent() {
+        var group = RDMachineGroup()
+        let machine = makeMachine(name: "alpha")
+        group.insert(machine)
+        var b = group
+        XCTAssertTrue(group == b)
+        var edited = machine
+        edited.name = "beta"
+        b.insert(edited)
+        XCTAssertFalse(group == b, "editing a machine must make the groups unequal")
+    }
+
     func testPortForwardGroupEqualityReflectsContent() {
         // Regression: RDPortForwardGroup used to compare only its stable
         // group id, so edits to a forward never registered as a change
