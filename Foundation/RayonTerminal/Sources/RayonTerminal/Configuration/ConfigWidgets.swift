@@ -319,11 +319,41 @@ struct ConfigWidgetView: View {
 }
 
 extension Color {
+    /// The basic CSS color names Ghostty also accepts in a configuration.
+    private static let configNamedColors: [String: Color] = [
+        "black": Color(red: 0, green: 0, blue: 0),
+        "silver": Color(red: 0.75, green: 0.75, blue: 0.75),
+        "gray": Color(red: 0.5, green: 0.5, blue: 0.5),
+        "grey": Color(red: 0.5, green: 0.5, blue: 0.5),
+        "white": Color(red: 1, green: 1, blue: 1),
+        "maroon": Color(red: 0.5, green: 0, blue: 0),
+        "red": Color(red: 1, green: 0, blue: 0),
+        "purple": Color(red: 0.5, green: 0, blue: 0.5),
+        "fuchsia": Color(red: 1, green: 0, blue: 1),
+        "green": Color(red: 0, green: 0.5, blue: 0),
+        "lime": Color(red: 0, green: 1, blue: 0),
+        "olive": Color(red: 0.5, green: 0.5, blue: 0),
+        "yellow": Color(red: 1, green: 1, blue: 0),
+        "navy": Color(red: 0, green: 0, blue: 0.5),
+        "blue": Color(red: 0, green: 0, blue: 1),
+        "teal": Color(red: 0, green: 0.5, blue: 0.5),
+        "aqua": Color(red: 0, green: 1, blue: 1),
+        "cyan": Color(red: 0, green: 1, blue: 1),
+        "magenta": Color(red: 1, green: 0, blue: 1),
+        "orange": Color(red: 1, green: 0.65, blue: 0),
+        "pink": Color(red: 1, green: 0.75, blue: 0.8),
+        "brown": Color(red: 0.65, green: 0.16, blue: 0.16),
+    ]
+
     init(configHex: String) {
         let raw = configHex.replacingOccurrences(of: "#", with: "")
         if raw.count == 6, let n = UInt64(raw, radix: 16) {
             self.init(red: Double((n >> 16) & 255) / 255, green: Double((n >> 8) & 255) / 255, blue: Double(n & 255) / 255)
-        } else { self = configHex == "white" ? .white : .black }
+        } else if let named = Self.configNamedColors[raw.lowercased()] {
+            self = named
+        } else {
+            self = .black
+        }
     }
     var configHex: String {
         var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
