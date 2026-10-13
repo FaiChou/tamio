@@ -62,6 +62,9 @@
 /*
  represent how many failure sending keep alive packet shall we ignore
  before cutting down the connection on client (our) side
+
+ attempts are spaced by KEEPALIVE_INTERVAL, so the session is dropped
+ after roughly interval times max retry seconds of continuous failure
  */
 #define KEEPALIVE_ERROR_TOLERANCE_MAX_RETRY 8
 

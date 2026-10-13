@@ -48,6 +48,7 @@
 @property (nonatomic, readwrite, nonnull, strong) NSLock *requestLoopLock;
 
 @property (nonatomic, readwrite, assign) unsigned keepAliveAttampt;
+@property (nonatomic, readwrite, nullable, strong) NSDate *keepAliveLastAttampt;
 @property (nonatomic, readwrite, nullable, strong) NSDate *keepAliveLastSuccessAttampt;
 
 @end
@@ -663,6 +664,7 @@ continue; \
     self.remoteFingerPrint = NULL;
     
     self.keepAliveAttampt = 0;
+    self.keepAliveLastAttampt = NULL;
     self.keepAliveLastSuccessAttampt = NULL;
     
     // any error occurred during connect will result disconnect
@@ -701,9 +703,11 @@ continue; \
         return;
     }
     
-    // the session is valid, check if last success attempt is shorter than interval
-    if (self.keepAliveLastSuccessAttampt) {
-        NSDate *nextRun = [self.keepAliveLastSuccessAttampt dateByAddingTimeInterval:KEEPALIVE_INTERVAL];
+    // the session is valid, at most one attempt per interval
+    // failed attempts used to retry on every event loop tick so a brief
+    // congestion burst racked up max retries in well under a second
+    if (self.keepAliveLastAttampt) {
+        NSDate *nextRun = [self.keepAliveLastAttampt dateByAddingTimeInterval:KEEPALIVE_INTERVAL];
         if ([nextRun timeIntervalSinceNow] >= 0) {
             return;
         }
@@ -711,6 +715,7 @@ continue; \
     
     // now sending the keep alive packet
     self.keepAliveAttampt += 1;
+    self.keepAliveLastAttampt = [[NSDate alloc] init];
     int nextInterval = 0;
     int retVal = libssh2_keepalive_send(self.associatedSession, &nextInterval);
     
