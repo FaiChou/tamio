@@ -549,7 +549,7 @@ continue; \
 
 - (nullable NSString*)getLastError {
     NSString *result;
-    @synchronized (self.lastError) {
+    @synchronized (self) {
         result = self.lastError;
         self.lastError = NULL;
     }
@@ -561,7 +561,7 @@ continue; \
 
 - (nullable NSString*)getLastFileTransferError {
     NSString *result;
-    @synchronized (self.lastFileTransferError) {
+    @synchronized (self) {
         result = self.lastFileTransferError;
         self.lastFileTransferError = NULL;
     }
@@ -753,7 +753,7 @@ continue; \
     libssh2_session_set_last_error(self.associatedSession, 0, NULL);
     NSString *message = [[NSString alloc] initWithUTF8String:msg];
     NSLog(@"shell object at %p setting last error %d %@", self, rrv, message);
-    @synchronized (self.lastError) {
+    @synchronized (self) {
         self.lastError = message;
     }
 }
@@ -2158,7 +2158,7 @@ continue; \
                              failureReason,
                              filePath];
     NSLog(@"%@", description);
-    @synchronized (self.lastFileTransferError) {
+    @synchronized (self) {
         self.lastFileTransferError = description;
     }
 }
