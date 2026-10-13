@@ -89,17 +89,6 @@ bash Workflow/Scripts/install-macos.sh   # Release build, installed to /Applicat
 
 Or open `App.xcworkspace` and run the **catussh** scheme (macOS) or **mCatussh** (iOS 16+).
 
-## Security
-
-> [!WARNING]
-> **Host keys are not verified.** The server's fingerprint is recorded but never checked
-> against trusted host keys, so connections are open to man-in-the-middle attacks. Do
-> not use catussh with credentials you cannot afford to lose until this is fixed.
-
-Saved credentials are encrypted with AES-256-GCM, with the key in the keychain. To
-report a vulnerability, open an issue asking for a private contact; please do not post
-exploit details in public.
-
 ## Contributing
 
 Bugs and ideas go to [issues](https://github.com/mizorewww/catussh/issues). Pull

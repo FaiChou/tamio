@@ -84,15 +84,6 @@ bash Workflow/Scripts/install-macos.sh   # Release 构建，并安装到 /Applic
 
 也可以打开 `App.xcworkspace`，运行 **catussh** scheme（macOS）或 **mCatussh**（iOS 16+）。
 
-## 安全
-
-> [!WARNING]
-> **不校验主机密钥。** 服务器指纹会被记录，但从不与受信任的主机密钥比对，因此连接可能遭受中间人攻击。
-> 这个问题修复之前，请不要用 catussh 连接你输不起的凭据。
-
-保存的凭据使用 AES-256-GCM 加密，密钥存放在钥匙串中。如果发现漏洞，请先开一个 issue
-索要私下联系方式，不要公开贴出利用细节。
-
 ## 参与贡献
 
 Bug 和建议请提到 [issues](https://github.com/mizorewww/catussh/issues)。欢迎 Pull
