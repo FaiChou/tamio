@@ -13,10 +13,7 @@ struct LicenseView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Divider().hidden()
-                Text(loadLicense())
-                    .textSelection(.enabled)
-                    .font(.footnote)
-                    .foregroundStyle(.rxInkSecondary)
+                LicenseTextView(resource: "LICENSE")
             }
             .padding(.bottom)
             .padding(.horizontal)
@@ -24,14 +21,34 @@ struct LicenseView: View {
         .background(RXBackdrop().ignoresSafeArea())
         .navigationTitle("License")
     }
+}
 
-    func loadLicense() -> String {
-        guard let bundle = Bundle.main.url(forResource: "LICENSE", withExtension: nil),
-              let str = try? String(contentsOfFile: bundle.path)
-        else {
-            return "Failed to load license info."
-        }
-        return str
+/// A bundled text (EULA, LICENSE), read off the main thread: the read would
+/// otherwise run synchronously inside `body`.
+struct LicenseTextView: View {
+    let resource: String
+    @State private var text = ""
+
+    var body: some View {
+        Text(text)
+            .textSelection(.enabled)
+            .font(.footnote)
+            .foregroundStyle(.rxInkSecondary)
+            .task {
+                guard text.isEmpty else { return }
+                text = await Self.load(resource: resource)
+            }
+    }
+
+    static func load(resource: String) async -> String {
+        await Task.detached {
+            guard let bundle = Bundle.main.url(forResource: resource, withExtension: nil),
+                  let str = try? String(contentsOfFile: bundle.path)
+            else {
+                return "Failed to load license info."
+            }
+            return str
+        }.value
     }
 }
 

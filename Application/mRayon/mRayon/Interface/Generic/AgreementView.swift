@@ -19,10 +19,7 @@ struct AgreementView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 5) {
                 Divider().hidden()
-                Text(loadLicense())
-                    .textSelection(.enabled)
-                    .font(.footnote)
-                    .foregroundStyle(.rxInkSecondary)
+                LicenseTextView(resource: "EULA")
                 Divider().hidden()
 
                 HStack {
@@ -50,15 +47,6 @@ struct AgreementView: View {
         }
         .background(RXBackdrop().ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    func loadLicense() -> String {
-        guard let bundle = Bundle.main.url(forResource: "EULA", withExtension: nil),
-              let str = try? String(contentsOfFile: bundle.path)
-        else {
-            return "Failed to load license info."
-        }
-        return str
     }
 }
 
