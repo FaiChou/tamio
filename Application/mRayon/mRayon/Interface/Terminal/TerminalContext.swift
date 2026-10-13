@@ -74,8 +74,9 @@ final class IOSTerminalUIHandler: TerminalUIHandler {
         // iPhone: the terminal is full screen with the key bar above the keyboard.
         host.modalPresentationStyle = UIDevice.current.userInterfaceIdiom == .phone ? .fullScreen : .formSheet
         host.preferredContentSize = preferredPopOverSize
-        UIWindow.shutUpKeyWindow?
-            .topMostViewController?
-            .present(next: host)
+        // A batch of terminals can bootstrap while the picker sheet is
+        // still animating out; the queue holds each present until the way
+        // is clear instead of dropping it on the floor.
+        PresentationQueue.present(next: host)
     }
 }
