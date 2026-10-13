@@ -66,14 +66,7 @@ struct PickMachineView: View {
                             toggleSelection(for: machine.id)
                         } label: {
                             Label(machine.shortDescription(), systemImage: sysImage(for: machine))
-
-//                            HStack(spacing: 5) {
-//                                Image(systemName: sysImage(for: machine))
-//                                    .frame(width: 20)
-//                                Text(machine.shortDescription())
-//                            }
                         }
-//                        .disabled(machine.associatedIdentity == nil)
                     }
                 }
             } header: {
@@ -107,9 +100,6 @@ struct PickMachineView: View {
     }
 
     func sysImage(for machine: RDMachine) -> String {
-//        if machine.associatedIdentity == nil {
-//            return "person.fill.questionmark"
-//        }
         if rawSelection.contains(machine.id) {
             return "circle.fill"
         }

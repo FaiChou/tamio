@@ -50,15 +50,6 @@ struct EditSnippetView: View {
                 RXSectionHeader("Name")
             }
 
-//                Group is not available on iOS, :P
-//                Section {
-//                    TextField("Group", text: $group)
-//                } header: {
-//                    Label("Group", systemImage: "square.stack.3d.down.right")
-//                } footer: {
-//                    Text("")
-//                }
-
             Section {
                 editor
                     .onContentChange { code = $0 }
@@ -121,16 +112,6 @@ struct EditSnippetView: View {
                 }
             }
         }
-    }
-
-    func dataDescriptionFor(_ str: String) -> String {
-        if str.count > 0,
-           let data = str.data(using: .utf8),
-           data.count > 0
-        {
-            return "<\(data.count)> bytes"
-        }
-        return "No Data (Optional)"
     }
 
     func completeSheet() {

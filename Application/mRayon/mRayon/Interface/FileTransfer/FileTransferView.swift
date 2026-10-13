@@ -61,7 +61,6 @@ struct FileTransferView: View {
         .animation(.interactiveSpring(), value: context.currentProgress)
         .animation(.interactiveSpring(), value: context.currentSpeed)
         .animation(.interactiveSpring(), value: context.currentProcessingFile)
-//        .animation(.interactiveSpring(), value: context.currentProgressCancelable)
         .animation(.interactiveSpring(), value: context.processConnection)
         .navigationTitle(context.machine.name)
         .navigationBarTitleDisplayMode(.inline)

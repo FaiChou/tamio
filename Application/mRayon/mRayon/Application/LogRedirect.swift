@@ -10,9 +10,6 @@ import SwiftUI
 class LogRedirect {
     static let shared = LogRedirect()
 
-    var currentLog = ""
-    var accessLock = NSLock()
-
     var handler: FileHandle?
     var path: URL?
 

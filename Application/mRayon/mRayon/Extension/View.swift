@@ -11,21 +11,6 @@ extension View {
     func expended() -> some View {
         frame(maxWidth: .infinity, maxHeight: .infinity)
     }
-
-    func roundedCorner() -> some View {
-        cornerRadius(8)
-    }
-}
-
-struct NavigationLazyView<Content: View>: View {
-    let build: () -> Content
-    init(_ build: @autoclosure @escaping () -> Content) {
-        self.build = build
-    }
-
-    var body: Content {
-        build()
-    }
 }
 
 import RayonModule

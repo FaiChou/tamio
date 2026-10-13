@@ -37,35 +37,6 @@ struct LogView: View {
             }
     }
 
-//    struct ActivityViewController: UIViewControllerRepresentable {
-//        let controller: UIActivityViewController
-//
-//        init(itemsToShare: [Any], servicesToShareItem: [UIActivity]? = nil) {
-//            self.itemsToShare = itemsToShare
-//            self.servicesToShareItem = servicesToShareItem
-//            controller = UIActivityViewController(
-//                activityItems: itemsToShare,
-//                applicationActivities: servicesToShareItem
-//            )
-//        }
-//
-//        var itemsToShare: [Any]
-//        var servicesToShareItem: [UIActivity]?
-//
-//        func makeUIViewController(
-//            context _: UIViewControllerRepresentableContext<ActivityViewController>
-//        )
-//            -> UIActivityViewController
-//        {
-//            controller
-//        }
-//
-//        func updateUIViewController(
-//            _: UIActivityViewController,
-//            context _: UIViewControllerRepresentableContext<ActivityViewController>
-//        ) {}
-//    }
-
     struct UILogViewR: UIViewRepresentable {
         let view: UIView
         let controller: UIViewController

@@ -12,10 +12,7 @@ struct AgreementView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-//        NavigationView {
         contentView
-//        }
-//        .navigationViewStyle(StackNavigationViewStyle())
     }
 
     var contentView: some View {
@@ -52,7 +49,6 @@ struct AgreementView: View {
             .padding()
         }
         .background(RXBackdrop().ignoresSafeArea())
-//        .navigationTitle("Agreement")
         .navigationBarTitleDisplayMode(.inline)
     }
 
