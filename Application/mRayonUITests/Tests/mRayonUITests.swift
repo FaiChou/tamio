@@ -91,25 +91,30 @@ final class MRayonUITests: XCTestCase {
         screenshot("Terminal")
     }
 
+    /// Creates the test server through the New Server sheet of whichever
+    /// screen is showing, unless it is already stored.
+    private func ensureServer(named name: String) {
+        guard !app.staticTexts[name].firstMatch.exists else { return }
+        app.buttons["New Server"].firstMatch.tap()
+        let nameField = app.textFields["Name"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 5))
+        nameField.tap()
+        nameField.typeText(name)
+        let address = app.textFields["Host Address"]
+        address.tap()
+        address.typeText("127.0.0.1")
+        let port = app.textFields["Host Port"]
+        port.tap()
+        port.typeText(XCUIKeyboardKey.delete.rawValue + XCUIKeyboardKey.delete.rawValue + "1")
+        app.buttons["Save"].firstMatch.tap()
+    }
+
     /// A server on Home answers a tap: its actions are offered, and Open
     /// Terminal shows the terminal (to a closed local port here).
     func testAServerOnHomeOpensItsTerminal() {
         let name = "UITest Server"
         XCTAssertTrue(app.staticTexts["Home"].firstMatch.waitForExistence(timeout: 10))
-        if !app.staticTexts[name].firstMatch.exists {
-            app.buttons["New Server"].firstMatch.tap()
-            let nameField = app.textFields["Name"]
-            XCTAssertTrue(nameField.waitForExistence(timeout: 5))
-            nameField.tap()
-            nameField.typeText(name)
-            let address = app.textFields["Host Address"]
-            address.tap()
-            address.typeText("127.0.0.1")
-            let port = app.textFields["Host Port"]
-            port.tap()
-            port.typeText(XCUIKeyboardKey.delete.rawValue + XCUIKeyboardKey.delete.rawValue + "1")
-            app.buttons["Save"].firstMatch.tap()
-        }
+        ensureServer(named: name)
         XCTAssertTrue(app.staticTexts[name].firstMatch.waitForExistence(timeout: 5), "Home lists the server")
         // Once it has been connected to, the server is also among the recent
         // ones, above; a tap there connects at once.
@@ -131,8 +136,9 @@ final class MRayonUITests: XCTestCase {
         let servers = app.tabBars.buttons["Servers"]
         try XCTSkipUnless(servers.waitForExistence(timeout: 5), "iPhone layout only")
         servers.tap()
+        ensureServer(named: name)
         let row = app.staticTexts[name].firstMatch
-        try XCTSkipUnless(row.waitForExistence(timeout: 5), "Run testAServerOnHomeOpensItsTerminal first: it adds the server")
+        XCTAssertTrue(row.waitForExistence(timeout: 5), "The list shows the server")
         screenshot("Servers")
         row.tap()
         let open = app.buttons["Open Terminal"].firstMatch
