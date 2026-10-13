@@ -51,7 +51,7 @@ final class CloudKeyValueTransport: SyncTransport {
     }()
 
     var problem: String? {
-        Self.isEntitled ? nil : "This copy of Rayon is not signed for iCloud, so it cannot sync."
+        Self.isEntitled ? nil : "This copy of catussh is not signed for iCloud, so it cannot sync."
     }
 
     func read() -> Data? {
