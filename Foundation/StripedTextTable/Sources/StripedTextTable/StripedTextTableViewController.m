@@ -173,9 +173,11 @@
         }
 
         if (self.removeDuplicates) {
+            NSMutableSet <NSString *> *seen = [NSMutableSet setWithCapacity:rowTexts.count];
             NSMutableArray <NSString *> *mRowTexts = [NSMutableArray arrayWithCapacity:rowTexts.count];
             for (NSString *rowText in rowTexts) {
-                if (![mRowTexts containsObject:rowText]) {
+                if (![seen containsObject:rowText]) {
+                    [seen addObject:rowText];
                     [mRowTexts addObject:rowText];
                 }
             }
@@ -227,7 +229,10 @@
             strongSelf.autoReloadSource = nil;
         }
         dispatch_async(dispatch_get_main_queue(), ^{
-            [strongSelf loadTextDataFromEntry];
+            // An actively written log fires constantly; fold the burst into
+            // one reload instead of re-reading the file per event.
+            [NSObject cancelPreviousPerformRequestsWithTarget:strongSelf selector:@selector(loadTextDataFromEntry) object:nil];
+            [strongSelf performSelector:@selector(loadTextDataFromEntry) withObject:nil afterDelay:0.5];
         });
     };
     dispatch_block_t cancelHandler = ^{
@@ -397,6 +402,7 @@
 #pragma mark -
 
 - (void)dealloc {
+    [NSObject cancelPreviousPerformRequestsWithTarget:self];
 #if DEBUG
     NSLog(@"-[%@ dealloc]", [self class]);
 #endif
