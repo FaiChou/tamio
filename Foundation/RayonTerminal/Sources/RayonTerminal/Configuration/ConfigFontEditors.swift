@@ -51,13 +51,23 @@ enum FontLibrary {
         faces.filter { $0.family == family }
     }
 
+    /// Style/feature/axis lookups are cached per family: editors ask for
+    /// them on every render, and each miss creates a CTFont and copies its
+    /// tables out of CoreText.
+    private static var stylesCache: [String: [String]] = [:]
+    private static var featuresCache: [String: [Feature]] = [:]
+    private static var axesCache: [String: [Axis]] = [:]
+
     /// Style names offered when the family is Ghostty's built-in font.
     static let builtInStyles = ["Thin", "ExtraLight", "Light", "Regular", "Medium", "SemiBold", "Bold", "ExtraBold"]
 
     static func styles(of family: String) -> [String] {
         guard !family.isEmpty else { return builtInStyles }
+        if let cached = stylesCache[family] { return cached }
         var seen = Set<String>()
-        return members(of: family).map(\.style).filter { seen.insert($0).inserted }
+        let result = members(of: family).map(\.style).filter { seen.insert($0).inserted }
+        stylesCache[family] = result
+        return result
     }
 
     /// The family's regular face, else its first.
@@ -78,21 +88,26 @@ enum FontLibrary {
 
     /// Variable-font axes (weight, width, slant…).
     static func axes(of family: String) -> [Axis] {
-        guard let font = font(of: family),
-              let raw = CTFontCopyVariationAxes(font) as? [[CFString: Any]]
-        else { return [] }
-        return raw.compactMap { axis in
-            guard let identifier = axis[kCTFontVariationAxisIdentifierKey] as? NSNumber else { return nil }
-            let value = identifier.uint32Value
-            let tag = String(bytes: [24, 16, 8, 0].map { UInt8((value >> $0) & 0xFF) }, encoding: .ascii) ?? "\(value)"
-            return Axis(
-                tag: tag,
-                name: axis[kCTFontVariationAxisNameKey] as? String ?? tag,
-                minimum: (axis[kCTFontVariationAxisMinimumValueKey] as? NSNumber)?.doubleValue ?? 0,
-                maximum: (axis[kCTFontVariationAxisMaximumValueKey] as? NSNumber)?.doubleValue ?? 0,
-                defaultValue: (axis[kCTFontVariationAxisDefaultValueKey] as? NSNumber)?.doubleValue ?? 0
-            )
+        if let cached = axesCache[family] { return cached }
+        var result: [Axis] = []
+        if let font = font(of: family),
+           let raw = CTFontCopyVariationAxes(font) as? [[CFString: Any]]
+        {
+            result = raw.compactMap { axis in
+                guard let identifier = axis[kCTFontVariationAxisIdentifierKey] as? NSNumber else { return nil }
+                let value = identifier.uint32Value
+                let tag = String(bytes: [24, 16, 8, 0].map { UInt8((value >> $0) & 0xFF) }, encoding: .ascii) ?? "\(value)"
+                return Axis(
+                    tag: tag,
+                    name: axis[kCTFontVariationAxisNameKey] as? String ?? tag,
+                    minimum: (axis[kCTFontVariationAxisMinimumValueKey] as? NSNumber)?.doubleValue ?? 0,
+                    maximum: (axis[kCTFontVariationAxisMaximumValueKey] as? NSNumber)?.doubleValue ?? 0,
+                    defaultValue: (axis[kCTFontVariationAxisDefaultValueKey] as? NSNumber)?.doubleValue ?? 0
+                )
+            }
         }
+        axesCache[family] = result
+        return result
     }
 
     struct Feature: Identifiable, Hashable {
@@ -106,35 +121,45 @@ enum FontLibrary {
     /// OpenType features the family's font actually has, named by the font.
     static func features(of family: String) -> [Feature] {
         guard !family.isEmpty else { return builtInFeatures }
-        guard let font = font(of: family), let types = CTFontCopyFeatures(font) as? [[CFString: Any]] else { return [] }
+        if let cached = featuresCache[family] { return cached }
         var result: [String: Feature] = [:]
         var order: [String] = []
-        for type in types {
-            let typeName = type[kCTFontFeatureTypeNameKey] as? String ?? "Other"
-            for selector in type[kCTFontFeatureTypeSelectorsKey] as? [[CFString: Any]] ?? [] {
-                guard let tag = selector[kCTFontOpenTypeFeatureTag] as? String else { continue }
-                let value = (selector[kCTFontOpenTypeFeatureValue] as? NSNumber)?.intValue ?? 1
-                let isDefault = (selector[kCTFontFeatureSelectorDefaultKey] as? NSNumber)?.boolValue ?? false
-                let selectorName = selector[kCTFontFeatureSelectorNameKey] as? String ?? tag
-                // Character variants and stylistic sets arrive one feature type
-                // each, with selectors named just "On"/"Off": gather them into one
-                // group and name each by its type.
-                let generic = ["on", "off", "enabled", "disabled"].contains(selectorName.lowercased())
-                let name = generic ? typeName : selectorName
-                let group = tag.range(of: "^cv[0-9]{2}$", options: .regularExpression) != nil ? "Character Variants"
-                    : tag.range(of: "^ss[0-9]{2}$", options: .regularExpression) != nil ? "Stylistic Sets"
-                    : typeName
-                let existing = result[tag]
-                if existing == nil { order.append(tag) }
-                result[tag] = Feature(
-                    tag: tag,
-                    name: value != 0 ? name : existing?.name ?? name,
-                    group: group,
-                    defaultOn: isDefault ? value != 0 : existing?.defaultOn ?? false
-                )
+        if let font = font(of: family), let types = CTFontCopyFeatures(font) as? [[CFString: Any]] {
+            for type in types {
+                let typeName = type[kCTFontFeatureTypeNameKey] as? String ?? "Other"
+                for selector in type[kCTFontFeatureTypeSelectorsKey] as? [[CFString: Any]] ?? [] {
+                    guard let tag = selector[kCTFontOpenTypeFeatureTag] as? String else { continue }
+                    let value = (selector[kCTFontOpenTypeFeatureValue] as? NSNumber)?.intValue ?? 1
+                    let isDefault = (selector[kCTFontFeatureSelectorDefaultKey] as? NSNumber)?.boolValue ?? false
+                    let selectorName = selector[kCTFontFeatureSelectorNameKey] as? String ?? tag
+                    // Character variants and stylistic sets arrive one feature type
+                    // each, with selectors named just "On"/"Off": gather them into one
+                    // group and name each by its type.
+                    let generic = ["on", "off", "enabled", "disabled"].contains(selectorName.lowercased())
+                    let name = generic ? typeName : selectorName
+                    let group = featureGroup(tag: tag, fallback: typeName)
+                    let existing = result[tag]
+                    if existing == nil { order.append(tag) }
+                    result[tag] = Feature(
+                        tag: tag,
+                        name: value != 0 ? name : existing?.name ?? name,
+                        group: group,
+                        defaultOn: isDefault ? value != 0 : existing?.defaultOn ?? false
+                    )
+                }
             }
         }
-        return order.compactMap { result[$0] }
+        let features = order.compactMap { result[$0] }
+        featuresCache[family] = features
+        return features
+    }
+
+    /// "cv01"–"cv99" and "ss01"–"ss99" get their own groups.
+    private static func featureGroup(tag: String, fallback: String) -> String {
+        guard tag.count == 4, tag.dropFirst(2).allSatisfy({ $0.isASCII && $0.isNumber }) else { return fallback }
+        if tag.hasPrefix("cv") { return "Character Variants" }
+        if tag.hasPrefix("ss") { return "Stylistic Sets" }
+        return fallback
     }
 
     /// Ghostty's built-in JetBrains Mono is not installed, so its features are listed here.
