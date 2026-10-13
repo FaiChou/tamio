@@ -59,64 +59,66 @@ class PortForwardBackend: ObservableObject {
 
     func beginLifecycle(for context: Context) {
         DispatchQueue.global().async {
-            // However the lifecycle ends — connect or auth failure, or the
+            self.runLifecycle(for: context)
+            // However the lifecycle ended — connect or auth failure, or the
             // channel closing — the session is over: release the shell and
             // drop the context so the switch goes back off (endSession can
             // no longer reach it once it leaves the container).
-            defer {
-                context.shell.requestDisconnectAndWait()
-                context.shell.destroyPermanently()
-                self.endLifecycle(for: context)
-            }
-            self.putHint(for: context.info.id, with: "awaiting connect")
-            context.shell
-                .applyConnection(for: context.machine, timeout: RayonStore.shared.timeoutNumber)
-                .requestConnectAndWait()
-            guard context.shell.isConnected else {
-                self.putHint(for: context.info.id, with: "failed connect")
-                return
-            }
-            guard let str = context.machine.associatedIdentity,
-                  let aid = UUID(uuidString: str)
-            else {
-                self.putHint(for: context.info.id, with: "failed authenticate")
-                return
-            }
-            let identity = RayonStore.shared.identityGroup[aid]
-            guard !identity.username.isEmpty else {
-                self.putHint(for: context.info.id, with: "failed authenticate")
-                return
-            }
-            identity.callAuthenticationWith(remote: context.shell)
-            guard context.shell.isAuthenticated else {
-                self.putHint(for: context.info.id, with: "failed authenticate")
-                return
-            }
-            self.putHint(for: context.info.id, with: "opening channel")
-            switch context.info.forwardOrientation {
-            case .listenRemote:
-                context.shell.createPortForward(
-                    withRemotePort: NSNumber(value: context.info.bindPort),
-                    withForwardTargetHost: context.info.targetHost,
-                    withForwardTargetPort: NSNumber(value: context.info.targetPort)
-                ) {
-                    PortForwardBackend.shared.putHint(for: context.info.id, with: "forward running")
-                } withContinuationHandler: {
-                    true // we are using shell.disconnect for shutdown
-                }
-            case .listenLocal:
-                context.shell.createPortForward(
-                    withLocalPort: NSNumber(value: context.info.bindPort),
-                    withForwardTargetHost: context.info.targetHost,
-                    withForwardTargetPort: NSNumber(value: context.info.targetPort)
-                ) {
-                    PortForwardBackend.shared.putHint(for: context.info.id, with: "forward running")
-                } withContinuationHandler: {
-                    true // we are using shell.disconnect for shutdown
-                }
-            }
-            self.putHint(for: context.info.id, with: "forward stopped")
+            context.shell.requestDisconnectAndWait()
+            context.shell.destroyPermanently()
+            self.endLifecycle(for: context)
         }
+    }
+
+    private func runLifecycle(for context: Context) {
+        putHint(for: context.info.id, with: "awaiting connect")
+        context.shell
+            .applyConnection(for: context.machine, timeout: RayonStore.shared.timeoutNumber)
+            .requestConnectAndWait()
+        guard context.shell.isConnected else {
+            putHint(for: context.info.id, with: "failed connect")
+            return
+        }
+        guard let str = context.machine.associatedIdentity,
+              let aid = UUID(uuidString: str)
+        else {
+            putHint(for: context.info.id, with: "failed authenticate")
+            return
+        }
+        let identity = RayonStore.shared.identityGroup[aid]
+        guard !identity.username.isEmpty else {
+            putHint(for: context.info.id, with: "failed authenticate")
+            return
+        }
+        identity.callAuthenticationWith(remote: context.shell)
+        guard context.shell.isAuthenticated else {
+            putHint(for: context.info.id, with: "failed authenticate")
+            return
+        }
+        putHint(for: context.info.id, with: "opening channel")
+        switch context.info.forwardOrientation {
+        case .listenRemote:
+            context.shell.createPortForward(
+                withRemotePort: NSNumber(value: context.info.bindPort),
+                withForwardTargetHost: context.info.targetHost,
+                withForwardTargetPort: NSNumber(value: context.info.targetPort)
+            ) {
+                PortForwardBackend.shared.putHint(for: context.info.id, with: "forward running")
+            } withContinuationHandler: {
+                true // we are using shell.disconnect for shutdown
+            }
+        case .listenLocal:
+            context.shell.createPortForward(
+                withLocalPort: NSNumber(value: context.info.bindPort),
+                withForwardTargetHost: context.info.targetHost,
+                withForwardTargetPort: NSNumber(value: context.info.targetPort)
+            ) {
+                PortForwardBackend.shared.putHint(for: context.info.id, with: "forward running")
+            } withContinuationHandler: {
+                true // we are using shell.disconnect for shutdown
+            }
+        }
+        putHint(for: context.info.id, with: "forward stopped")
     }
 
     /// Removes a finished session's context, so the row's switch turns off.
