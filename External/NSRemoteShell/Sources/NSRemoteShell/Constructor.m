@@ -13,7 +13,7 @@
 
 int kLIBSSH2_CONSTRUCTOR_SUCCESS = 0;
 
-#if TARGET_OS_MAC
+#if TARGET_OS_OSX
 
 /*
  
@@ -35,7 +35,7 @@ __attribute__((constructor)) void libssh2_constructor(void) {
         kLIBSSH2_CONSTRUCTOR_SUCCESS = 1;
         NSLog(@"libssh2 init success");
     }
-#if TARGET_OS_MAC
+#if TARGET_OS_OSX
     activity = [[NSProcessInfo processInfo] beginActivityWithOptions:NSActivityLatencyCritical reason:@"NSRemoteShell is latency critical"];
 #endif
 }
@@ -44,7 +44,7 @@ __attribute__((destructor)) void libssh2_destructor(void) {
     if (kLIBSSH2_CONSTRUCTOR_SUCCESS) {
         libssh2_exit();
     }
-#if TARGET_OS_MAC
+#if TARGET_OS_OSX
     if (activity) {
         [[NSProcessInfo processInfo] endActivity:activity];
     }
