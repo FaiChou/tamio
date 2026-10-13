@@ -77,19 +77,7 @@ struct QuickConnectHero: View {
     @FocusState private var focused: Bool
 
     var parsed: SSHCommandReader? {
-        var trimmed = command.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return nil }
-        if !trimmed.lowercased().hasPrefix("ssh ") { trimmed = "ssh " + trimmed }
-        // Accept `user@host:port` as well as `-p port`.
-        let parts = trimmed.split(separator: " ")
-        if parts.count == 2, parts[1].contains("@"), parts[1].filter({ $0 == ":" }).count == 1,
-           let colon = parts[1].lastIndex(of: ":")
-        {
-            let target = parts[1][..<colon]
-            let port = parts[1][parts[1].index(after: colon)...]
-            trimmed = "ssh \(target) -p \(port)"
-        }
-        return SSHCommandReader(command: trimmed)
+        SSHCommandReader(quickConnect: command)
     }
 
     var body: some View {
@@ -209,15 +197,10 @@ struct QuickConnectHero: View {
     }
 
     func refreshSuggestion() {
-        guard command.count > 2 else {
-            suggestion = nil
-            return
-        }
-        let typed = command.hasPrefix("ssh ") ? command : "ssh " + command
-        suggestion = store.recentRecord
-            .lazy
-            .map(\.equivalentSSHCommand)
-            .first { !$0.isEmpty && $0.hasPrefix(typed) && $0 != typed }
+        suggestion = SSHCommandReader.suggestion(
+            for: command,
+            in: store.recentRecord.lazy.map(\.equivalentSSHCommand)
+        )
     }
 }
 
