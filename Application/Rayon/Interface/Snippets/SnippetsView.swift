@@ -13,11 +13,9 @@ struct SnippetsView: View {
     @EnvironmentObject var store: RayonStore
 
     @State private var searchText = ""
-    @State private var groupFilter: String = SnippetsView.allGroups
+    @State private var groupFilter: String?
     @State private var creating = false
     @State private var editing: RDSnippet.ID?
-
-    static let allGroups = "\u{0}all"
 
     var groupNames: [String] {
         Set(store.snippetGroup.snippets.map(\.group)).filter { !$0.isEmpty }.sorted()
@@ -25,7 +23,7 @@ struct SnippetsView: View {
 
     var filtered: [RDSnippet] {
         var result = store.snippetGroup.snippets
-        if groupFilter != Self.allGroups {
+        if let groupFilter {
             result = result.filter { $0.group == groupFilter }
         }
         if !searchText.isEmpty {
@@ -42,9 +40,9 @@ struct SnippetsView: View {
         ) {
             if !groupNames.isEmpty {
                 Picker("Group", selection: $groupFilter) {
-                    Text("All Groups").tag(Self.allGroups)
+                    Text("All Groups").tag(String?.none)
                     Divider()
-                    ForEach(groupNames, id: \.self) { Text($0).tag($0) }
+                    ForEach(groupNames, id: \.self) { Text($0).tag(String?.some($0)) }
                 }
                 .help("Filter by group")
             }
@@ -80,7 +78,7 @@ struct SnippetsView: View {
             }
         }
         .onChange(of: groupNames) { names in
-            if groupFilter != Self.allGroups, !names.contains(groupFilter) { groupFilter = Self.allGroups }
+            if let groupFilter, !names.contains(groupFilter) { self.groupFilter = nil }
         }
         .sheet(isPresented: $creating) {
             SnippetEditorSheet(snippet: nil) { creating = false }
