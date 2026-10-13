@@ -164,6 +164,9 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
         var failures = 0
         while loopContinue {
             if !(shell.isConnected && shell.isAuthenticated) {
+                // Statics belong to the connection; a reconnect may land on
+                // a reimaged or different host.
+                status.resetSessionStatics()
                 onMainThread { if self.phase != .connected { self.phase = .connecting } }
                 connectAndAuthenticate()
             }

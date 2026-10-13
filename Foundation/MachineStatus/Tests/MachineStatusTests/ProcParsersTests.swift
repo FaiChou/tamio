@@ -193,7 +193,7 @@ final class ProcParsersTests: XCTestCase {
     }
 
     func testMonitorScriptSamplesCountersTwiceAroundOneSleep() {
-        let script = ServerStatus.monitorScript()
+        let script = ServerStatus.monitorScript(includeStatic: true)
         XCTAssertEqual(script.components(separatedBy: "/bin/cat /proc/stat").count - 1, 2)
         XCTAssertEqual(script.components(separatedBy: "/bin/cat /proc/net/dev").count - 1, 2)
         XCTAssertEqual(script.components(separatedBy: "/bin/sleep 1").count - 1, 1)
@@ -203,6 +203,13 @@ final class ProcParsersTests: XCTestCase {
                 "missing marker for \(section)"
             )
         }
+    }
+
+    func testMonitorScriptOmitsStaticsUnlessAsked() {
+        let script = ServerStatus.monitorScript(includeStatic: false)
+        XCTAssertFalse(script.contains("os-release"))
+        XCTAssertFalse(script.contains("hostname"))
+        XCTAssertEqual(script.components(separatedBy: "/bin/sleep 1").count - 1, 1)
     }
 
     // MARK: - /proc/uptime

@@ -65,9 +65,10 @@ public class ServerStatus: ObservableObject, Equatable {
     /// One remote run that samples the CPU and network counters twice one
     /// second apart and reads every other /proc payload behind markers, so
     /// a refresh costs one exec channel instead of nine and one remote
-    /// second instead of two.
-    static func monitorScript() -> String {
-        let sections = [
+    /// second instead of two. Static payloads join only while
+    /// `includeStatic` — they cannot change while a connection stays up.
+    static func monitorScript(includeStatic: Bool) -> String {
+        var sections = [
             ("cpu-a", "/bin/cat /proc/stat"),
             ("net-a", "/bin/cat /proc/net/dev"),
             ("wait", "/bin/sleep 1"),
@@ -77,9 +78,13 @@ public class ServerStatus: ObservableObject, Equatable {
             ("df", "/bin/df -Pk"),
             ("uptime", "/bin/cat /proc/uptime"),
             ("loadavg", "/bin/cat /proc/loadavg"),
-            ("hostname", "([ -f /proc/sys/kernel/hostname ] && cat /proc/sys/kernel/hostname )|| echo \"localhost\""),
-            ("os-release", "/bin/cat /etc/os-release"),
         ]
+        if includeStatic {
+            sections += [
+                ("hostname", "([ -f /proc/sys/kernel/hostname ] && cat /proc/sys/kernel/hostname )|| echo \"localhost\""),
+                ("os-release", "/bin/cat /etc/os-release"),
+            ]
+        }
         return sections
             .map { name, command in
                 "echo '\(sectionMarkerPrefix)\(name)\(sectionMarkerSuffix)'\n\(command)"
@@ -122,6 +127,22 @@ public class ServerStatus: ObservableObject, Equatable {
 
     private static let queue = DispatchQueue(label: "me.mizorewww.rayon.info", attributes: .concurrent)
 
+    /// Hostname and os-release cannot change while a connection stays up,
+    /// so they are read once and reused until the monitor reports a
+    /// reconnect via `resetSessionStatics`.
+    private let staticsLock = NSLock()
+    private var sessionHostname: String?
+    private var sessionReleaseName: String?
+
+    /// Drops the once-per-connection static readings so the next refresh
+    /// pulls them again.
+    public func resetSessionStatics() {
+        staticsLock.lock()
+        sessionHostname = nil
+        sessionReleaseName = nil
+        staticsLock.unlock()
+    }
+
     /// Runs the merged monitor script and the GPU probe on two channels,
     /// then parses every section on its own: one section going missing
     /// (a hung `nvidia-smi`, a server without /proc) empties only its
@@ -131,6 +152,9 @@ public class ServerStatus: ObservableObject, Equatable {
         // The shell multiplexes channels internally; claiming it Sendable
         // is for the compiler, like the legacy model callbacks.
         nonisolated(unsafe) let remote = remote
+        staticsLock.lock()
+        let includeStatic = sessionHostname == nil || sessionReleaseName == nil
+        staticsLock.unlock()
         let group = DispatchGroup()
         let queue = Self.queue
 
@@ -138,7 +162,7 @@ public class ServerStatus: ObservableObject, Equatable {
         group.enter()
         queue.async {
             defer { group.leave() }
-            mergedOutput.store(Self.downloadResultFrom(shell: remote, command: Self.monitorScript(), timeout: timeout))
+            mergedOutput.store(Self.downloadResultFrom(shell: remote, command: Self.monitorScript(includeStatic: includeStatic), timeout: timeout))
         }
 
         let graphicsResult = ConcurrentValue<GraphicsInfo?>(nil)
@@ -151,15 +175,30 @@ public class ServerStatus: ObservableObject, Equatable {
         group.wait()
 
         let sections = ProcParsers.splitMonitorSections(mergedOutput.load())
+        if includeStatic {
+            // Only a non-empty reading is cached; a failed probe is retried
+            // on the next round instead of sticking a placeholder.
+            let hostname = (sections["hostname"] ?? "").replacingOccurrences(of: "\n", with: "")
+            let releasePayload = (sections["os-release"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            staticsLock.lock()
+            if !hostname.isEmpty { sessionHostname = hostname }
+            if !releasePayload.isEmpty { sessionReleaseName = ProcParsers.parseOsReleaseName(releasePayload) }
+            staticsLock.unlock()
+        }
+        staticsLock.lock()
+        let hostname = sessionHostname ?? ""
+        let releaseName = sessionReleaseName ?? ""
+        staticsLock.unlock()
+
         let processor = ProcessorInfo(statBefore: sections["cpu-a"], statAfter: sections["cpu-b"]) ?? .init()
         let network = NetworkInfo(netDevBefore: sections["net-a"], netDevAfter: sections["net-b"]) ?? .init()
         let memory = MemoryInfo(meminfo: sections["mem"] ?? "")
         let fileSystem = FileSystemInfo(dfPk: sections["df"] ?? "")
         let load = ProcParsers.parseLoadavg(sections["loadavg"] ?? "")
         let system = SystemInfo(
-            release: ProcParsers.parseOsReleaseName(sections["os-release"] ?? ""),
+            release: releaseName,
             uptimeInSec: ProcParsers.parseUptime(sections["uptime"] ?? ""),
-            hostname: (sections["hostname"] ?? "").replacingOccurrences(of: "\n", with: ""),
+            hostname: hostname,
             runningProcs: load.runningProcess,
             totalProcs: load.totalProcess,
             load1: load.load1avg,
