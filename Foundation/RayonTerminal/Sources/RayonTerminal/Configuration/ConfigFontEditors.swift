@@ -307,10 +307,7 @@ struct ConfigFontFamilyEditor: View {
     private var families: [String] { model.document.overrides[key] ?? [] }
 
     private func write(_ values: [String]) {
-        let cleaned = values.filter { !$0.isEmpty }
-        model.edit { document in
-            if cleaned.isEmpty { document.overrides.removeValue(forKey: key) } else { document.set(key, cleaned) }
-        }
+        model.setOrRemove(key, values.filter { !$0.isEmpty })
     }
 
     var body: some View {
@@ -464,9 +461,7 @@ struct ConfigFontFeatureEditor: View {
     }
 
     private func write(_ values: [String]) {
-        model.edit { document in
-            if values.isEmpty { document.overrides.removeValue(forKey: "font-feature") } else { document.set("font-feature", values) }
-        }
+        model.setOrRemove("font-feature", values)
     }
 
     var body: some View {
@@ -546,9 +541,7 @@ struct ConfigFontVariationEditor: View {
     private func set(_ axis: FontLibrary.Axis, _ number: Double) {
         var next = entries.filter { !$0.hasPrefix(axis.tag + "=") }
         if abs(number - axis.defaultValue) > 0.0001 { next.append("\(axis.tag)=\(number.formatted(.number.grouping(.never)))") }
-        model.edit { document in
-            if next.isEmpty { document.overrides.removeValue(forKey: key) } else { document.set(key, next) }
-        }
+        model.setOrRemove(key, next)
     }
 
     var body: some View {

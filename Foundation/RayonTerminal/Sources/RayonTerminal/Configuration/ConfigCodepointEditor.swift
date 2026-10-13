@@ -64,9 +64,7 @@ struct ConfigCodepointMapEditor: View {
     private var entries: [String] { model.document.overrides["font-codepoint-map"] ?? [] }
 
     private func write(_ values: [String]) {
-        model.edit { document in
-            if values.isEmpty { document.overrides.removeValue(forKey: "font-codepoint-map") } else { document.set("font-codepoint-map", values) }
-        }
+        model.setOrRemove("font-codepoint-map", values)
     }
 
     private func update(_ index: Int, _ change: (inout CodepointMapping) -> Void) {

@@ -122,6 +122,12 @@ final class ConfigEditorModel: ObservableObject {
         }
     }
     func reset(_ key: String) { edit { $0.overrides.removeValue(forKey: key) } }
+    /// Writes the values, or removes the key when there is nothing to write.
+    func setOrRemove(_ key: String, _ values: [String]) {
+        edit { document in
+            if values.isEmpty { document.overrides.removeValue(forKey: key) } else { document.set(key, values) }
+        }
+    }
     func importConfig(_ source: String) throws {
         var next = document
         try next.merge(source)
