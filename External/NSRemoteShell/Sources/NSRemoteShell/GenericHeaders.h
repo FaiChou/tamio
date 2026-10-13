@@ -16,6 +16,7 @@
 #import <sys/time.h>
 #import <netdb.h>
 #import <errno.h>
+#import <unistd.h>
 
 #import <Foundation/Foundation.h>
 
@@ -82,13 +83,34 @@ if ((SEM)) { dispatch_semaphore_signal((SEM)); } \
 } while (0);
 
 /*
+ upper bound in seconds for a channel level operation to keep retrying
+ on LIBSSH2_ERROR_EAGAIN, used where no per-shell operationTimeout is
+ in scope (graceful shutdown, pty resize) so a wedged channel can not
+ park the event loop thread forever
+ */
+#define LIBSSH2_CHANNEL_EAGAIN_TIMEOUT 5
+
+/*
  common used libssh2 channel gracefully shutdown all in one
  */
 #define LIBSSH2_CHANNEL_SHUTDOWN(CHANNEL) do { \
-while (libssh2_channel_send_eof(CHANNEL) == LIBSSH2_ERROR_EAGAIN) {}; \
-while (libssh2_channel_close(CHANNEL) == LIBSSH2_ERROR_EAGAIN) {}; \
-while (libssh2_channel_wait_closed(CHANNEL) == LIBSSH2_ERROR_EAGAIN) {}; \
-while (libssh2_channel_free(CHANNEL) == LIBSSH2_ERROR_EAGAIN) {}; \
+NSDate *channelShutdownDeadline = [[NSDate alloc] initWithTimeIntervalSinceNow:LIBSSH2_CHANNEL_EAGAIN_TIMEOUT]; \
+while (libssh2_channel_send_eof(CHANNEL) == LIBSSH2_ERROR_EAGAIN) { \
+if ([channelShutdownDeadline timeIntervalSinceNow] < 0) { break; } \
+usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT); \
+} \
+while (libssh2_channel_close(CHANNEL) == LIBSSH2_ERROR_EAGAIN) { \
+if ([channelShutdownDeadline timeIntervalSinceNow] < 0) { break; } \
+usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT); \
+} \
+while (libssh2_channel_wait_closed(CHANNEL) == LIBSSH2_ERROR_EAGAIN) { \
+if ([channelShutdownDeadline timeIntervalSinceNow] < 0) { break; } \
+usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT); \
+} \
+while (libssh2_channel_free(CHANNEL) == LIBSSH2_ERROR_EAGAIN) { \
+if ([channelShutdownDeadline timeIntervalSinceNow] < 0) { break; } \
+usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT); \
+} \
 } while (0);
 
 /*

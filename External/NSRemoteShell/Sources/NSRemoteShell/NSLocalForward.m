@@ -118,6 +118,7 @@
             }
             long rc = libssh2_session_last_errno(self.representedSession);
             if (rc == LIBSSH2_ERROR_EAGAIN) {
+                usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
                 continue;
             }
             break;

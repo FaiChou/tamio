@@ -154,6 +154,7 @@
         // Actual number of bytes written or negative on failure.
         long rc = libssh2_channel_write(self.representedChannel, [data bytes], [data length]);
         if (rc == LIBSSH2_ERROR_EAGAIN) {
+            usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
             continue;
         }
         if (rc < 0) {
@@ -201,17 +202,22 @@
     if (CGSizeEqualToSize(targetSize, self.currentTerminalSize)) {
         return;
     }
-    self.currentTerminalSize = targetSize;
+    // a wedged channel must not stall the loop here; giving up leaves
+    // currentTerminalSize stale so a later tick retries the resize
+    NSDate *resizeDeadline = [[NSDate alloc] initWithTimeIntervalSinceNow:LIBSSH2_CHANNEL_EAGAIN_TIMEOUT];
     while (true) {
+        if ([resizeDeadline timeIntervalSinceNow] < 0) { return; }
         long rc = libssh2_channel_request_pty_size(self.representedChannel,
                                                    targetSize.width,
                                                    targetSize.height);
         if (rc == LIBSSH2_ERROR_EAGAIN) {
+            usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
             continue;
         }
         // don't check error here?
         break;
     }
+    self.currentTerminalSize = targetSize;
 }
 
 - (void)unsafeCallNonblockingOperations {
@@ -239,13 +245,26 @@
     LIBSSH2_CHANNEL *channel = self.representedChannel;
     self.representedChannel = NULL;
     self.representedSession = NULL;
-    while (libssh2_channel_send_eof(channel) == LIBSSH2_ERROR_EAGAIN) {};
-    while (libssh2_channel_close(channel) == LIBSSH2_ERROR_EAGAIN) {};
-    while (libssh2_channel_wait_closed(channel) == LIBSSH2_ERROR_EAGAIN) {};
+    NSDate *channelTeardownDeadline = [[NSDate alloc] initWithTimeIntervalSinceNow:LIBSSH2_CHANNEL_EAGAIN_TIMEOUT];
+    while (libssh2_channel_send_eof(channel) == LIBSSH2_ERROR_EAGAIN) {
+        if ([channelTeardownDeadline timeIntervalSinceNow] < 0) { break; }
+        usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
+    }
+    while (libssh2_channel_close(channel) == LIBSSH2_ERROR_EAGAIN) {
+        if ([channelTeardownDeadline timeIntervalSinceNow] < 0) { break; }
+        usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
+    }
+    while (libssh2_channel_wait_closed(channel) == LIBSSH2_ERROR_EAGAIN) {
+        if ([channelTeardownDeadline timeIntervalSinceNow] < 0) { break; }
+        usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
+    }
     int es = libssh2_channel_get_exit_status(channel);
     NSRLog(@"channel get exit status returns: %d", es);
     self.exitStatus = es;
-    while (libssh2_channel_free(channel) == LIBSSH2_ERROR_EAGAIN) {};
+    while (libssh2_channel_free(channel) == LIBSSH2_ERROR_EAGAIN) {
+        if ([channelTeardownDeadline timeIntervalSinceNow] < 0) { break; }
+        usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
+    }
     if (self.terminationBlock) { self.terminationBlock(); }
     self.terminationBlock = NULL;
 }

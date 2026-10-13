@@ -1381,8 +1381,12 @@ continue; \
             }
         }
     } while (rc > 0);
-    
-    while (libssh2_sftp_closedir(handle) == LIBSSH2_ERROR_EAGAIN) {};
+
+    NSDate *date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
+    while (libssh2_sftp_closedir(handle) == LIBSSH2_ERROR_EAGAIN) {
+        if ([date timeIntervalSinceNow] < 0) { break; }
+        usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
+    }
     if (rc < 0) {
         NSString *reason;
         if (rc == LIBSSH2_ERROR_EAGAIN) {
@@ -1437,9 +1441,13 @@ continue; \
         }
         break;
     }
-    
-    while (libssh2_sftp_closedir(handle) == LIBSSH2_ERROR_EAGAIN) {};
-    
+
+    date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
+    while (libssh2_sftp_closedir(handle) == LIBSSH2_ERROR_EAGAIN) {
+        if ([date timeIntervalSinceNow] < 0) { break; }
+        usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
+    }
+
     if (!statSuccess) {
         [self unsafeFileTransferSetErrorForFile:atPath pathIsRemote:YES failureReason:@"remote permission denied"];
         return NULL;
@@ -1927,6 +1935,9 @@ continue; \
         [self unsafeFileTransferSetErrorForFile:atFullPath pathIsRemote:YES failureReason:@"failed to allocate transfer buffer"];
         return NO;
     }
+    // a read that stalls on eagain gives up after operationTimeout while
+    // any progress re-arms the deadline, so long transfers are unaffected
+    date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
     while (recv_size < fi.st_size) {
         if (continuationBlock && !continuationBlock()) { break; }
         if (!self.isConnectedFileTransfer) { break; }
@@ -1941,6 +1952,11 @@ continue; \
         if (recv_write_size < 0) {
             if (recv_write_size == LIBSSH2_ERROR_EAGAIN) {
                 // do not change anything
+                if ([date timeIntervalSinceNow] < 0) {
+                    libssh2_session_set_last_error(session, LIBSSH2_ERROR_TIMEOUT, NULL);
+                    break;
+                }
+                usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT);
                 continue;
             }
             // error occurred
@@ -1963,6 +1979,7 @@ continue; \
                 break;
             }
             recv_size += f_write_size;
+            date = [[NSDate alloc] initWithTimeIntervalSinceNow:[self.operationTimeout intValue]];
         }
         if (onProgress) {
             NSDate *now = [[NSDate alloc] init];

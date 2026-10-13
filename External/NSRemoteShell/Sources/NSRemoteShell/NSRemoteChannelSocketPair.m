@@ -40,7 +40,9 @@
             long wr = 0;
             while(wr < len) {
                 long i = libssh2_channel_write(self.channel, buf + wr, len - wr);
-                if (LIBSSH2_ERROR_EAGAIN == i) { continue; }
+                // eagain means the remote window of a live transfer is full
+                // keep waiting but do not burn the event loop thread
+                if (LIBSSH2_ERROR_EAGAIN == i) { usleep(LIBSSH2_CONTINUE_EAGAIN_WAIT); continue; }
                 if (i <= 0) {
                     NSRLog(@"libssh2_channel_write returns failure %ld", len);
                     self.completed = YES;
