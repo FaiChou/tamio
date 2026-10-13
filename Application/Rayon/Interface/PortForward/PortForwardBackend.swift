@@ -9,9 +9,11 @@
 import Combine
 import RayonModule
 
+/// The backend and its container are main-thread state, like the rows
+/// showing the forwards.
+@MainActor
 class PortForwardBackend: ObservableObject {
-    // Keep the existing caller-managed queue and lock ownership.
-    nonisolated(unsafe) static let shared = PortForwardBackend()
+    static let shared = PortForwardBackend()
 
     private init() {}
 

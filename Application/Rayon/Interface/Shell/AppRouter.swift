@@ -25,8 +25,11 @@ enum Route: Hashable {
     case editor(UUID)
 }
 
+/// The router and everything it publishes are main-thread state, like the
+/// interface it drives.
+@MainActor
 final class AppRouter: ObservableObject {
-    nonisolated(unsafe) static let shared = AppRouter()
+    static let shared = AppRouter()
 
     @Published var route: Route = .home {
         didSet {

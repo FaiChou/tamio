@@ -9,9 +9,11 @@ import Combine
 import Foundation
 import RayonModule
 
+/// The manager and its session list are main-thread state, like the
+/// interface showing them.
+@MainActor
 class TerminalManager: ObservableObject {
-    // Keep the existing caller-managed queue and lock ownership.
-    nonisolated(unsafe) static let shared = TerminalManager()
+    static let shared = TerminalManager()
     private init() {}
 
     @Published var sessionContexts: [Context] = []

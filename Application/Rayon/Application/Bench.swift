@@ -20,6 +20,15 @@ import SwiftUI
         static let benchFiles = Notification.Name("me.mizorewww.rayon.bench.files")
     }
 
+    /// What the run loop observer in `settle` records: written on the main
+    /// run loop only, read after the observer is removed. The box hands the
+    /// capture to the C callback as one Sendable object.
+    private final class RunLoopLoad: @unchecked Sendable {
+        var busy = 0.0
+        var stretch = 0.0
+        var woke = CACurrentMediaTime()
+    }
+
     @MainActor
     enum Bench {
         static func runIfRequested() {
@@ -40,20 +49,18 @@ import SwiftUI
         static var longest = 0.0
 
         static func settle(_ action: () -> Void) async -> Double {
-            nonisolated(unsafe) var busy = 0.0
-            nonisolated(unsafe) var stretch = 0.0
-            nonisolated(unsafe) var woke = CACurrentMediaTime()
+            let load = RunLoopLoad()
             let activities = CFRunLoopActivity.afterWaiting.rawValue | CFRunLoopActivity.beforeWaiting.rawValue
             let observer = CFRunLoopObserverCreateWithHandler(nil, activities, true, CFIndex.max) { _, activity in
                 let now = CACurrentMediaTime()
-                if activity == .afterWaiting { woke = now } else { busy += now - woke; stretch = max(stretch, now - woke); woke = now }
+                if activity == .afterWaiting { load.woke = now } else { load.busy += now - load.woke; load.stretch = max(load.stretch, now - load.woke); load.woke = now }
             }
             CFRunLoopAddObserver(CFRunLoopGetMain(), observer, .commonModes)
             action()
             try? await Task.sleep(nanoseconds: 400_000_000)
             CFRunLoopRemoveObserver(CFRunLoopGetMain(), observer, .commonModes)
-            longest = stretch * 1000
-            return busy * 1000
+            longest = load.stretch * 1000
+            return load.busy * 1000
         }
 
         static func report(_ name: String, _ samples: [Double]) {

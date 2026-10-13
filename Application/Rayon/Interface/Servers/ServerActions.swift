@@ -34,6 +34,7 @@ enum ServerActions {
         }
     }
 
+    @MainActor
     static func delete(_ machines: [RDMachine.ID]) {
         let store = RayonStore.shared
         guard !machines.isEmpty else { return }

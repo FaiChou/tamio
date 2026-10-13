@@ -196,6 +196,7 @@ enum PortForwardActions {
         RayonStore.shared.portForwardGroup.insert(copy)
     }
 
+    @MainActor
     static func delete(_ id: RDPortForward.ID) {
         let forward = RayonStore.shared.portForwardGroup[id]
         UIBridge.requiresConfirmation(

@@ -21,7 +21,9 @@ extension UIBridge {
         always: Bool = false,
         confirmation: @escaping (Bool) -> Void
     ) {
-        // Keep the immediate callback when confirmation is disabled.
+        // With confirmation disabled the callback fires synchronously;
+        // otherwise it comes from the AppKit alert on the main thread.
+        // Either way it never crosses to a worker queue.
         nonisolated(unsafe) let confirmation = confirmation
         if RayonStore.shared.disableConformation, !always {
             confirmation(true)
@@ -54,8 +56,13 @@ final class MacFileTransferUIHandler: FileTransferUIHandler {
     }
 
     func autoOpenInterface(_ context: FileTransferContext) {
-        // Opened for the editor, the session stays on the editor.
-        if AppRouter.shared.route == .editor(context.id) { return }
-        AppRouter.shared.route = .transfer(context.id)
+        // The contract calls this on the main thread; the class itself is
+        // not MainActor because it witnesses a nonisolated protocol.
+        let id = context.id
+        MainActor.assumeIsolated {
+            // Opened for the editor, the session stays on the editor.
+            if AppRouter.shared.route == .editor(id) { return }
+            AppRouter.shared.route = .transfer(id)
+        }
     }
 }

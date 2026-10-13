@@ -11,8 +11,22 @@ import Foundation
 import RayonModule
 
 enum Mac {
+    /// The bridge, loaded once. The box is what crosses the concurrency
+    /// boundary: the bridge object inside is an AppKit object used on the
+    /// main thread, like the windows it manages.
+    private final class BridgeBox: @unchecked Sendable {
+        let value: MacBridging?
+        init(_ value: MacBridging?) { self.value = value }
+    }
+
+    private static let loaded = BridgeBox(loadBridge())
+
     /// Nil only if the bundle is missing from the app, which a build never is.
-    nonisolated(unsafe) static let bridge: MacBridging? = {
+    static var bridge: MacBridging? {
+        loaded.value
+    }
+
+    private static func loadBridge() -> MacBridging? {
         guard let url = Bundle.main.builtInPlugInsURL?.appendingPathComponent("MacBridge.bundle"),
               let bundle = Bundle(url: url)
         else {
@@ -30,7 +44,7 @@ enum Mac {
             return nil
         }
         return bridge
-    }()
+    }
 
     /// Lets the store find the master key the AppKit builds of Rayon kept in
     /// the login keychain. Call before `RayonStore.shared` is first used.

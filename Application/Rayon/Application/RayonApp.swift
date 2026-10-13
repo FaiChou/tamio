@@ -118,7 +118,8 @@ enum MainWindow {
 }
 
 class AppDelegate: NSObject, UIApplicationDelegate {
-    nonisolated(unsafe) private(set) static var shared: AppDelegate!
+    /// Set once at launch on the main thread; read there ever after.
+    @MainActor private(set) static var shared: AppDelegate!
 
     override init() {
         super.init()

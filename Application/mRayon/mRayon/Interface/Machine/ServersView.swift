@@ -213,6 +213,7 @@ struct ServerMenuItems: View {
 }
 
 enum ServerActions {
+    @MainActor
     static func openMonitor(_ machine: RDMachine.ID) {
         do {
             let existing = MonitorCenter.shared.session(for: machine)
@@ -240,6 +241,7 @@ enum ServerActions {
         RayonStore.shared.machineGroup.insert(copy)
     }
 
+    @MainActor
     static func delete(_ machine: RDMachine.ID) {
         let name = RayonStore.shared.machineGroup[machine].name
         UIBridge.requiresConfirmation(message: "Delete \(name)?") { confirmed in

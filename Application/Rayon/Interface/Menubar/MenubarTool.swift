@@ -8,11 +8,13 @@
 import Foundation
 import RayonModule
 
+/// The menu bar items and their persistence are main-thread state, like
+/// the AppKit items they model; the lock is the bridge's callback contract.
+@MainActor
 class MenubarTool {
     let bootstrapLock = NSLock()
 
-    // Keep the existing caller-managed queue and lock ownership.
-    nonisolated(unsafe) static let shared = MenubarTool()
+    static let shared = MenubarTool()
 
     var statusItem: [MenubarStatusItem] = []
     var hasCat: Bool {

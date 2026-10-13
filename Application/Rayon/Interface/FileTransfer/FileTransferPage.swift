@@ -62,6 +62,8 @@ struct FileTransferPage: View {
         // than a frame, and showing it at once avoids a flash of the old one.
         guard list.count > 1000 else { return show(sorted: Self.sort(list)) }
         let expected = listing
+        // The published list is only ever read, never mutated in place, so
+        // the sort racing a display read is safe.
         nonisolated(unsafe) let list = list
         DispatchQueue.global(qos: .userInitiated).async {
             nonisolated(unsafe) let result = Self.sort(list)
@@ -346,23 +348,37 @@ struct FileTransferPage: View {
         // Say no to a drop with nothing we can take, so it lands elsewhere.
         guard !matching.isEmpty else { return false }
         let group = DispatchGroup()
-        nonisolated(unsafe) var urls: [URL] = []
-        let lock = NSLock()
+        let urls = DroppedURLs()
         for provider in matching {
             group.enter()
             _ = provider.loadObject(ofClass: URL.self) { url, _ in
-                if let url {
-                    lock.lock()
-                    urls.append(url)
-                    lock.unlock()
-                }
+                if let url { urls.append(url) }
                 group.leave()
             }
         }
         group.notify(queue: .main) {
-            if !urls.isEmpty { context.upload(urls: urls) }
+            if !urls.values.isEmpty { context.upload(urls: urls.values) }
         }
         return true
+    }
+}
+
+/// What the drop providers fill: appended on their completion queues under
+/// the lock, read once the group has drained.
+private final class DroppedURLs: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [URL] = []
+
+    func append(_ url: URL) {
+        lock.lock()
+        storage.append(url)
+        lock.unlock()
+    }
+
+    var values: [URL] {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
     }
 }
 

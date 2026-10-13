@@ -78,6 +78,8 @@ final class EditorDocument: ObservableObject, Identifiable {
                 // The server may still be connecting when a file is opened from
                 // the Editor tab of a server that had nothing open.
                 try await waitForConnection()
+                // readText drives the session's SFTP shell, which serializes
+                // its own work across queues.
                 nonisolated(unsafe) let context = context
                 let loaded = try await context.readText(at: path)
                 savedText = loaded
@@ -98,6 +100,8 @@ final class EditorDocument: ObservableObject, Identifiable {
         Task {
             defer { saving = false }
             do {
+                // writeText drives the session's SFTP shell, which serializes
+                // its own work across queues.
                 nonisolated(unsafe) let context = context
                 try await context.writeText(snapshot, to: path)
                 savedText = snapshot
@@ -111,6 +115,7 @@ final class EditorDocument: ObservableObject, Identifiable {
     }
 
     private func waitForConnection() async throws {
+        // The publisher chain only reads the context.
         nonisolated(unsafe) let context = context
         await Self.waitForConnection(of: context)
     }
@@ -194,9 +199,11 @@ final class EditorWorkspace: ObservableObject, Identifiable {
     }
 }
 
-/// Every server's editor, by the id of its SFTP session.
+/// Every server's editor, by the id of its SFTP session. Main thread, like
+/// the interface showing the workspaces.
+@MainActor
 final class EditorCenter: ObservableObject {
-    nonisolated(unsafe) static let shared = EditorCenter()
+    static let shared = EditorCenter()
 
     @Published private(set) var workspaces: [EditorWorkspace] = []
     private var cancellable: AnyCancellable?

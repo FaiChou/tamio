@@ -257,6 +257,7 @@ private struct TerminalStatusBar: View {
 }
 
 enum TerminalSessionActions {
+    @MainActor
     static func close(_ context: TerminalManager.Context) {
         let manager = TerminalManager.shared
         if manager.sessionAlive(forContext: context.id) {
