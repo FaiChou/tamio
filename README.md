@@ -1,5 +1,7 @@
 # catussh
 
+**English** · [简体中文](./README.zh-Hans.md) · [繁體中文](./README.zh-Hant.md)
+
 A native macOS app for the Linux servers you look after: an SSH terminal built on
 [Ghostty](https://ghostty.org), SFTP file transfer and a live resource monitor, side
 by side for every server.
@@ -10,9 +12,9 @@ by side for every server.
 
 > [!NOTE]
 > **catussh is the continuation of Rayon.** This repository,
-> [mizorewww/Rayon](https://github.com/mizorewww/Rayon), is where Rayon was kept alive
-> after its author archived [Lakr233/Rayon](https://github.com/Lakr233/Rayon); the app
-> now goes on under the name catussh. It is not affiliated with or endorsed by the
+> [mizorewww/catussh](https://github.com/mizorewww/catussh), is where Rayon was kept
+> alive after its author archived [Lakr233/Rayon](https://github.com/Lakr233/Rayon);
+> the app now goes on under the name catussh. It is not affiliated with or endorsed by the
 > original author. The "Rayon" sold on the App Store belongs to a third party and is
 > unrelated to this code.
 
@@ -52,11 +54,33 @@ by side for every server.
 
 ## Screenshots
 
-| Servers | Terminal text settings |
-| :---: | :---: |
-| <picture><source media="(prefers-color-scheme: dark)" srcset="./Resources/Screenshots/servers-dark.jpg"><img alt="The Servers table grouped into Production, CI and Home Lab, with Files, Monitor and Connect on each row." src="./Resources/Screenshots/servers-light.jpg"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="./Resources/Screenshots/text-dark.jpg"><img alt="Settings, Text: a font picker, style menus, a size slider with a number field, and stroke thickening." src="./Resources/Screenshots/text-light.jpg"></picture> |
-| **Colors with live preview** | **Keyboard shortcuts** |
-| <picture><source media="(prefers-color-scheme: dark)" srcset="./Resources/Screenshots/colors-dark.jpg"><img alt="Settings, Colors: a live terminal preview above the theme gallery." src="./Resources/Screenshots/colors-light.jpg"></picture> | <picture><source media="(prefers-color-scheme: dark)" srcset="./Resources/Screenshots/keyboard-dark.jpg"><img alt="Settings, Keyboard: shortcuts as key caps with plain-language actions, grouped by purpose." src="./Resources/Screenshots/keyboard-light.jpg"></picture> |
+### Servers
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./Resources/Screenshots/servers-dark.jpg">
+  <img alt="The Servers table grouped into Production, CI and Home Lab, with Files, Monitor and Connect on each row." src="./Resources/Screenshots/servers-light.jpg">
+</picture>
+
+### Terminal text settings
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./Resources/Screenshots/text-dark.jpg">
+  <img alt="Settings, Text: a font picker, style menus, a size slider with a number field, and stroke thickening." src="./Resources/Screenshots/text-light.jpg">
+</picture>
+
+### Colors with live preview
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./Resources/Screenshots/colors-dark.jpg">
+  <img alt="Settings, Colors: a live terminal preview above the theme gallery." src="./Resources/Screenshots/colors-light.jpg">
+</picture>
+
+### Keyboard shortcuts
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./Resources/Screenshots/keyboard-dark.jpg">
+  <img alt="Settings, Keyboard: shortcuts as key caps with plain-language actions, grouped by purpose." src="./Resources/Screenshots/keyboard-light.jpg">
+</picture>
 
 Screenshots follow your GitHub light or dark theme. The servers shown use reserved
 documentation addresses.
@@ -74,10 +98,10 @@ There are no prebuilt downloads yet; build catussh from source.
 ### Build and install
 
 ```sh
-git clone https://github.com/mizorewww/Rayon.git
-cd Rayon
+git clone https://github.com/mizorewww/catussh.git
+cd catussh
 
-# Debug build → DerivedData/Build/Products/Debug/catussh.app
+# Debug build → DerivedData/Build/Products/Debug-maccatalyst/catussh.app
 bash Workflow/Scripts/build-macos.sh
 
 # Release build, installed to /Applications
@@ -89,7 +113,8 @@ Mac; they are not notarized. Set `DERIVED_DATA_PATH` to build elsewhere. To dist
 catussh, configure your own team, signing identity and provisioning profile; changing
 the signing identity can affect access to existing Keychain items.
 
-You can also open `App.xcworkspace` and run the **Rayon** scheme.
+You can also open `App.xcworkspace` and run the **Rayon** scheme (the Xcode
+projects and modules still carry the Rayon name).
 
 ## Using catussh
 
@@ -132,7 +157,7 @@ open an issue asking for a private contact instead.
 
 ## Getting help and contributing
 
-- Bugs and feature requests: [open an issue](https://github.com/mizorewww/Rayon/issues).
+- Bugs and feature requests: [open an issue](https://github.com/mizorewww/catussh/issues).
 - Pull requests are welcome. Run the terminal package tests before sending one; they
   briefly open native terminal windows and use no SSH connection or credential store:
 
