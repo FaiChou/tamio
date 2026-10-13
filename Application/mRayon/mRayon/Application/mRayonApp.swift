@@ -40,7 +40,13 @@ struct mRayonApp: App {
                 }
                 #endif
                 .onAppear {
-                    // optimize later on flight exp
+                    // Warm the shared WebKit process pool so the first
+                    // editor (snippet or remote file) skips the cold
+                    // start. SCodeEditor builds its web view lazily now,
+                    // so nothing else pays this at launch; the hidden view
+                    // gets a second to finish its page load before being
+                    // released, or the load would be cancelled and the
+                    // warm-up defeated.
                     let prewarm = CodeEditorView()
                     AppearancePreference.applyStored()
                     checkAgreement()
@@ -65,10 +71,8 @@ struct mRayonApp: App {
         host.isModalInPresentation = true
         host.modalTransitionStyle = .coverVertical
         host.modalPresentationStyle = .formSheet
-        onMainThread(delay: 0.5) {
-            UIWindow.shutUpKeyWindow?
-                .topMostViewController?
-                .present(next: host)
-        }
+        // At launch the window is not in the hierarchy yet; the queue
+        // replays the present once it is.
+        PresentationQueue.present(next: host)
     }
 }
