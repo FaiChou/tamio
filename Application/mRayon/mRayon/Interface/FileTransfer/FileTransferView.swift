@@ -438,10 +438,8 @@ final class IOSFileTransferUIHandler: FileTransferUIHandler {
     }
 
     func downloadCompleted() {
-        SPIndicator.present(
-            title: "Download Completed",
-            message: "Saved to Files",
-            preset: .done
-        )
+        let indicator = SPIndicatorView(title: "Download Completed", message: "Saved to Files", preset: .done)
+        indicator.presentWindow = UIWindow.shutUpKeyWindow
+        indicator.present(haptic: .success, completion: nil)
     }
 }

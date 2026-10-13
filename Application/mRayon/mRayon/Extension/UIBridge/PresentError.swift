@@ -11,14 +11,9 @@ import UIKit
 
 extension UIBridge {
     static func presentSuccess(with message: String) {
-        SPIndicator.present(
-            title: message,
-            message: "",
-            preset: .done,
-            haptic: .success,
-            from: .top,
-            completion: nil
-        )
+        let indicator = SPIndicatorView(title: message, message: "", preset: .done)
+        indicator.presentWindow = UIWindow.shutUpKeyWindow
+        indicator.present(haptic: .success, completion: nil)
     }
 
     static func presentAlert(with message: String) {
@@ -35,14 +30,9 @@ extension UIBridge {
             // Banner-style errors need short titles; server-provided text can
             // be any length.
             let title = message.count > 25 ? String(message.prefix(25)) + "…" : message
-            SPIndicator.present(
-                title: title,
-                message: "",
-                preset: .error,
-                haptic: .error,
-                from: .top,
-                completion: nil
-            )
+            let indicator = SPIndicatorView(title: title, message: "", preset: .error)
+            indicator.presentWindow = UIWindow.shutUpKeyWindow
+            indicator.present(haptic: .error, completion: nil)
         }
     }
 }
