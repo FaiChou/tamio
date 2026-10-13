@@ -22,7 +22,9 @@ enum RayonUtil {
     static func deviceOwnershipAuthenticate(onComplete: @escaping (DeviceOwnershipCheckSuccess) -> Void) {
         DispatchQueue.global().async {
             guard deviceHasPassword() else {
-                onComplete(true)
+                onMainThread {
+                    onComplete(true)
+                }
                 return
             }
             let context = LAContext()
