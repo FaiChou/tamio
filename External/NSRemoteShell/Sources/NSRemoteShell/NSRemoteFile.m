@@ -42,9 +42,10 @@
 
 - (BOOL)isEqual:(NSRemoteFile*)object {
     if (self == object) { return YES; }
+    if (![object isKindOfClass:[NSRemoteFile class]]) { return NO; }
     do {
         if (![self.name isEqualToString:object.name]) { break; }
-        if (self.size != object.size) { break; }
+        if (![self.size isEqualToNumber:object.size]) { break; }
         if (self.isRegularFile != object.isRegularFile) { break; }
         if (self.isDirectory != object.isDirectory) { break; }
         if (self.isLink != object.isLink) { break; }
@@ -56,6 +57,19 @@
         return YES;
     } while (false);
     return NO;
+}
+
+- (NSUInteger)hash {
+    return self.name.hash
+    ^ self.size.hash
+    ^ self.modificationDate.hash
+    ^ self.lastAccess.hash
+    ^ self.permissionDescription.hash
+    ^ (NSUInteger)self.ownerUID
+    ^ (NSUInteger)self.ownerGID
+    ^ (NSUInteger)self.isRegularFile
+    ^ ((NSUInteger)self.isDirectory << 1)
+    ^ ((NSUInteger)self.isLink << 2);
 }
 
 - (void)populateAttributes:(LIBSSH2_SFTP_ATTRIBUTES)fileAttributes {
@@ -79,8 +93,8 @@
     strcpy(&bits[4], rwx[(mode >> 3)& 7]);
     strcpy(&bits[7], rwx[(mode & 7)]);
     if (mode & S_ISUID) { bits[3] = (mode & 0100) ? 's' : 'S'; }
-    if (mode & S_ISGID) { bits[6] = (mode & 0010) ? 's' : 'l'; }
-    if (mode & S_ISVTX) { bits[9] = (mode & 0100) ? 't' : 'T'; }
+    if (mode & S_ISGID) { bits[6] = (mode & 0010) ? 's' : 'S'; }
+    if (mode & S_ISVTX) { bits[9] = (mode & 0001) ? 't' : 'T'; }
     return [NSString stringWithCString:bits encoding:NSUTF8StringEncoding];
 }
 
