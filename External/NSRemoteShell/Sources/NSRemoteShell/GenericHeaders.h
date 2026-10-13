@@ -12,7 +12,10 @@
 #import <arpa/inet.h>
 #import <netinet/in.h>
 #import <sys/socket.h>
+#import <sys/select.h>
+#import <sys/time.h>
 #import <netdb.h>
+#import <errno.h>
 
 #import <Foundation/Foundation.h>
 
@@ -29,6 +32,14 @@
  this is a workaround for data being cut in half
  */
 #define BUFFER_SIZE 131072
+
+/*
+ max time in seconds a connect() may take before we give up on that address
+ used as fallback by legacy entry points without an explicit timeout
+ a blocking connect() would otherwise park the caller for the full kernel
+ tcp timeout (~75s) when the peer drops packets
+ */
+#define GENERIC_SOCKET_CONNECT_TIMEOUT 8
 
 /*
  the interval for sending keep alive packet, count in second

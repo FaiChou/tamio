@@ -24,6 +24,12 @@ NS_ASSUME_NONNULL_BEGIN
              requireNonblockingIO:(BOOL)useNonblocking
 ;
 
++ (int)createSocketWithTargetHost:(NSString*)targetHost
+                   withTargetPort:(NSNumber*)targetPort
+             requireNonblockingIO:(BOOL)useNonblocking
+               withConnectTimeout:(NSNumber*)connectTimeout
+;
+
 + (void)destroyNativeSocket:(int)socketDescriptor;
 
 + (NSString*)getResolvedIpAddressWith:(int)socket;

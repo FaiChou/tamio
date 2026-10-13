@@ -568,7 +568,8 @@ continue; \
     
     int sock = [GenericNetworking createSocketWithTargetHost:self.remoteHost
                                               withTargetPort:self.remotePort
-                                        requireNonblockingIO:NO];
+                                        requireNonblockingIO:NO
+                                          withConnectTimeout:self.operationTimeout];
     if (!sock) {
         NSLog(@"failed to create socket to host");
         return;

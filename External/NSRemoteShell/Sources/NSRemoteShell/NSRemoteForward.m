@@ -84,7 +84,8 @@
     NSLog(@"channel forward accepted a channel");
     int socket = [GenericNetworking createSocketWithTargetHost:self.targetHost
                                                 withTargetPort:self.targetPort
-                                          requireNonblockingIO:YES];
+                                          requireNonblockingIO:YES
+                                            withConnectTimeout:self.timeout];
     if (!socket) {
         NSLog(@"failed to create socket to target");
         LIBSSH2_CHANNEL_SHUTDOWN(channel);

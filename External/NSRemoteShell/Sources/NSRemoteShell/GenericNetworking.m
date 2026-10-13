@@ -7,6 +7,48 @@
 
 #import "GenericNetworking.h"
 
+/*
+ waits for a non-blocking connect() to settle on a socket
+ select is retried on EINTR against an absolute deadline so a signal
+ can not stretch the wait past the requested timeout
+ */
+static BOOL NSRWaitForSocketWritable(int sock, double timeoutSeconds) {
+    if (timeoutSeconds <= 0) { timeoutSeconds = GENERIC_SOCKET_CONNECT_TIMEOUT; }
+    struct timeval deadline;
+    gettimeofday(&deadline, NULL);
+    deadline.tv_sec += (time_t)timeoutSeconds;
+    deadline.tv_usec += (suseconds_t)((timeoutSeconds - (double)(time_t)timeoutSeconds) * 1000000);
+    if (deadline.tv_usec >= 1000000) {
+        deadline.tv_sec += 1;
+        deadline.tv_usec -= 1000000;
+    }
+    while (true) {
+        struct timeval now;
+        gettimeofday(&now, NULL);
+        struct timeval tv;
+        tv.tv_sec = deadline.tv_sec - now.tv_sec;
+        tv.tv_usec = deadline.tv_usec - now.tv_usec;
+        if (tv.tv_usec < 0) {
+            tv.tv_sec -= 1;
+            tv.tv_usec += 1000000;
+        }
+        if (tv.tv_sec < 0) { return NO; }
+        fd_set wset;
+        FD_ZERO(&wset);
+        FD_SET(sock, &wset);
+        int rc = select(sock + 1, NULL, &wset, NULL, &tv);
+        if (rc > 0) { break; }
+        if (rc < 0 && errno == EINTR) { continue; }
+        return NO;
+    }
+    int socketError = 0;
+    socklen_t socketErrorLength = sizeof(socketError);
+    if (getsockopt(sock, SOL_SOCKET, SO_ERROR, &socketError, &socketErrorLength) != 0) {
+        return NO;
+    }
+    return socketError == 0;
+}
+
 @implementation GenericNetworking
 
 + (NSArray *)resolveIpAddressesFor:(NSString*)candidateHost
@@ -93,6 +135,17 @@
                    withTargetPort:(NSNumber *)targetPort
              requireNonblockingIO:(BOOL)useNonblocking
 {
+    return [self createSocketWithTargetHost:targetHost
+                             withTargetPort:targetPort
+                       requireNonblockingIO:useNonblocking
+                         withConnectTimeout:@(GENERIC_SOCKET_CONNECT_TIMEOUT)];
+}
+
++ (int)createSocketWithTargetHost:(NSString *)targetHost
+                   withTargetPort:(NSNumber *)targetPort
+             requireNonblockingIO:(BOOL)useNonblocking
+               withConnectTimeout:(NSNumber *)connectTimeout
+{
     if (![self isValidateWithPort:targetPort]) { return 0; }
     int candidatePort = [targetPort intValue];
     NSArray *addrData = [self resolveIpAddressesFor:targetHost];
@@ -110,14 +163,29 @@
                 continue;
             }
             setsockopt(forwardsock, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int));
-            int rv = connect(forwardsock, (struct sockaddr*)&address4, sizeof(struct sockaddr_in));
-            if (rv != 0) {
-                NSLog(@"socket failed to connect, trying next address");
+            // connect() must run non-blocking even when the caller wants a
+            // blocking socket, otherwise a dropped packet parks us for the
+            // full kernel tcp timeout; blocking mode is restored afterwards
+            if (fcntl(forwardsock, F_SETFL, fcntl(forwardsock, F_GETFL, 0) | O_NONBLOCK) == -1) {
+                NSLog(@"failed to call fcntl for none-blocking for socket %d", forwardsock);
                 close(forwardsock);
                 continue;
             }
-            if (useNonblocking && fcntl(forwardsock, F_SETFL, fcntl(forwardsock, F_GETFL, 0) | O_NONBLOCK) == -1) {
-                NSLog(@"failed to call fcntl for none-blocking for socket %d", forwardsock);
+            int rv = connect(forwardsock, (struct sockaddr*)&address4, sizeof(struct sockaddr_in));
+            if (rv != 0) {
+                if (errno != EINPROGRESS && errno != EINTR) {
+                    NSLog(@"socket failed to connect, trying next address");
+                    close(forwardsock);
+                    continue;
+                }
+                if (!NSRWaitForSocketWritable(forwardsock, [connectTimeout doubleValue])) {
+                    NSLog(@"socket failed to connect before deadline, trying next address");
+                    close(forwardsock);
+                    continue;
+                }
+            }
+            if (!useNonblocking && fcntl(forwardsock, F_SETFL, fcntl(forwardsock, F_GETFL, 0) & ~O_NONBLOCK) == -1) {
+                NSLog(@"failed to restore blocking io for socket %d", forwardsock);
                 close(forwardsock);
                 continue;
             }
@@ -135,14 +203,26 @@
                 continue;
             }
             setsockopt(forwardsock, SOL_SOCKET, SO_NOSIGPIPE, &(int){1}, sizeof(int));
-            int rv = connect(forwardsock, (struct sockaddr*)&address6, sizeof(struct sockaddr_in6));
-            if (rv != 0) {
-                NSLog(@"socket failed to connect, trying next address");
+            if (fcntl(forwardsock, F_SETFL, fcntl(forwardsock, F_GETFL, 0) | O_NONBLOCK) == -1) {
+                NSLog(@"failed to call fcntl for none-blocking for socket %d", forwardsock);
                 close(forwardsock);
                 continue;
             }
-            if (useNonblocking && fcntl(forwardsock, F_SETFL, fcntl(forwardsock, F_GETFL, 0) | O_NONBLOCK) == -1) {
-                NSLog(@"failed to call fcntl for none-blocking for socket %d", forwardsock);
+            int rv = connect(forwardsock, (struct sockaddr*)&address6, sizeof(struct sockaddr_in6));
+            if (rv != 0) {
+                if (errno != EINPROGRESS && errno != EINTR) {
+                    NSLog(@"socket failed to connect, trying next address");
+                    close(forwardsock);
+                    continue;
+                }
+                if (!NSRWaitForSocketWritable(forwardsock, [connectTimeout doubleValue])) {
+                    NSLog(@"socket failed to connect before deadline, trying next address");
+                    close(forwardsock);
+                    continue;
+                }
+            }
+            if (!useNonblocking && fcntl(forwardsock, F_SETFL, fcntl(forwardsock, F_GETFL, 0) & ~O_NONBLOCK) == -1) {
+                NSLog(@"failed to restore blocking io for socket %d", forwardsock);
                 close(forwardsock);
                 continue;
             }
