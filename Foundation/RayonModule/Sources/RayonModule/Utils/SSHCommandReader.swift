@@ -17,10 +17,10 @@ public struct SSHCommandReader: Codable, Equatable {
     }
 
     public init?(command: String) {
-        var parser = command
-            .lowercased()
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        guard parser.hasPrefix("ssh ") else {
+        var parser = command.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Only the "ssh " prefix is case-insensitive; the username and host
+        // keep their case, a Linux username is case-sensitive.
+        guard parser.lowercased().hasPrefix("ssh ") else {
             return nil
         }
         // Collapse repeated spaces so pasting "ssh  user@host" still parses.
@@ -28,13 +28,28 @@ public struct SSHCommandReader: Codable, Equatable {
             parser = parser.replacingOccurrences(of: "  ", with: " ")
         }
         parser.removeFirst(4) // "ssh "
-        guard let reader = parser
-            .components(separatedBy: " ")
-            .first?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-            reader.contains("@") // requires username, block anonymous login
-        else {
-            return nil
+        let tokens = parser.components(separatedBy: " ").filter { !$0.isEmpty }
+        // "-p <port>" may come before or after user@host.
+        var target: String?
+        var port: String?
+        var index = 0
+        while index < tokens.count {
+            let token = tokens[index]
+            if token == "-p", port == nil {
+                guard index + 1 < tokens.count, let value = UInt16(tokens[index + 1]) else {
+                    return nil
+                }
+                port = "\(value)"
+                index += 2
+            } else if target == nil, token.contains("@") {
+                target = token
+                index += 1
+            } else {
+                return nil
+            }
+        }
+        guard let reader = target else {
+            return nil // requires username, block anonymous login
         }
         let component = reader.components(separatedBy: "@")
         guard component.count == 2 else {
@@ -47,18 +62,6 @@ public struct SSHCommandReader: Codable, Equatable {
         }
         username = name
         remoteAddress = addr
-
-        parser.removeFirst(reader.count)
-        parser = parser.trimmingCharacters(in: .whitespacesAndNewlines)
-        if parser.hasPrefix("-p") {
-            parser.removeFirst(2)
-            parser = parser.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard let port = UInt16(parser) else {
-                return nil
-            }
-            remotePort = "\(port)"
-        } else {
-            remotePort = "22"
-        }
+        remotePort = port ?? "22"
     }
 }
