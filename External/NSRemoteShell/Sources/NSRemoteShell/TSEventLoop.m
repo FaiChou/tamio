@@ -86,7 +86,10 @@
     }
 #endif
     [self.parent handleRequestsIfNeeded];
-    usleep(20000); // 50 times each second
+    // the timer above wakes this handler about 10 times a second and
+    // port messages add extra runs on top; the nap throttles back to
+    // back housekeeping so a busy session can not spin a whole core
+    usleep(20000);
 }
 
 - (void)destroyLoop {
