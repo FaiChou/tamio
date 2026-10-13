@@ -79,7 +79,7 @@ struct HomeView: View {
     }
 }
 
-/// Type `ssh user@host -p port` and connect. Uses identities that authenticate automatically.
+/// Type `user@host:port` or a full ssh command and connect. Uses identities that authenticate automatically.
 struct QuickConnectCard: View {
     @EnvironmentObject var store: RayonStore
     @State private var command = ""
@@ -87,8 +87,7 @@ struct QuickConnectCard: View {
     @State private var importData: Data?
 
     var parsed: SSHCommandReader? {
-        let trimmed = command.trimmingCharacters(in: .whitespaces)
-        return SSHCommandReader(command: trimmed) ?? SSHCommandReader(command: "ssh " + trimmed)
+        SSHCommandReader(quickConnect: command)
     }
 
     var body: some View {
@@ -155,14 +154,10 @@ struct QuickConnectCard: View {
     }
 
     func refreshSuggestion() {
-        guard command.count > 2 else {
-            suggestion = nil
-            return
-        }
-        let typed = command.hasPrefix("ssh ") ? command : "ssh " + command
-        suggestion = store.recentRecord.lazy.map(\.equivalentSSHCommand).first {
-            !$0.isEmpty && $0.hasPrefix(typed) && $0 != typed
-        }
+        suggestion = SSHCommandReader.suggestion(
+            for: command,
+            in: store.recentRecord.lazy.map(\.equivalentSSHCommand)
+        )
     }
 
     /// Hidden importer kept from the original app: long-press Connect with the
