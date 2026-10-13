@@ -83,7 +83,13 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
     @Published public private(set) var isRefreshing = false
 
     private var shell: NSRemoteShell
-    private var loopContinue = true
+    /// Written on the main thread by `shutdown`, read on the monitor queue.
+    private let loopLock = NSLock()
+    private var loopContinueStorage = true
+    private var loopContinue: Bool {
+        get { loopLock.lock(); defer { loopLock.unlock() }; return loopContinueStorage }
+        set { loopLock.lock(); defer { loopLock.unlock() }; loopContinueStorage = newValue }
+    }
     private var cancellables = Set<AnyCancellable>()
 
     private static let queue = DispatchQueue(label: "me.mizorewww.monitor", attributes: .concurrent)
@@ -99,10 +105,6 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
         MonitorSession.queue.async { [weak self] in
             self?.updateLoop()
         }
-    }
-
-    deinit {
-        debugPrint("\(self) \(#function) \(machine.id)")
     }
 
     #if DEBUG
