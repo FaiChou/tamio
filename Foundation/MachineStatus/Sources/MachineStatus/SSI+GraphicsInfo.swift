@@ -1,11 +1,10 @@
 //
-//  Template.swift
+//  SSI+GraphicsInfo.swift
 //
 //
 //  Created by Lakr Aream on 2022/3/2.
 //
 
-import Combine
 import Foundation
 import NSRemoteShell
 import XMLCoder

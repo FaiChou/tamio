@@ -8,7 +8,6 @@
 import Combine
 import Foundation
 import NSRemoteShell
-import XMLCoder
 
 /// Mirror of RayonModule's `onMainThread`; MachineStatus sits below
 /// RayonModule in the package graph and cannot import it.

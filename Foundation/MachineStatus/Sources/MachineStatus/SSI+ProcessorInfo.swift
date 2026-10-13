@@ -1,14 +1,12 @@
 //
-//  Template.swift
+//  SSI+ProcessorInfo.swift
 //
 //
 //  Created by Lakr Aream on 2022/3/2.
 //
 
-import Combine
 import Foundation
 import NSRemoteShell
-import XMLCoder
 
 public extension ServerStatus {
     /// 服务器 CPU 信息
