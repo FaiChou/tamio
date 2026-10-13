@@ -61,34 +61,10 @@ public extension ServerStatus {
         public init?(withRemote shell: NSRemoteShell, timeout: Double) {
             let downloadResult = downloadResultFrom(shell: shell, command: .obtainFileSystemInfo, timeout: timeout)
             /*
-             Filesystem      Size  Used Avail Use% Mounted on
-             udev            935M     0  935M   0% /dev
+             Filesystem     1024-blocks      Used Available Capacity Mounted on
+             /dev/sda1        102687776  42301880  55049164      42% /
              */
-            var result = [FileSystemInfoElement]()
-            for line in downloadResult.components(separatedBy: "\n").dropFirst() where line.count > 0 {
-                var line = line
-                while line.contains("  ") {
-                    line = line.replacingOccurrences(of: "  ", with: " ")
-                }
-                let cut = line.components(separatedBy: " ")
-                if cut.count != 6 {
-                    continue
-                }
-                if cut[3] == "0" || cut[4].last != "%" || cut[5].first != "/" {
-                    continue
-                }
-                let size = cut[1]
-                let used = cut[2]
-                let free = cut[3]
-                let mount = cut[5]
-                var percentStr = cut[4]
-                percentStr.removeLast()
-                guard let percent = Float(percentStr) else {
-                    continue
-                }
-                result.append(.init(mountPoint: mount, size: size, used: used, free: free, percent: percent))
-            }
-            result = result.sorted(by: { a, b in
+            let result = ProcParsers.parseDfPk(downloadResult).sorted(by: { a, b in
                 a.mountPoint < b.mountPoint
             })
             self.init(elements: result)

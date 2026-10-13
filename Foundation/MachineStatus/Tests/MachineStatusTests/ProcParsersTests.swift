@@ -144,4 +144,50 @@ final class ProcParsersTests: XCTestCase {
         XCTAssertEqual(load.load1avg, 0)
         XCTAssertEqual(load.totalProcess, 0)
     }
+
+    // MARK: - df -Pk
+
+    private let dfPkFixture = """
+    Filesystem                        1024-blocks     Used Available Capacity Mounted on
+    udev                                 8192000        0   8192000       0% /dev
+    tmpfs                                1638400   124928   1513472       8% /run
+    /dev/mapper/ubuntu--vg-ubuntu--lv   51281224 15994688  32923552      33% /
+    tmpfs                                8192000        0   8192000       0% /dev/shm
+    tmpfs                                   5120        0      5120       0% /run/lock
+    none                                       0        0         0       0% /sys/fs/cgroup
+    /dev/sda2                            1959920   251792   1606088      14% /boot
+    /dev/sdb1                          976762532 6185396 920562116       1% /media/My Passport
+    """
+
+    func testDfPkParsesNumericColumns() {
+        let elements = ProcParsers.parseDfPk(dfPkFixture)
+        let root = elements.first { $0.mountPoint == "/" }
+        XCTAssertEqual(root?.size, "49G")
+        XCTAssertEqual(root?.used, "15G")
+        XCTAssertEqual(root?.free, "31G")
+        XCTAssertEqual(root?.percent, 33)
+    }
+
+    func testDfPkKeepsLongDeviceNames() {
+        // Regression: df -h wraps a long device name onto its own line, and
+        // the old space-splitting parser silently dropped both halves; -P
+        // keeps one filesystem per line.
+        let elements = ProcParsers.parseDfPk(dfPkFixture)
+        XCTAssertTrue(elements.contains { $0.mountPoint == "/" })
+        XCTAssertEqual(elements.count, 7)
+    }
+
+    func testDfPkKeepsSpacesInMountPointAndSkipsEmptyFilesystems() {
+        let elements = ProcParsers.parseDfPk(dfPkFixture)
+        let mounted = elements.first { $0.mountPoint == "/media/My Passport" }
+        XCTAssertEqual(mounted?.size, "932G")
+        XCTAssertEqual(mounted?.used, "5.9G")
+        XCTAssertFalse(elements.contains { $0.mountPoint == "/sys/fs/cgroup" })
+    }
+
+    func testDfPkFormatsKilobytesLikeDfH() {
+        XCTAssertEqual(ProcParsers.formatKilobytes(957_440), "935M")
+        XCTAssertEqual(ProcParsers.formatKilobytes(512), "512K")
+        XCTAssertEqual(ProcParsers.formatKilobytes(1_945_600), "1.9G")
+    }
 }

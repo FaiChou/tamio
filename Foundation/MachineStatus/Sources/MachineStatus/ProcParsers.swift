@@ -153,4 +153,55 @@ enum ProcParsers {
         }
         return ret
     }
+
+    // MARK: - df -Pk
+
+    /// Formats a 1024-block count the way `df -h` would ("935M", "98G",
+    /// "1.8T"), so the model keeps serving display-ready strings.
+    static func formatKilobytes(_ kilobytes: Int) -> String {
+        let units = ["K", "M", "G", "T", "P"]
+        var value = Double(kilobytes)
+        var index = 0
+        while value >= 1024, index < units.count - 1 {
+            value /= 1024
+            index += 1
+        }
+        if index == 0 || value >= 10 {
+            return "\(Int(value.rounded()))\(units[index])"
+        }
+        return String(format: "%.1f%@", value, units[index])
+    }
+
+    /// Parses `df -Pk` output (POSIX: one line per filesystem, sizes in
+    /// 1024-blocks) into display-ready elements. Unlike `df -h`, -P never
+    /// wraps a long device name onto its own line, and the mount point is
+    /// the trailing columns, so spaces in it survive.
+    static func parseDfPk(_ raw: String) -> [ServerStatus.FileSystemInfo.FileSystemInfoElement] {
+        var result = [ServerStatus.FileSystemInfo.FileSystemInfoElement]()
+        for line in raw.components(separatedBy: "\n").dropFirst() where line.count > 0 {
+            let cut = splitWhitespaceRuns(line)
+            guard cut.count >= 6,
+                  let size = Int(cut[1]),
+                  let used = Int(cut[2]),
+                  let free = Int(cut[3]),
+                  cut[4].hasSuffix("%"),
+                  let percent = Float(cut[4].dropLast())
+            else {
+                continue
+            }
+            let mount = cut[5...].joined(separator: " ")
+            // Skip pseudo and empty filesystems (udev reports 0 available).
+            guard mount.hasPrefix("/"), free > 0 else {
+                continue
+            }
+            result.append(.init(
+                mountPoint: mount,
+                size: formatKilobytes(size),
+                used: formatKilobytes(used),
+                free: formatKilobytes(free),
+                percent: percent
+            ))
+        }
+        return result
+    }
 }

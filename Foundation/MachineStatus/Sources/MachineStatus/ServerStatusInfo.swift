@@ -41,7 +41,7 @@ public class ServerStatus: ObservableObject, Equatable {
             """
         case obtainFileSystemInfo =
             """
-             /bin/df -h
+             /bin/df -Pk
             """
         case obtainHostname =
             """
