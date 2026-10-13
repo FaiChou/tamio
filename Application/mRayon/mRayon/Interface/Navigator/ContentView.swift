@@ -159,21 +159,28 @@ struct SidebarView: View {
             if let context = terminals.terminals.first(where: { $0.id == id }) {
                 TerminalView(context: context).id(id)
             } else {
-                HomeView()
+                sessionGone
             }
         case let .monitor(id):
             if let session = monitors.session(withID: id) {
                 MonitorView(session: session).id(id)
             } else {
-                ServersView()
+                sessionGone
             }
         case let .transfer(id):
             if let context = transfers.transfers.first(where: { $0.id == id }) {
                 FileTransferView(context: context).id(id)
             } else {
-                HomeView()
+                sessionGone
             }
         }
+    }
+
+    /// The selection pointed at a session that is gone: show Home and drop
+    /// the dangling selection.
+    var sessionGone: some View {
+        HomeView()
+            .onAppear { selection = .home }
     }
 }
 
