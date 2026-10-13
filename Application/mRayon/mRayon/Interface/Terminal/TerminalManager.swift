@@ -11,7 +11,11 @@ import SwiftUI
 class TerminalManager: ObservableObject {
     static let shared = TerminalManager()
 
-    private init() {}
+    private init() {
+        // Shared terminal core lives in RayonModule; register the platform
+        // UI handler it delegates to.
+        TerminalInterface.uiHandler = IOSTerminalUIHandler()
+    }
 
     @Published var terminals: [TerminalContext] = []
 
