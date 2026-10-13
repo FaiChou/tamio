@@ -196,21 +196,24 @@ public extension RayonStore {
 }
 
 public extension RayonStore {
-    static func overrideImport(from data: Data, key: String) {
+    /// False when the data or the key could not be read; nothing was
+    /// changed then.
+    @discardableResult
+    static func overrideImport(from data: Data, key: String) -> Bool {
         guard let plist = try? PropertyListSerialization.propertyList(
             from: data,
             format: nil
         ) else {
-            print("unable to serialize property list")
-            return
+            debugPrint("RayonStore: unable to serialize property list")
+            return false
         }
         guard let dic = plist as? [String: Any] else {
-            print("unexpected format")
-            return
+            debugPrint("RayonStore: unexpected format")
+            return false
         }
         guard let aes = AES(key: key, iv: key) else {
-            print("failed to load crypto engine")
-            return
+            debugPrint("RayonStore: failed to load crypto engine")
+            return false
         }
 
         func readEncrypted<T: Codable>(from data: Data, _: T) -> T? {
@@ -230,31 +233,17 @@ public extension RayonStore {
               let sg = readEncrypted(from: snippetGroupEncrypted, RayonStore.shared.snippetGroup.self),
               let pg = readEncrypted(from: portForwardEncrypted, RayonStore.shared.portForwardGroup.self)
         else {
-            print("broken payload")
-            return
-        }
-        print("sending payload")
-
-        func storeEncryptedDefault<T: Codable>(to key: UserDefaultKey, with data: T) {
-            guard !crypto.isEphemeral,
-                  let data = try? documentEncoder.encode(data),
-                  let encrypt = crypto.encrypt(data: data)
-            else {
-                return
-            }
-            UserDefaults
-                .standard
-                .set(encrypt, forKey: key.rawValue)
+            debugPrint("RayonStore: broken payload")
+            return false
         }
         onMainThread {
+            // Assigning fires each didSet, which stores the value; the
+            // extra writes this used to do stored the same bytes twice.
             RayonStore.shared.identityGroup = ig
             RayonStore.shared.machineGroup = mg
             RayonStore.shared.snippetGroup = sg
             RayonStore.shared.portForwardGroup = pg
-            storeEncryptedDefault(to: .identityGroupEncrypted, with: ig)
-            storeEncryptedDefault(to: .machineGroupEncrypted, with: mg)
-            storeEncryptedDefault(to: .snippetGroupEncrypted, with: sg)
-            storeEncryptedDefault(to: .portForwardEncrypted, with: pg)
         }
+        return true
     }
 }
