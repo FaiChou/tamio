@@ -9,13 +9,12 @@ import Foundation
 
 public extension ServerStatus {
     /// 服务器 NET 信息
-    struct NetworkInfo: Codable, Equatable, Hashable, Identifiable {
-        public var id = UUID()
-
+    struct NetworkInfo: Codable, Equatable, Hashable {
         public let elements: [NetworkInfoElement]
 
         public struct NetworkInfoElement: Codable, Equatable, Hashable, Identifiable {
-            public var id = UUID()
+            /// Stable across refreshes: the parser keeps one row per device.
+            public var id: String { device }
 
             public let device: String
             public let rxBytesPerSec: Int

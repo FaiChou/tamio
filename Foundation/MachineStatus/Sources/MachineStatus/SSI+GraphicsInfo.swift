@@ -11,9 +11,7 @@ import XMLCoder
 
 public extension ServerStatus {
     /// 服务器 GPU 信息
-    struct GraphicsInfo: Codable, Equatable, Identifiable {
-        public var id = UUID()
-
+    struct GraphicsInfo: Codable, Equatable {
         public let version: String // CUDA version, like '11.2'
         public let units: [SingleGraphicsInfo]
 
@@ -43,7 +41,8 @@ public extension ServerStatus {
 
     /// 单块 GPU 信息
     struct SingleGraphicsInfo: Codable, Equatable, Identifiable {
-        public var id = UUID()
+        /// Stable across refreshes: nvidia-smi reports the GPU's own uuid.
+        public var id: String { uuid }
 
         public let uuid: String // GPU uuid from Nvidia
         public let name: String // GPU name, like '2080 Ti'
@@ -113,8 +112,7 @@ public extension ServerStatus {
             case utilization
         }
 
-        public init(id: UUID = UUID(), uuid: String = "", name: String = "", memory: Memory = .init(), vbios_version: String = "", fan_speed: String = "", utilization: Utilization = .init()) {
-            self.id = id
+        public init(uuid: String = "", name: String = "", memory: Memory = .init(), vbios_version: String = "", fan_speed: String = "", utilization: Utilization = .init()) {
             self.uuid = uuid
             self.name = name
             self.memory = memory

@@ -75,7 +75,8 @@ public struct SubMetricRow: View {
     let items: [Item]
 
     public struct Item: Identifiable {
-        public let id = UUID()
+        /// Stable across rebuilds; one row must not repeat a label.
+        public var id: String { label }
         let label: String
         let value: String
         let unit: String
@@ -110,7 +111,8 @@ public struct SubMetricRow: View {
 /// Facts row under a page title (four columns of caption + value).
 public struct FactsRow: View {
     public struct Fact: Identifiable {
-        public let id = UUID()
+        /// Stable across rebuilds; one row must not repeat a label.
+        public var id: String { label }
         let label: String
         let value: String
         let monospaced: Bool

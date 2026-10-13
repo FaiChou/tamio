@@ -9,9 +9,7 @@ import Foundation
 
 public extension ServerStatus {
     /// 服务器 RAM 信息
-    struct MemoryInfo: Codable, Equatable, Identifiable {
-        public var id = UUID()
-
+    struct MemoryInfo: Codable, Equatable {
         public let memTotal: Double
         public let memFree: Double
         public let memBuffers: Double

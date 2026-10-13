@@ -9,9 +9,7 @@ import Foundation
 
 public extension ServerStatus {
     /// 服务器 CPU 信息
-    struct ProcessorInfo: Codable, Equatable, Identifiable {
-        public var id = UUID()
-
+    struct ProcessorInfo: Codable, Equatable {
         public var summary: ProcessPercentInfo
         public var cores: [ProcessPercentInfo]
         public init() {
@@ -79,7 +77,8 @@ public extension ServerStatus {
 
     /// 服务器 CPU 信息 这里全部是百分比
     struct ProcessPercentInfo: Codable, Equatable, Identifiable {
-        public var id = UUID()
+        /// Stable across refreshes: the kernel names cores cpu0…cpuN.
+        public var id: String { name }
 
         public var name: String
 
@@ -116,9 +115,7 @@ public extension ServerStatus {
     }
 
     /// 服务器 CPU 的立即信息
-    struct ProcessInfoElement: Codable, Equatable, Identifiable {
-        public var id = UUID()
-
+    struct ProcessInfoElement: Codable, Equatable {
         public let user: Float
         public let nice: Float
         public let system: Float

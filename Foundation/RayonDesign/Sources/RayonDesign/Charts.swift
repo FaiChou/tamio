@@ -17,11 +17,15 @@ public func rxUsageColor(_ percent: Double, base: Color = .rxAccent) -> Color {
 /// A 6pt rounded track on `surface-sunken` with one or more segments.
 public struct UsageBar: View {
     public struct Segment: Identifiable {
-        public let id = UUID()
+        /// Stable across rebuilds as long as a bar's segments keep their
+        /// labels; one bar must not repeat a label.
+        public var id: String { label }
+        let label: String
         let fraction: Double
         let color: Color
 
-        public init(_ fraction: Double, _ color: Color) {
+        public init(_ label: String = "value", _ fraction: Double, _ color: Color) {
+            self.label = label
             self.fraction = fraction
             self.color = color
         }
@@ -39,7 +43,7 @@ public struct UsageBar: View {
     public init(fraction: Double, color: Color = .rxAccent, thresholds: Bool = false, height: CGFloat = 6) {
         let clamped = max(0, min(1, fraction.isFinite ? fraction : 0))
         let tint = thresholds ? rxUsageColor(clamped * 100, base: color) : color
-        segments = [Segment(clamped, tint)]
+        segments = [Segment("value", clamped, tint)]
         self.height = height
     }
 

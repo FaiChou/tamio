@@ -71,10 +71,10 @@ public struct ProcessorCard: View {
                     .padding(.top, RX.Space.s4)
             } else {
                 UsageBar([
-                    .init(Double(summary.sumUser) / 100, .rxAccent),
-                    .init(Double(summary.sumSystem) / 100, .rxSeries2),
-                    .init(Double(summary.sumIOWait) / 100, .rxWarning),
-                    .init(Double(summary.sumNice) / 100, .rxControlBorder),
+                    .init("User", Double(summary.sumUser) / 100, .rxAccent),
+                    .init("System", Double(summary.sumSystem) / 100, .rxSeries2),
+                    .init("IO wait", Double(summary.sumIOWait) / 100, .rxWarning),
+                    .init("Nice", Double(summary.sumNice) / 100, .rxControlBorder),
                 ])
                 .padding(.top, RX.Space.s3)
                 SubMetricRow([
@@ -345,8 +345,8 @@ public struct NetworkCard: View {
                             detail: "↑ \(RXFormat.rateString(Double(element.txBytesPerSec)))"
                         ) {
                             UsageBar([
-                                .init(Double(element.rxBytesPerSec) / peak / 2, .rxSeries2),
-                                .init(Double(element.txBytesPerSec) / peak / 2, .rxAccent),
+                                .init("Receive", Double(element.rxBytesPerSec) / peak / 2, .rxSeries2),
+                                .init("Transmit", Double(element.txBytesPerSec) / peak / 2, .rxAccent),
                             ])
                         }
                     }

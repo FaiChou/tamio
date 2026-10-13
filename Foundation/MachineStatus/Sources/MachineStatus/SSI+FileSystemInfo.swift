@@ -9,13 +9,12 @@ import Foundation
 
 public extension ServerStatus {
     /// 服务器 文件系统 信息
-    struct FileSystemInfo: Codable, Equatable, Hashable, Identifiable {
-        public var id = UUID()
-
+    struct FileSystemInfo: Codable, Equatable, Hashable {
         public let elements: [FileSystemInfoElement]
 
         public struct FileSystemInfoElement: Codable, Equatable, Hashable, Identifiable {
-            public var id = UUID()
+            /// Stable across refreshes: df lists each mount once.
+            public var id: String { mountPoint }
 
             public let mountPoint: String
             public let size: String

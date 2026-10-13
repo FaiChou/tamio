@@ -9,9 +9,7 @@ import Foundation
 
 public extension ServerStatus {
     /// 服务器 系统 信息
-    struct SystemInfo: Codable, Equatable, Hashable, Identifiable {
-        public var id = UUID()
-
+    struct SystemInfo: Codable, Equatable, Hashable {
         public let releaseName: String
         public let uptimeSec: Double
         public let hostname: String
@@ -57,9 +55,7 @@ public extension ServerStatus {
         }
     }
 
-    struct SystemLoadInternal: Codable, Equatable, Hashable, Identifiable {
-        public var id = UUID()
-
+    struct SystemLoadInternal: Codable, Equatable, Hashable {
         public var runningProcess: Int = 0
         public var totalProcess: Int = 0
         public var load1avg: Float = 0
