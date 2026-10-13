@@ -52,8 +52,24 @@ extension TerminalManager {
 
         static let defaultTerminalSize = CGSize(width: 80, height: 40)
 
-        var terminalSize: CGSize = defaultTerminalSize {
-            didSet {
+        // The parser thread writes terminalSize and the shell IO thread reads
+        // it; main and the bootstrap thread write continueDecision and the IO
+        // thread reads it. One lock covers both, as bufferAccessLock does
+        // _dataBuffer. Side effects run outside the critical section.
+        private let stateAccessLock = NSLock()
+        private var _terminalSize: CGSize = defaultTerminalSize
+        private var _continueDecision: Bool = true
+
+        var terminalSize: CGSize {
+            get {
+                stateAccessLock.lock()
+                defer { stateAccessLock.unlock() }
+                return _terminalSize
+            }
+            set {
+                stateAccessLock.lock()
+                _terminalSize = newValue
+                stateAccessLock.unlock()
                 shell.explicitRequestStatusPickup()
             }
         }
@@ -79,8 +95,16 @@ extension TerminalManager {
             }
         }
 
-        var continueDecision: Bool = true {
-            didSet {
+        var continueDecision: Bool {
+            get {
+                stateAccessLock.lock()
+                defer { stateAccessLock.unlock() }
+                return _continueDecision
+            }
+            set {
+                stateAccessLock.lock()
+                _continueDecision = newValue
+                stateAccessLock.unlock()
                 onMainThread {
                     self.interfaceDisabled = !self.continueDecision
                 }
@@ -222,8 +246,6 @@ extension TerminalManager {
 
             // leave loop
             debugPrint("\(self) \(#function) defer \(machine.id)")
-
-            processShutdown()
         }
 
         func processShutdown(exitFromShell: Bool = false) {
