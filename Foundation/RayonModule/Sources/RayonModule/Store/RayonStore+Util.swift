@@ -46,16 +46,33 @@ public extension RayonStore {
         defaults.set(true, forKey: adopted)
     }
 
+    /// Nil means one of two things: nothing was ever stored, or what was
+    /// stored cannot be read. The second case keeps the original bytes
+    /// under a ".corrupt" key once, so a later write does not destroy the
+    /// only copy.
     func readEncryptedDefault<T: Codable>(from key: UserDefaultKey, _: T) -> T? {
-        if let encryptedData = UserDefaults
+        guard let encryptedData = UserDefaults
             .standard
-            .value(forKey: key.rawValue) as? Data,
-            let decrypted = crypto.decrypt(data: encryptedData),
-            let objects = try? documentDecoder.decode(T.self, from: decrypted)
-        {
-            return objects
+            .value(forKey: key.rawValue) as? Data
+        else {
+            return nil
         }
-        return nil
+        guard let decrypted = crypto.decrypt(data: encryptedData) else {
+            backupCorrupt(encryptedData, for: key, reason: "decryption failed")
+            return nil
+        }
+        guard let objects = try? documentDecoder.decode(T.self, from: decrypted) else {
+            backupCorrupt(encryptedData, for: key, reason: "decoding failed")
+            return nil
+        }
+        return objects
+    }
+
+    private func backupCorrupt(_ blob: Data, for key: UserDefaultKey, reason: String) {
+        let backupKey = key.rawValue + ".corrupt"
+        debugPrint("RayonStore: \(key.rawValue) is unreadable (\(reason)); the original bytes are kept under \(backupKey)")
+        guard UserDefaults.standard.object(forKey: backupKey) == nil else { return }
+        UserDefaults.standard.set(blob, forKey: backupKey)
     }
 
     func storeDefault(to key: UserDefaultKey, with data: Any) {
@@ -74,6 +91,7 @@ public extension RayonStore {
             guard let data = try? documentEncoder.encode(data),
                   let encrypt = crypto.encrypt(data: data)
             else {
+                debugPrint("RayonStore: failed to encode or encrypt \(key.rawValue); the change is not stored")
                 return
             }
             UserDefaults
