@@ -107,14 +107,18 @@ public class ServerStatus: ObservableObject, Equatable {
         return result
     }
 
-    @Published public var processor: ProcessorInfo = .init()
-    @Published public var fileSystem: FileSystemInfo = .init()
-    @Published public var memory: MemoryInfo = .init()
-    @Published public var system: SystemInfo = .init()
-    @Published public var network: NetworkInfo = .init()
+    // Not @Published on purpose: a refresh replaces every group in one
+    // batch and sends a single objectWillChange (see requestInfoAndWait),
+    // where six per-property publishes used to redraw every card six
+    // times per round.
+    public var processor: ProcessorInfo = .init()
+    public var fileSystem: FileSystemInfo = .init()
+    public var memory: MemoryInfo = .init()
+    public var system: SystemInfo = .init()
+    public var network: NetworkInfo = .init()
 
     // not all server have gpu, bro
-    @Published public var graphics: GraphicsInfo? = nil
+    public var graphics: GraphicsInfo? = nil
 
     public static func == (lhs: ServerStatus, rhs: ServerStatus) -> Bool {
         lhs.processor == rhs.processor &&
@@ -209,6 +213,9 @@ public class ServerStatus: ObservableObject, Equatable {
 
         onMainThread { [weak self] in
             guard let self else { return }
+            // One publish per refresh: the whole batch lands behind a
+            // single objectWillChange.
+            objectWillChange.send()
             self.processor = processor
             self.fileSystem = fileSystem
             self.memory = memory
