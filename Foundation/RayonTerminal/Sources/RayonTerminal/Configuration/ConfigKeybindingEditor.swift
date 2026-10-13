@@ -419,10 +419,14 @@ struct ConfigKeybindingBuilder: View {
                     }
                     .buttonStyle(.rx(size: .small))
                     .help("Press the shortcut on the keyboard")
-                    .background(KeyRecorder(active: recordingStep == index) { recorded in
-                        edit { if $0.steps.indices.contains(index) { $0.steps[index] = recorded } }
-                        recordingStep = nil
-                    })
+                    .background(KeyRecorder(
+                        active: recordingStep == index,
+                        record: { recorded in
+                            edit { if $0.steps.indices.contains(index) { $0.steps[index] = recorded } }
+                            recordingStep = nil
+                        },
+                        cancel: { recordingStep = nil }
+                    ))
                 #endif
                 Spacer()
                 if parsed.steps.count > 1 {
@@ -512,6 +516,9 @@ struct ConfigKeybindingBuilder: View {
     private struct KeyRecorder: NSViewRepresentable {
         let active: Bool
         let record: (String) -> Void
+        /// Only the Catalyst recorder grabs first responder, so only it can
+        /// lose it; here the monitor simply never uses this.
+        let cancel: () -> Void
 
         final class Coordinator {
             var monitor: Any?
@@ -572,9 +579,13 @@ struct ConfigKeybindingBuilder: View {
     private struct KeyRecorder: UIViewRepresentable {
         let active: Bool
         let record: (String) -> Void
+        let cancel: () -> Void
 
         final class Catcher: UIView {
             var record: ((String) -> Void)?
+            var cancelled: (() -> Void)?
+            /// Mirrors `active` so a queued focus grab dies once recording ended.
+            var armed = false
             override var canBecomeFirstResponder: Bool { true }
 
             override func pressesBegan(_ presses: Set<UIPress>, with event: UIPressesEvent?) {
@@ -586,16 +597,26 @@ struct ConfigKeybindingBuilder: View {
                 }
                 // A modifier on its own: keep waiting for the key.
             }
+
+            override func resignFirstResponder() -> Bool {
+                let resigned = super.resignFirstResponder()
+                // A tap into another field ends the recording like Cancel
+                // instead of the next body pass grabbing the focus back.
+                if resigned { DispatchQueue.main.async { self.cancelled?() } }
+                return resigned
+            }
         }
 
         func makeUIView(context _: Context) -> Catcher { Catcher() }
 
         func updateUIView(_ view: Catcher, context _: Context) {
             view.record = record
+            view.cancelled = cancel
+            view.armed = active
             if active, !view.isFirstResponder {
-                DispatchQueue.main.async { view.becomeFirstResponder() }
+                DispatchQueue.main.async { if view.armed { view.becomeFirstResponder() } }
             } else if !active, view.isFirstResponder {
-                view.resignFirstResponder()
+                _ = view.resignFirstResponder()
             }
         }
 
