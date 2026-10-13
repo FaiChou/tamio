@@ -12,7 +12,17 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/// Decides whether the key a server presented is the one to trust for it.
+/// `keyType` is the name SSH gives the algorithm ("ssh-ed25519", "ssh-rsa", ...),
+/// `key` the public key as the server sent it. Called on the connecting thread.
+typedef BOOL (^NSRemoteShellHostKeyVerifier)(NSString *host, NSNumber *port, NSString *keyType, NSData *key);
+
 @interface NSRemoteShell : NSObject
+
+/// Asked on every connection, after the handshake and before anything is sent
+/// to the server. When it answers NO the connection is closed. With none set,
+/// every host key is accepted.
+@property (class, nonatomic, nullable, copy) NSRemoteShellHostKeyVerifier hostKeyVerifier;
 
 @property (nonatomic, readonly, getter=isConnected) BOOL connected;
 @property (nonatomic, readonly, getter=isConnectedFileTransfer) BOOL connectedFileTransfer;

@@ -55,6 +55,32 @@
 
 @implementation NSRemoteShell
 
+static NSRemoteShellHostKeyVerifier sharedHostKeyVerifier;
+
++ (NSRemoteShellHostKeyVerifier)hostKeyVerifier {
+    @synchronized ([NSRemoteShell class]) {
+        return sharedHostKeyVerifier;
+    }
+}
+
++ (void)setHostKeyVerifier:(NSRemoteShellHostKeyVerifier)hostKeyVerifier {
+    @synchronized ([NSRemoteShell class]) {
+        sharedHostKeyVerifier = [hostKeyVerifier copy];
+    }
+}
+
+static NSString *NSRemoteShellHostKeyTypeName(int type) {
+    switch (type) {
+        case LIBSSH2_HOSTKEY_TYPE_RSA: return @"ssh-rsa";
+        case LIBSSH2_HOSTKEY_TYPE_DSS: return @"ssh-dss";
+        case LIBSSH2_HOSTKEY_TYPE_ECDSA_256: return @"ecdsa-sha2-nistp256";
+        case LIBSSH2_HOSTKEY_TYPE_ECDSA_384: return @"ecdsa-sha2-nistp384";
+        case LIBSSH2_HOSTKEY_TYPE_ECDSA_521: return @"ecdsa-sha2-nistp521";
+        case LIBSSH2_HOSTKEY_TYPE_ED25519: return @"ssh-ed25519";
+        default: return @"unknown";
+    }
+}
+
 #pragma mark init
 
 - (instancetype)init {
@@ -628,6 +654,30 @@ continue; \
             self.remoteFingerPrint = [fingerprint copy];
         }
     } while (0);
+    
+    // The handshake proved the server holds this key; whether it is the key
+    // of the host we meant to reach is for the verifier to say.
+    NSRemoteShellHostKeyVerifier verifier = [NSRemoteShell hostKeyVerifier];
+    if (verifier) {
+        size_t keyLength = 0;
+        int keyType = LIBSSH2_HOSTKEY_TYPE_UNKNOWN;
+        const char *key = libssh2_session_hostkey(constructorSession, &keyLength, &keyType);
+        BOOL trusted = NO;
+        if (key && keyLength > 0) {
+            trusted = verifier(self.remoteHost,
+                               self.remotePort,
+                               NSRemoteShellHostKeyTypeName(keyType),
+                               [NSData dataWithBytes:key length:keyLength]);
+        }
+        if (!trusted) {
+            NSRLog(@"host key of %@ was not accepted, closing", self.remoteHost);
+            [self unsafeDisconnect];
+            @synchronized (self) {
+                self.lastError = @"The server's host key was not accepted.";
+            }
+            return;
+        }
+    }
     
     // because we are running non-blocking-mode
     // we are responsible for sending the keep alive packet
