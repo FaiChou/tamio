@@ -30,7 +30,7 @@ struct ConfigPreview: View {
                 if !minimized {
                     ScrollViewReader { proxy in
                         ScrollView(.vertical) {
-                            VStack(alignment: .leading, spacing: 3) {
+                            LazyVStack(alignment: .leading, spacing: 3) {
                                 ForEach(shell.lines) { line in
                                     Text(line.text).foregroundStyle(line.palette.map { Color(configHex: document.effectivePalette($0, dark: dark)) } ?? foreground)
                                         .textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
@@ -62,17 +62,28 @@ struct ConfigPreview: View {
 struct ConfigCursorPreview: View {
     let document: ConfigDocument
     let dark: Bool
+
+    private var blink: Bool { document.text("cursor-style-blink") == "true" }
+
+    private func cursor(visible: Bool) -> some View {
+        let style = document.text("cursor-style")
+        return ZStack(alignment: style == "underline" ? .bottom : .leading) {
+            Text("A").foregroundStyle(Color(configHex: document.effectiveColor("foreground", dark: dark)))
+            Rectangle().fill(Color(configHex: document.effectiveColor("cursor-color", dark: dark)))
+                .frame(width: style == "bar" ? 2 : 11, height: style == "underline" ? 2 : 17)
+                .opacity(visible ? Double(document.text("cursor-opacity")) ?? 1 : 0)
+        }.frame(width: 15, height: 20)
+    }
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.6)) { context in
-            let blink = document.text("cursor-style-blink") == "true"
-            let visible = !blink || Int(context.date.timeIntervalSince1970 / 0.6) % 2 == 0
-            let style = document.text("cursor-style")
-            ZStack(alignment: style == "underline" ? .bottom : .leading) {
-                Text("A").foregroundStyle(Color(configHex: document.effectiveColor("foreground", dark: dark)))
-                Rectangle().fill(Color(configHex: document.effectiveColor("cursor-color", dark: dark)))
-                    .frame(width: style == "bar" ? 2 : 11, height: style == "underline" ? 2 : 17)
-                    .opacity(visible ? Double(document.text("cursor-opacity")) ?? 1 : 0)
-            }.frame(width: 15, height: 20)
+        // A still cursor needs no timeline at all: with blink off the ticker
+        // would redraw the preview every 0.6s for nothing.
+        if blink {
+            TimelineView(.animation(minimumInterval: 0.6)) { context in
+                cursor(visible: Int(context.date.timeIntervalSince1970 / 0.6) % 2 == 0)
+            }
+        } else {
+            cursor(visible: true)
         }
     }
 }
