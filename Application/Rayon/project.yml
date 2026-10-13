@@ -54,7 +54,7 @@ targets:
         type: folder.iconcomposer
     settings:
       base:
-        PRODUCT_NAME: Rayon
+        PRODUCT_NAME: catussh
         # Signed to run locally. Workflow/Scripts/build-macos.sh signs release
         # builds with a development certificate when there is one.
         CODE_SIGN_IDENTITY: "-"
@@ -70,6 +70,7 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: macOS/Info.plist
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
+        INFOPLIST_KEY_CFBundleDisplayName: catussh
         INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2022 Lakr Aream. Copyright © 2026 mizorewww and contributors."
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
