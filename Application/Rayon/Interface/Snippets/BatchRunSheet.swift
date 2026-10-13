@@ -74,7 +74,11 @@ struct BatchRunSheet: View {
         }
         .frame(width: 820)
         .onAppear { context.start() }
-        .onReceive(timer) { tick = $0 }
+        .onReceive(timer) { date in
+            // Nothing changes once every server is done; ticking then would
+            // redraw the whole sheet twice a second until it is closed.
+            if !finished { tick = date }
+        }
     }
 
     var serverList: some View {
@@ -164,7 +168,11 @@ private struct BatchOutputView: View {
     var body: some View {
         terminalView
             .onReceive(timer) { _ in
-                terminalView.write(context.requestBuffer(for: terminalId, machine: machine))
+                // A drained buffer returns nothing; writing it would only churn.
+                let incoming = context.requestBuffer(for: terminalId, machine: machine)
+                if !incoming.isEmpty {
+                    terminalView.write(incoming)
+                }
             }
     }
 }
