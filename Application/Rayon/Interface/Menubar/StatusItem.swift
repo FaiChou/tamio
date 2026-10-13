@@ -170,7 +170,8 @@ final class TraySceneDelegate: NSObject, UIWindowSceneDelegate {
         session.userInfo = [Self.marker: key]
         item.trayScene = scene
 
-        let host = UIHostingController(rootView: item.popoverContent)
+        let host = UIHostingController(rootView: item.popoverContent
+            .environmentObject(RayonStore.shared))
         host.view.backgroundColor = .clear
         let size = host.sizeThatFits(in: CGSize(width: MenubarPopoverView.width, height: .greatestFiniteMagnitude))
         scene.sizeRestrictions?.minimumSize = size

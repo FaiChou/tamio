@@ -88,6 +88,7 @@ struct MainView: View {
         .animation(.easeOut(duration: 0.2), value: store.globalProgressInPresent)
         .sheet(isPresented: $router.presentNewServer) {
             ServerEditorSheet(machine: nil)
+                .environmentObject(RayonStore.shared)
         }
         .sheet(isPresented: $openLicenseAgreement) {
             AgreementSheet()

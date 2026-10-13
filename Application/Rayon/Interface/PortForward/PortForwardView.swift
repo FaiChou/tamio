@@ -78,6 +78,7 @@ struct PortForwardView: View {
         }
         .sheet(item: $editor) { target in
             PortForwardEditorSheet(forward: target.forward) { editor = nil }
+                .environmentObject(RayonStore.shared)
         }
         .background {
             // ⌘⌫ deletes the selected row.

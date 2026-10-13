@@ -77,6 +77,7 @@ struct IdentitiesView: View {
                 creating = false
                 if let created { selection = created }
             }
+            .environmentObject(RayonStore.shared)
         }
         .onAppear {
             if selection == nil { selection = groups.first?.identities.first?.id }

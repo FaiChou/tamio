@@ -226,6 +226,7 @@ struct IdentityPickerSheet: View {
                 creating = false
                 if let created { selection = created }
             }
+            .environmentObject(RayonStore.shared)
         }
     }
 }

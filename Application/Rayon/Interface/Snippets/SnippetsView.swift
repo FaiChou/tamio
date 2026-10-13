@@ -82,9 +82,11 @@ struct SnippetsView: View {
         }
         .sheet(isPresented: $creating) {
             SnippetEditorSheet(snippet: nil) { creating = false }
+                .environmentObject(RayonStore.shared)
         }
         .sheet(item: Binding(get: { editing.map(EditingID.init) }, set: { editing = $0?.id })) { item in
             SnippetEditorSheet(snippet: item.id) { editing = nil }
+                .environmentObject(RayonStore.shared)
         }
     }
 
