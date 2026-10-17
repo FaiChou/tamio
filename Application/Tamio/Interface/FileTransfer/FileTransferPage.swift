@@ -454,10 +454,11 @@ private struct BrowserPane: View {
                     .foregroundStyle(isFolder ? Color(red: 0.42, green: 0.71, blue: 0.96) : Color.rxInkSecondary)
                     .frame(width: 22)
                 VStack(alignment: .leading, spacing: 0) {
+                    // Whole, on more lines when it is long, never cut short.
                     Text(parent ? ".." : entry!.name)
                         .font(.rxBody)
                         .foregroundStyle(.rxInk)
-                        .lineLimit(1)
+                        .fixedSize(horizontal: false, vertical: true)
                     if let entry, !entry.permissions.isEmpty {
                         Text(entry.permissions)
                             .font(.system(size: 10, design: .monospaced))
@@ -483,7 +484,8 @@ private struct BrowserPane: View {
                 .frame(width: Self.kindWidth, alignment: .leading)
         }
         .padding(.horizontal, RX.Space.s4)
-        .frame(height: 38)
+        .padding(.vertical, 4)
+        .frame(minHeight: 38)
         .background(
             RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(targeted ? Color.rxAccent.opacity(0.22) : selected ? Color.rxRowSelected : Color.clear)
@@ -838,11 +840,14 @@ private struct TransferProgressLine: View {
             Image(systemName: job.direction == .download ? "arrow.down" : "arrow.up")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(.rxAccent)
-            Text(job.currentFile.isEmpty ? job.title : job.currentFile)
-                .font(.rxBody)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .frame(maxWidth: 220, alignment: .leading)
+            // The file's whole name, or none when there is no room for it.
+            ViewThatFits(in: .horizontal) {
+                Text(job.currentFile.isEmpty ? job.title : job.currentFile)
+                    .font(.rxBody)
+                    .fixedSize()
+                Color.clear.frame(width: 0, height: 0)
+            }
+            .frame(maxWidth: 260, alignment: .leading)
             RXProgressBar(job.fraction)
                 .frame(minWidth: 80)
             Text("\(Int(job.fraction * 100))%")
@@ -878,7 +883,7 @@ private struct TransferRow: View {
                 .foregroundStyle(color)
                 .frame(width: 18)
             VStack(alignment: .leading, spacing: 2) {
-                Text(job.title).font(.rxBody).lineLimit(1).truncationMode(.middle)
+                Text(job.title).font(.rxBody).fixedSize(horizontal: false, vertical: true)
                 Text(job.error ?? subtitle)
                     .font(.rxHelp)
                     .foregroundStyle(job.error == nil ? Color.rxInkSecondary : Color.rxDanger)

@@ -28,9 +28,20 @@ extension Bridge {
         }
         var field: NSTextField?
         if let textField {
-            let input = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
-            input.stringValue = textField
+            // As wide as its text (a path, often), within reason; past that it
+            // wraps onto more lines, so all of it shows.
+            let input = NSTextField(string: textField)
+            input.font = .systemFont(ofSize: NSFont.systemFontSize)
+            input.cell?.wraps = true
+            input.cell?.isScrollable = false
+            input.usesSingleLineMode = false
+            input.lineBreakMode = .byCharWrapping
+            let textWidth = (textField as NSString).size(withAttributes: [.font: input.font as Any]).width
+            let width = min(560, max(320, ceil(textWidth) + 16))
+            let height = input.cell?.cellSize(forBounds: NSRect(x: 0, y: 0, width: width, height: .greatestFiniteMagnitude)).height ?? 24
+            input.frame = NSRect(x: 0, y: 0, width: width, height: max(24, ceil(height)))
             alert.accessoryView = input
+            alert.layout()
             alert.window.initialFirstResponder = input
             field = input
         }

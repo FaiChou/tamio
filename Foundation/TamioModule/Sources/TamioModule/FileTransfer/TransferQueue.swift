@@ -40,6 +40,7 @@ public final class TransferQueue: ObservableObject {
     public func cancel(_ job: TransferJob) {
         job.cancel()
         if job.state == .queued { job.state = .cancelled }
+        objectWillChange.send()
         pump()
     }
 
@@ -54,12 +55,17 @@ public final class TransferQueue: ObservableObject {
         jobs.removeAll { $0.state == .done || $0.state == .cancelled }
     }
 
+    /// Starts what may run. A job's state is its own, so the queue says when
+    /// one starts or ends: what shows the queue redraws then, not with every
+    /// byte of progress.
     private func pump() {
         let running = jobs.filter { $0.state == .running }.count
         for job in jobs.filter({ $0.state == .queued }).prefix(max(0, Self.concurrent - running)) {
+            objectWillChange.send()
             job.state = .running
             Task {
                 await job.run()
+                objectWillChange.send()
                 onFinish?(job)
                 pump()
             }
