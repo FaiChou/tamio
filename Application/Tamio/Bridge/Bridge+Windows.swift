@@ -108,6 +108,23 @@ extension Bridge {
         }
     }
 
+    func holdNewWindowsUntilToolbar() {
+        let started = Date()
+        var seen = Set<ObjectIdentifier>()
+        windowObservers.append(NotificationCenter.default.addObserver(
+            forName: NSWindow.didUpdateNotification, object: nil, queue: nil
+        ) { note in
+            guard let window = note.object as? NSWindow,
+                  window.className.contains("UINSWindow"),
+                  seen.insert(ObjectIdentifier(window)).inserted,
+                  Date().timeIntervalSince(started) < 5
+            else { return }
+            // Whatever its toolbar now: Catalyst can drop it as the window is
+            // ordered on screen. watchToolbar shows the window once it settles.
+            window.alphaValue = 0
+        })
+    }
+
     /// Catalyst builds the window's AppKit toolbar out of the pages'
     /// navigation bar, and drops it, at random, when a page rebuilds early
     /// on. Without it the sidebar keeps a navigation bar of its own: the
@@ -123,9 +140,22 @@ extension Bridge {
         }
         var attempts = 0
         var pending = false
+        var revealing = false
+        let launched = Date()
         func check() {
+            // While the app is starting, a window without its toolbar is not
+            // shown at all; later it is only rebuilt.
+            if window.toolbar == nil, Date().timeIntervalSince(launched) < 3, window.alphaValue > 0 {
+                window.alphaValue = 0
+            }
             if window.toolbar != nil {
-                if window.alphaValue < 1 {
+                // Shown once on screen with its toolbar kept a moment: it can
+                // still go as the window is ordered front.
+                guard window.alphaValue < 1, !revealing else { return }
+                revealing = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    revealing = false
+                    guard window.toolbar != nil, window.isVisible else { return check() }
                     NSAnimationContext.runAnimationGroup { $0.duration = 0.12; window.animator().alphaValue = 1 }
                 }
                 return
@@ -144,8 +174,8 @@ extension Bridge {
         appearanceObservers.append(window.observe(\.toolbar) { _, _ in
             DispatchQueue.main.async { check() }
         })
-        // Pages also rebuild on navigation; a dropped toolbar is caught there.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        // Shown after three seconds whatever happens.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             if window.alphaValue < 1 { window.alphaValue = 1 }
         }
         check()

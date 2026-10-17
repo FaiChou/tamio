@@ -29,8 +29,12 @@ struct MainView: View {
     @State private var toolbarEpoch = 0
 
     var body: some View {
+        // Built at once, before the probe answers: swapping a placeholder
+        // for the split view as the window comes up races Catalyst building
+        // the window's toolbar, which then goes missing. A popover's scene
+        // drops it as soon as it knows.
         Group {
-            if inPopoverScene == false {
+            if inPopoverScene != true {
                 window
             } else {
                 Color.clear
@@ -68,7 +72,11 @@ struct MainView: View {
                         .allowsHitTesting(router.route == .settings)
                         .accessibilityHidden(router.route != .settings)
                 }
-                SessionPages(route: router.route)
+                // Only in the real window: a popover's scene would take the
+                // terminals from it.
+                if inPopoverScene == false {
+                    SessionPages(route: router.route)
+                }
             }
             .onChange(of: router.route == .settings) { shown in
                 // Before macOS 26 its toolbar and search field cannot be taken

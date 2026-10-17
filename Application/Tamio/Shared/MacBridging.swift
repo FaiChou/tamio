@@ -53,6 +53,10 @@ import Foundation
     /// until it has one again. The window stays transparent at first, until
     /// it has its toolbar, so its layout without one is never seen.
     func watchToolbar(of uiWindow: AnyObject, rebuild: @escaping () -> Void)
+    /// From launch: a new app window starts transparent until it has its
+    /// toolbar, so its first frame on screen is its finished layout.
+    /// `watchToolbar` shows it; call once, before any window exists.
+    func holdNewWindowsUntilToolbar()
 
     // MARK: Dialogs
 

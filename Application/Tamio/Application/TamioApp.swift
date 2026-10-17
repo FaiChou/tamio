@@ -22,6 +22,8 @@ struct TamioApp: App {
         #if DEBUG
             NSLog(CommandLine.arguments.joined(separator: "\n"))
         #endif
+        // Before any window: its first frame on screen is its finished layout.
+        Mac.bridge?.holdNewWindowsUntilToolbar()
         // Before the store: it reads the master key as it loads.
         Mac.installLegacyKeyStore()
         _ = TamioStore.shared
