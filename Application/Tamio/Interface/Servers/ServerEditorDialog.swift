@@ -129,15 +129,9 @@ struct ServerEditorDialog: View {
     var addressSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: RX.Space.s3) {
-                Image(systemName: "server.rack")
-                    .font(.system(size: 16))
-                    .foregroundStyle(.rxOnAccent)
-                    .frame(width: 34, height: 34)
-                    .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Color.rxAccent))
-                    .accessibilityHidden(true)
                 TextField("IP or hostname", text: $draft.address)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 17, design: .monospaced))
+                    .font(.system(size: 14, design: .monospaced))
                     .disableAutocorrection(true)
                     .textInputAutocapitalization(.never)
                     .focused($addressFocused)
@@ -145,8 +139,8 @@ struct ServerEditorDialog: View {
                     .accessibilityLabel("Address")
             }
             .padding(.horizontal, RX.Space.s3)
-            .frame(height: 50)
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.rxSurfaceSunken))
+            .frame(height: 38)
+            .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.rxSurfaceSunken))
             if let addressError {
                 HelpText(addressError, isError: true)
             }

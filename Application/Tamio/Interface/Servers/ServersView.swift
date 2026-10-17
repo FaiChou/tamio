@@ -2,7 +2,8 @@
 //  ServersView.swift
 //  Tamio (macOS)
 //
-//  All servers grouped, with search, redaction, Open Terminals and New Server.
+//  All servers in one list, each group a badge before the name, with search,
+//  redaction, Open Terminals and New Server.
 //
 
 import MachineStatusView
@@ -23,16 +24,9 @@ struct ServersView: View {
         return machines.filter { $0.isQualifiedForSearch(text: searchText) }
     }
 
-    var groups: [(name: String, machines: [RDMachine])] {
-        let machines = filtered
-        let names = Set(machines.map(\.group)).sorted { lhs, rhs in
-            if lhs.isEmpty { return false }
-            if rhs.isEmpty { return true }
-            return lhs.localizedStandardCompare(rhs) == .orderedAscending
-        }
-        return names.map { name in
-            (name, machines.filter { $0.group == name }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending })
-        }
+    /// By name; a server's group is its badge, not a section.
+    var sorted: [RDMachine] {
+        filtered.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     var body: some View {
@@ -71,7 +65,7 @@ struct ServersView: View {
                 EmptyStateView("No matches", systemImage: "magnifyingglass")
                 .rxCard()
             } else {
-                ServersTable(groups: groups, selection: $selection)
+                ServersTable(machines: sorted, selection: $selection)
             }
         }
         .background {
@@ -134,7 +128,7 @@ struct RedactionBanner: View {
 // MARK: - Table
 
 private struct ServersTable: View {
-    let groups: [(name: String, machines: [RDMachine])]
+    let machines: [RDMachine]
     @Binding var selection: RDMachine.ID?
     @State private var width: CGFloat = 900
 
@@ -143,18 +137,14 @@ private struct ServersTable: View {
         VStack(spacing: 0) {
             header(columns)
             Hairline()
-            ForEach(groups, id: \.name) { group in
-                TableGroupRow(group.name.isEmpty ? "Default" : group.name, trailing: "\(group.machines.count)")
+            ForEach(Array(machines.enumerated()), id: \.element.id) { index, machine in
+                ServerRow(machine: machine.id, columns: columns, selection: $selection)
+                    .rxRise(index)
                     .transition(.opacity)
-                ForEach(Array(group.machines.enumerated()), id: \.element.id) { index, machine in
-                    ServerRow(machine: machine.id, columns: columns, selection: $selection)
-                        .rxRise(index)
-                        .transition(.opacity)
-                }
             }
         }
         // Rows make room for a new server and close up after a deleted one.
-        .animation(.rxMove, value: groups.flatMap { $0.machines.map(\.id) })
+        .animation(.rxMove, value: machines.map(\.id))
         .readWidth($width)
         .rxCard(padding: RX.Space.s2)
     }
@@ -164,7 +154,7 @@ private struct ServersTable: View {
             TableHeaderLabel("Name").frame(maxWidth: .infinity, alignment: .leading)
             TableHeaderLabel("Address").frame(width: columns.address)
             if columns.showIdentity { TableHeaderLabel("Identity").frame(width: columns.identity) }
-            if columns.showCPU { TableHeaderLabel("CPU").frame(width: columns.cpu) }
+            if columns.showCPU { TableHeaderLabel("CPU").frame(width: columns.meter) }
             if columns.showMemory { TableHeaderLabel("Mem").frame(width: columns.meter) }
             if columns.showDisk { TableHeaderLabel("Disk").frame(width: columns.meter) }
             if columns.showNetwork { TableHeaderLabel("Net ↑ ↓").frame(width: columns.network) }
@@ -181,7 +171,6 @@ private struct ServersTable: View {
 struct ServerColumns {
     let address: CGFloat = 150
     let identity: CGFloat = 130
-    let cpu: CGFloat = 96
     let meter: CGFloat = 70
     let network: CGFloat = 150
     let lastUsed: CGFloat = 110
@@ -200,7 +189,7 @@ struct ServerColumns {
             room -= column
             return true
         }
-        showCPU = fits(cpu)
+        showCPU = fits(meter)
         showMemory = fits(meter)
         showDisk = fits(meter)
         showNetwork = fits(network)
@@ -223,6 +212,10 @@ private struct ServerRow: View {
             HStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 5) {
+                        if !read.group.isEmpty {
+                            RXTag(read.group)
+                                .fixedSize()
+                        }
                         if let flag = read.countryFlag { Text(flag).font(.system(size: 13)) }
                         RedactableText(read.name, redacted: store.machineRedacted == .all)
                             .font(.rxBody)
@@ -250,21 +243,9 @@ private struct ServerRow: View {
                         .lineLimit(1)
                         .frame(width: columns.identity, alignment: .leading)
                 }
-                if columns.showCPU {
-                    Group {
-                        if let cpu = state.cpu {
-                            HStack(spacing: RX.Space.s2) {
-                                UsageBar(fraction: cpu / 100, height: 4)
-                                    .frame(width: 48)
-                                Text("\(RXFormat.percent(cpu))%")
-                                    .font(.rxBody.monospacedDigit())
-                            }
-                        } else {
-                            Text("—").foregroundStyle(.rxInkSecondary)
-                        }
-                    }
-                    .frame(width: columns.cpu, alignment: .leading)
-                }
+                // CPU, memory and disk read alike: a percentage, coloured
+                // as it gets high.
+                if columns.showCPU { percentText(state.cpu).frame(width: columns.meter, alignment: .leading) }
                 if columns.showMemory { percentText(state.memory).frame(width: columns.meter, alignment: .leading) }
                 if columns.showDisk { percentText(state.disk).frame(width: columns.meter, alignment: .leading) }
                 if columns.showNetwork {
@@ -288,14 +269,12 @@ private struct ServerRow: View {
                         .frame(width: columns.lastUsed, alignment: .leading)
                 }
                 HStack(spacing: RX.Space.s1) {
-                    ForEach([ServerTool.files, .monitor]) { tool in
+                    // All three bordered alike, so each reads as a button.
+                    ForEach([ServerTool.files, .monitor, .terminal]) { tool in
                         Button(tool.title) { tool.show(machine) }
-                            .buttonStyle(.rx(.plain, size: .small))
+                            .buttonStyle(.rx(size: .small))
                             .help(tool.help)
                     }
-                    Button(ServerTool.terminal.title) { ServerTool.terminal.show(machine) }
-                        .buttonStyle(.rx(size: .small))
-                        .help(ServerTool.terminal.help)
                 }
                 .frame(width: columns.actions, alignment: .trailing)
             }

@@ -67,7 +67,7 @@ struct AgentSetupSettings: View {
                     .font(.rxCode)
                     .foregroundStyle(.rxInk)
                     .textSelection(.enabled)
-                    .lineLimit(6)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: 380, alignment: .leading)
                     .padding(RX.Space.s2)
                     .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.rxSurfaceSunken))
