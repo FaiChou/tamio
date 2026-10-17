@@ -512,8 +512,12 @@ struct ConfigCategoryContent: View {
             }
 
             /// A page out of sight is transparent, not hidden: a hidden hosting
-            /// view draws itself again from nothing when it comes back.
+            /// view draws itself again from nothing when it comes back. It keeps
+            /// the light or dark it had, too: every page drawing itself again
+            /// at a change of appearance held the app up for a second. Shown,
+            /// it follows the window again, and catches up alone.
             private func set(_ page: UIHostingController<AnyView>, visible: Bool) {
+                page.overrideUserInterfaceStyle = visible ? .unspecified : view.traitCollection.userInterfaceStyle
                 page.view.layer.removeAllAnimations()
                 page.view.alpha = visible ? 1 : 0
                 page.view.isUserInteractionEnabled = visible

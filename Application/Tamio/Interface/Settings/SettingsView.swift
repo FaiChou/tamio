@@ -11,6 +11,7 @@ import TamioModule
 import TamioTerminal
 import MachineStatusView
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @EnvironmentObject var store: TamioStore
@@ -81,9 +82,33 @@ enum AppearancePreference: String, CaseIterable {
     static let key = "sb.moe.tamio.appearance"
 
     @MainActor
-    func apply() {
+    func apply(crossFade: Bool = false) {
+        // Every window draws itself again in the new appearance, which takes
+        // a moment; meanwhile each shows a picture of what it was, which then
+        // fades into the new one, so nothing is seen half done.
+        var covers: [UIView] = []
+        if crossFade {
+            for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
+                for window in scene.windows where !window.isHidden {
+                    guard let cover = window.snapshotView(afterScreenUpdates: false) else { continue }
+                    cover.isUserInteractionEnabled = false
+                    cover.frame = window.bounds
+                    window.addSubview(cover)
+                    covers.append(cover)
+                }
+            }
+        }
         // The app's appearance is AppKit's to set; UIKit follows it.
         Mac.bridge?.setAppearance(self == .system ? nil : rawValue)
+        guard !covers.isEmpty else { return }
+        // On the next turn, once the windows have drawn themselves again.
+        DispatchQueue.main.async {
+            UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
+                covers.forEach { $0.alpha = 0 }
+            } completion: { _ in
+                covers.forEach { $0.removeFromSuperview() }
+            }
+        }
     }
 
     @MainActor
@@ -105,7 +130,12 @@ private struct AppearanceSettings: View {
             ], caps: false)
         }
         .onChange(of: appearance) { raw in
-            (AppearancePreference(rawValue: raw) ?? .system).apply()
+            // Once the selection has slid over: the whole app draws itself
+            // again in the new appearance, which would stop it halfway.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) {
+                guard raw == appearance else { return }
+                (AppearancePreference(rawValue: raw) ?? .system).apply(crossFade: true)
+            }
         }
     }
 }
