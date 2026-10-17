@@ -225,6 +225,24 @@ Rayon's data. Importing from Rayon is out of scope for v1.
 
 ## 4. New Server panel (Termius-style)
 
+> **Revised 2026-10-17 (after review in the running app).** Where this section
+> and the notes below differ, the notes win:
+> - New / Edit Server is a **centered dialog** over the dimmed window (not a side
+>   panel). Esc or a click outside closes it, asking first when there are changes.
+> - **The username belongs to the server**, under SSH with the port, and is `root`
+>   when left empty. **An identity is only a credential**, a named SSH key (or a
+>   password identity kept from before), never tied to a user, so one key works
+>   as `root` on one host and `debian` on another.
+> - Credentials are **Password** (kept with this server only, a private identity
+>   never listed in Identities) or **SSH key**: choose one from Identities or
+>   **New Key…** to paste, load or **generate an Ed25519** key, which is saved to
+>   Identities. There is no "try automatic identities" choice any more.
+> - A private key is **never shown again** once it is in: the field becomes
+>   "•••• ED25519 private key" with only **Replace…**. The public key stays
+>   visible with Copy.
+> - Labels that name a country (`JP Tokyo`, `us-sjc-1`, `KR ICN ORACLE`) show its
+>   **flag** on cards, the Servers table and the sidebar.
+
 ### 4.1 What changes
 
 Today `ServerEditorSheet` is a 520-pt centered sheet with Name, Address + Port,
@@ -315,6 +333,20 @@ removed (confirmed, Q1). Home opens straight onto the server cards.
 ---
 
 ## 5. Live server metrics on saved servers
+
+> **Revised 2026-10-17 (after review in the running app).** Where this section
+> and the notes below differ, the notes win:
+> - Cards are **small (240–320 pt), with no rotation**: the name (and flag), the
+>   OS logo with as much of "macOS 26.6.2 · up 25d 5h" as fits **whole** (never
+>   an ellipsis; what does not fit is in the inspector), and three rings:
+>   **CPU · MEM · DISK**. Terminal and ⋯ on the right.
+> - Home has **no title row**: the toolbar holds search and New Server at the top
+>   right, and the grid starts right under it.
+> - A click on a card opens the **inspector beside the grid, below the toolbar**,
+>   never under it, so search and New Server keep their own row. Overview /
+>   Processes / Containers as in §5.7; it gives up width before the cards do.
+> - OS logos are the Simple Icons set (CC0) from missuo/herdrm
+>   (`Resources/OSIcons`), plus a Windows mark, in the app's asset catalog.
 
 ### 5.1 Today
 

@@ -4,7 +4,7 @@ A native SSH client for macOS: a Ghostty terminal, a dual-pane SFTP browser,
 live status for every server, end-to-end encrypted iCloud sync, and an MCP
 server so AI agents can work across your hosts with your approval.
 
-Tamio is in early development. The plan is in [design.md](./design.md).
+Tamio is in early development. The plan is in [DESIGN.md](./DESIGN.md).
 
 ![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey)
 ![Swift](https://img.shields.io/badge/Swift-6.2-orange)

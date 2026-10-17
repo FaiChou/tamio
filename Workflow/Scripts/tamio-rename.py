@@ -49,7 +49,7 @@ NAME_REPLACEMENTS = [
 
 SKIP_DIRS = {".git", "DerivedData", ".build", "node_modules", ".swiftpm"}
 # Kept verbatim: they credit the projects Tamio comes from.
-SKIP_FILES = {"LICENSE", "EULA", "NOTICE.txt", "design.md", "tamio-rename.py", "port-upstream.sh"}
+SKIP_FILES = {"LICENSE", "EULA", "NOTICE.txt", "DESIGN.md", "tamio-rename.py", "port-upstream.sh"}
 
 
 def rewrite(text):

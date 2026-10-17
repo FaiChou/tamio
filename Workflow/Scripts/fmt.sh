@@ -5,9 +5,9 @@ set -e
 cd "$(dirname "$0")"
 cd ../../
 
-# check if .root file exists
-if [ ! -f .root ]; then
-    echo "malformed project structure, missing .root file"
+# The repository root holds the workspace.
+if [ ! -d App.xcworkspace ]; then
+    echo "malformed project structure, missing App.xcworkspace"
     exit 1
 fi
 
