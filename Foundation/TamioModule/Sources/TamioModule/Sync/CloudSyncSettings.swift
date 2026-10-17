@@ -18,8 +18,9 @@ public struct CloudSyncSettings: View {
     public var body: some View {
         RXDividedStack {
             RXFormRow("Sync with iCloud", description: (sync.isOn ? nil : sync.problem) ?? """
-            Servers and identities are encrypted on this device, with a passphrase you choose, \
-            before they go to iCloud. Apple cannot read them.
+            Everything is encrypted on this device, with a passphrase you choose, before it goes \
+            to iCloud. Apple cannot read it. Your iCloud Keychain keeps the passphrase, so your \
+            other Macs turn sync on by themselves.
             """) {
                 Toggle("Sync with iCloud", isOn: Binding(
                     get: { sync.isOn },
@@ -78,7 +79,7 @@ public struct CloudSyncSettings: View {
                     description: "What agents did on each server, so agents on other devices know.",
                     isOn: $sync.syncsActivity
                 )
-                RXFormRow("Passphrase", description: "After a change, your other devices ask for the new one.") {
+                RXFormRow("Passphrase", description: "After a change, your other devices take the new one from iCloud Keychain, or ask for it.") {
                     Button("Change…") { asking = .change }
                         .buttonStyle(.rx(size: .small))
                 }

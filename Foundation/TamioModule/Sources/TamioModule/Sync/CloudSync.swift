@@ -88,6 +88,9 @@ public final class CloudSync: ObservableObject {
         static let portForwards = "sb.moe.tamio.sync.portForwards"
         static let knownHosts = "sb.moe.tamio.sync.knownHosts"
         static let activity = "sb.moe.tamio.sync.activity"
+        /// Turned off here by the user: the passphrase shared in iCloud
+        /// Keychain does not turn it on again.
+        static let optedOut = "sb.moe.tamio.sync.optedOut"
     }
 
     /// The passphrase as it is kept on the device: with the servers and
@@ -147,7 +150,10 @@ public final class CloudSync: ObservableObject {
     public func start() {
         guard !started else { return }
         started = true
-        transport.changed = { [weak self] in self?.sync() }
+        transport.changed = { [weak self] in
+            guard let self else { return }
+            if !adoptSharedPassphrase() { sync() }
+        }
         // Asks iCloud for what it has, well before Settings asks whether
         // there is anything.
         _ = transport.read()
@@ -194,7 +200,20 @@ public final class CloudSync: ObservableObject {
                 return
             }
         #endif
+        if adoptSharedPassphrase() { return }
         sync()
+    }
+
+    /// Turns sync on with the passphrase another device shared in iCloud
+    /// Keychain, when iCloud holds data and the user has not turned sync off
+    /// here. True when it did.
+    @discardableResult
+    private func adoptSharedPassphrase() -> Bool {
+        guard !isOn, problem == nil, !defaults.bool(forKey: Key.optedOut),
+              hasStoredData, let shared = SyncKeychain.read(), !shared.isEmpty
+        else { return false }
+        turnOn(passphrase: shared)
+        return true
     }
 
     // MARK: - Settings
@@ -203,6 +222,7 @@ public final class CloudSync: ObservableObject {
     /// refused.
     public func turnOn(passphrase new: String) {
         guard problem == nil else { return }
+        defaults.set(false, forKey: Key.optedOut)
         set(passphrase: new)
         if !isOn {
             state = SyncState()
@@ -227,6 +247,7 @@ public final class CloudSync: ObservableObject {
     public func turnOff() {
         isOn = false
         defaults.set(false, forKey: Key.on)
+        defaults.set(true, forKey: Key.optedOut)
         passphrase = nil
         key = nil
         store.removeDefault(.syncPassphrase)
@@ -263,6 +284,7 @@ public final class CloudSync: ObservableObject {
             status = .failed("The data in iCloud could not be removed: \(error.localizedDescription)")
             return
         }
+        SyncKeychain.delete()
         turnOff()
     }
 
@@ -270,6 +292,8 @@ public final class CloudSync: ObservableObject {
         passphrase = new
         key = nil
         store.storeEncryptedDefault(to: .syncPassphrase, with: Secret(passphrase: new))
+        // The user's other devices find it in iCloud Keychain.
+        SyncKeychain.save(new)
     }
 
     // MARK: - Sync
@@ -341,6 +365,12 @@ public final class CloudSync: ObservableObject {
         guard isOn else { return }
         switch outcome {
         case .locked:
+            // Changed on another device, which shared the new one.
+            if let shared = SyncKeychain.read(), !shared.isEmpty, shared != passphrase {
+                set(passphrase: shared)
+                sync()
+                return
+            }
             status = .locked
         case .unreadable:
             status = .unreadable
