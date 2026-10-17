@@ -1,29 +1,38 @@
 {
   "fill" : {
-    "automatic-gradient" : "display-p3:0.94673,0.89542,0.96783,1.00000"
+    "automatic-gradient" : "display-p3:0.33725,0.32549,0.85098,1.00000"
   },
   "groups" : [
     {
       "layers" : [
         {
-          "image-name" : "cat-girl-lines-transparent.svg",
-          "name" : "cat-girl-lines-transparent",
-          "position" : {
-            "scale" : 1,
-            "translation-in-points" : [
-              8.140625,
-              53.78125
-            ]
-          }
+          "image-name" : "cursor.svg",
+          "name" : "cursor"
+        }
+      ],
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.15
+      }
+    },
+    {
+      "layers" : [
+        {
+          "image-name" : "prompt.svg",
+          "name" : "prompt"
         }
       ],
       "shadow" : {
         "kind" : "neutral",
-        "opacity" : 0.6
+        "opacity" : 0.5
       },
       "translucency" : {
         "enabled" : true,
-        "value" : 0.2
+        "value" : 0.25
       }
     }
   ],
