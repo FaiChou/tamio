@@ -233,7 +233,6 @@ private struct MonitorSettings: View {
 
 private struct AboutSettings: View {
     @State private var document: AboutDocument?
-    @State private var showsWhatsNew = false
 
     var version: String {
         let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
@@ -253,9 +252,11 @@ private struct AboutSettings: View {
                     .foregroundStyle(.rxInkSecondary)
                     .textSelection(.enabled)
             }
-            RXFormRow("What's new", description: "The changes in each version.") {
-                Button("Release Notes…") { showsWhatsNew = true }
-                    .buttonStyle(.rx)
+            RXFormRow("What's new", description: "This version's release notes. New versions show theirs before they install.") {
+                Link(destination: UpdateCenter.releaseNotesURL) {
+                    Label("Release Notes", systemImage: "arrow.up.right.square")
+                }
+                .buttonStyle(.rx)
             }
             RXFormRow("Source code", description: "missuo/tamio on GitHub") {
                 Link(destination: URL(string: "https://github.com/missuo/tamio")!) {
@@ -281,9 +282,6 @@ private struct AboutSettings: View {
         }
         .sheet(item: $document) { item in
             LicenseSheet(document: item) { document = nil }
-        }
-        .sheet(isPresented: $showsWhatsNew) {
-            WhatsNewSheet(title: "Release Notes", releases: Changelog.releases) { showsWhatsNew = false }
         }
     }
 }

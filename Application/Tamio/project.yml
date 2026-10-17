@@ -63,9 +63,6 @@ targets:
         buildPhase: resources
       - path: ../../Resources/LICENSE
         buildPhase: resources
-      # What's New (Settings › About, and after an update).
-      - path: ../../CHANGELOG.md
-        buildPhase: resources
       - path: ../../Resources/Tamio.icon
         buildPhase: resources
         type: folder.iconcomposer

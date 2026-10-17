@@ -14,7 +14,6 @@ import UIKit
 struct MainView: View {
     @EnvironmentObject var store: TamioStore
     @ObservedObject var router = AppRouter.shared
-    @ObservedObject var updates = UpdateCenter.shared
 
     @State private var openLicenseAgreement = false
     /// Unknown until the view is in a window. SwiftUI's WindowGroup puts a main
@@ -120,12 +119,6 @@ struct MainView: View {
         .onReceive(NotificationCenter.default.publisher(for: .rebuildPageToolbar)) { _ in toolbarEpoch += 1 }
         .sheet(isPresented: $openLicenseAgreement) {
             AgreementSheet()
-        }
-        // The first launch after an update: what is new in it.
-        .sheet(item: $updates.justUpdated) { release in
-            WhatsNewSheet(title: "What's New in Tamio \(release.version)", releases: [release]) {
-                updates.justUpdated = nil
-            }
         }
         .onAppear {
             onMainThread(delay: 0.5) {

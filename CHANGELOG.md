@@ -1,7 +1,7 @@
 # Changelog
 
 What changes in each version of Tamio. Each release's notes come from its
-section here: on GitHub, in the update window, and under What's New in the app.
+section here: on the GitHub release, and in the update window that offers it.
 
 Write new entries under **Unreleased**. To release, rename that heading to the
 version and date (`## [0.2.0] - 2026-11-02`), set `MARKETING_VERSION` to match,
