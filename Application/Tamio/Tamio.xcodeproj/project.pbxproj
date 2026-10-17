@@ -18,8 +18,8 @@
 		2BAA1A836A2337D1A8C43CC2 /* Bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85124054BC012460F503B9FB /* Bridge.swift */; };
 		2E25F3ECB61794C861B0CF8D /* FileTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = E65511B75249BC895041BD82 /* FileTable.swift */; };
 		2E4369F69EA9DF974DF27F6A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5BF8E05669BAD48CA9ADC146 /* Assets.xcassets */; };
+		2F609EB69F20470FF1BE9E8D /* skills in Resources */ = {isa = PBXBuildFile; fileRef = 95B1005E04E501D384F8AEED /* skills */; };
 		30833C8DDC18BF730D6FD3B2 /* DoubleConfirm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 746C74A073F34EF4BFF12FA4 /* DoubleConfirm.swift */; };
-		379177E7299187B4931F2F9C /* Skills in Resources */ = {isa = PBXBuildFile; fileRef = 8815320B0ADA6F5284A9F228 /* Skills */; };
 		3F28E44A7D3F76069A1C963F /* Bridge+Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445C92A373BC041DA54CDCF3 /* Bridge+Windows.swift */; };
 		44AE26FF07198A235D4AADB5 /* TamioEditor in Frameworks */ = {isa = PBXBuildFile; productRef = B1EF69EF2F48C5B3F05F2A7F /* TamioEditor */; };
 		489AF44AD472CC65ACB57634 /* StatusItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC98FA8A3917947D4177007 /* StatusItem.swift */; };
@@ -130,11 +130,11 @@
 		83EF894C99EF1CDFECB5DD2D /* MacBridging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBridging.swift; sourceTree = "<group>"; };
 		85124054BC012460F503B9FB /* Bridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bridge.swift; sourceTree = "<group>"; };
 		85358DC98DB406C6FB6D164E /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
-		8815320B0ADA6F5284A9F228 /* Skills */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Skills; path = ../../Skills; sourceTree = SOURCE_ROOT; };
 		89D30D618CFFED4A6386D0E1 /* TamioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TamioApp.swift; sourceTree = "<group>"; };
 		8D6160F6465AF5B5EFF497B1 /* Bench.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bench.swift; sourceTree = "<group>"; };
 		8E42EF3219DBEC406B179547 /* SymbolPicker */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SymbolPicker; path = ../../Foundation/SymbolPicker; sourceTree = SOURCE_ROOT; };
 		924CB398B52DC9CBB1633708 /* EditorPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorPage.swift; sourceTree = "<group>"; };
+		95B1005E04E501D384F8AEED /* skills */ = {isa = PBXFileReference; lastKnownFileType = folder; name = skills; path = ../../skills; sourceTree = SOURCE_ROOT; };
 		9DDE29F5CD9A23175CCFBCF3 /* PageScaffold.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageScaffold.swift; sourceTree = "<group>"; };
 		A2AC3C2F5C0CE0FD9D6CBC46 /* Generic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Generic.swift; sourceTree = "<group>"; };
 		A62CDF7C5C29EFAD66CB9EAC /* UIBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIBridge.swift; sourceTree = "<group>"; };
@@ -315,7 +315,7 @@
 			isa = PBXGroup;
 			children = (
 				767CF33A427B2C6C6677E1BF /* Resources */,
-				8815320B0ADA6F5284A9F228 /* Skills */,
+				95B1005E04E501D384F8AEED /* skills */,
 			);
 			name = tamio;
 			path = ../..;
@@ -557,8 +557,8 @@
 				2E4369F69EA9DF974DF27F6A /* Assets.xcassets in Resources */,
 				54C706C4966389E84D9903AD /* EULA in Resources */,
 				ADF9F497480AAECF8EFA2978 /* LICENSE in Resources */,
-				379177E7299187B4931F2F9C /* Skills in Resources */,
 				C78E22FC07482B9FD7C71BF3 /* Tamio.icon in Resources */,
+				2F609EB69F20470FF1BE9E8D /* skills in Resources */,
 				C5B61FEFE6D29C674F851CDE /* tamio-mcp in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

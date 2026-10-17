@@ -55,7 +55,7 @@ targets:
       # The agents' MCP command and skill (Settings › MCP).
       - path: Helpers/tamio-mcp
         buildPhase: resources
-      - path: ../../Skills
+      - path: ../../skills
         buildPhase: resources
         type: folder
     settings:

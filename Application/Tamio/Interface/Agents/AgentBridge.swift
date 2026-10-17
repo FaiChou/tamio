@@ -34,7 +34,7 @@ final class AgentBridge: ObservableObject, AgentEnvironment {
     }
 
     static var skillFolder: URL? {
-        Bundle.main.url(forResource: "Skills", withExtension: nil)?.appendingPathComponent("tamio")
+        Bundle.main.url(forResource: "skills", withExtension: nil)?.appendingPathComponent("tamio")
     }
 
     private init() {
@@ -131,7 +131,7 @@ final class AgentBridge: ObservableObject, AgentEnvironment {
     }
 
     var skillInstallCommand: String {
-        let source = Self.skillFolder?.path ?? "/Applications/Tamio.app/Contents/Resources/Skills/tamio"
+        let source = Self.skillFolder?.path ?? "/Applications/Tamio.app/Contents/Resources/skills/tamio"
         return "mkdir -p ~/.claude/skills && cp -R \"\(source)\" ~/.claude/skills/"
     }
 
@@ -140,8 +140,8 @@ final class AgentBridge: ObservableObject, AgentEnvironment {
         """
         My SSH servers are in Tamio, which runs an MCP server. Connect to it as a stdio MCP server \
         with the command "\(Self.helperPath)" (Claude Code: \(claudeCommand)). \
-        Read the Tamio skill at "\(Self.skillFolder?.appendingPathComponent("SKILL.md").path ?? "Tamio.app/Contents/Resources/Skills/tamio/SKILL.md")" \
-        (also at https://github.com/missuo/tamio/tree/main/Skills/tamio) and follow it: call get_activity before \
+        Read the Tamio skill at "\(Self.skillFolder?.appendingPathComponent("SKILL.md").path ?? "Tamio.app/Contents/Resources/skills/tamio/SKILL.md")" \
+        (also at https://github.com/missuo/tamio/tree/main/skills/tamio) and follow it: call get_activity before \
         working on a server, run commands with run_command, and call log_activity for anything you change by \
         other means. Tamio never gives out passwords or private keys; ask me to approve changes.
         """

@@ -969,7 +969,7 @@ existing Tamio data to migrate.
 > - **Settings › MCP**: the server is **on by default**; the page has the Claude
 >   Code command, the Codex config, **Install Skill** (copies the skill bundled
 >   in the app to `~/.claude/skills/tamio`) with its shell command, and a prompt
->   to paste into any agent. The skill lives in the repo at `Skills/tamio/SKILL.md`.
+>   to paste into any agent. The skill lives in the repo at `skills/tamio/SKILL.md`.
 > - The stdio command is `Tamio.app/Contents/Resources/tamio-mcp`, a shell script
 >   that relays to the socket with `nc -U` (no extra binary). The socket is
 >   `~/Library/Application Support/<bundle id>/agent.sock`, mode 0600, and only
