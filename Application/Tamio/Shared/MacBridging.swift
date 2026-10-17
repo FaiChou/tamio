@@ -58,6 +58,11 @@ import Foundation
     /// `watchToolbar` shows it; call once, before any window exists.
     func holdNewWindowsUntilToolbar()
 
+    /// The modifier keys held now: Command and Shift, for clicks that extend
+    /// a selection (SwiftUI's tap modifiers are not on Mac Catalyst).
+    var commandHeld: Bool { get }
+    var shiftHeld: Bool { get }
+
     // MARK: Dialogs
 
     /// A sheet on the key window. `buttons` are listed first-to-last as in

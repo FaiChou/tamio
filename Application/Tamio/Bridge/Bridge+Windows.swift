@@ -53,7 +53,7 @@ extension Bridge {
         // It is painted the same colour as the pages.
         let toolbarHeight = max(window.frame.height - window.contentLayoutRect.height, 0)
         if toolbarHeight > 0 {
-            let strip = NSView(frame: NSRect(
+            let strip = PaintOnlyView(frame: NSRect(
                 x: 0, y: content.bounds.height - toolbarHeight,
                 width: content.bounds.width, height: toolbarHeight
             ))
@@ -72,14 +72,15 @@ extension Bridge {
 
     /// One surface from the top edge down: the title bar draws nothing of its
     /// own, so the traffic lights and toolbar sit on the window colour like
-    /// the sidebar and the page, not on a white band. UIKit sets the title
-    /// bar back to opaque when it installs or changes the toolbar, and AppKit
-    /// redraws its background while the window is resized, so this is applied
-    /// again at once (not on the next turn of the run loop, which shows as a
-    /// flicker) whenever either happens.
+    /// the sidebar and the page, not on a white band. Its background views are
+    /// hidden instead of the title bar being made transparent: a transparent
+    /// title bar passes clicks to the content under it, and Catalyst's toolbar
+    /// items (New Server, search) then never get them. UIKit and AppKit bring
+    /// the background back when the toolbar changes and while the window is
+    /// resized, so this is applied again at once (not on the next turn of the
+    /// run loop, which shows as a flicker) whenever either happens.
     func unifyTitlebar(of window: NSWindow) {
         func apply(_ window: NSWindow) {
-            if !window.titlebarAppearsTransparent { window.titlebarAppearsTransparent = true }
             if !window.styleMask.contains(.fullSizeContentView) { window.styleMask.insert(.fullSizeContentView) }
             if window.titlebarSeparatorStyle != .none { window.titlebarSeparatorStyle = .none }
             // The title bar's own fill, a white layer in light mode.
@@ -90,7 +91,9 @@ extension Bridge {
         apply(window)
         appearanceObservers.append(window.observe(\.titlebarAppearsTransparent) { window, _ in apply(window) })
         appearanceObservers.append(window.observe(\.styleMask) { window, _ in apply(window) })
-        for name in [NSWindow.willStartLiveResizeNotification, NSWindow.didResizeNotification, NSWindow.didEndLiveResizeNotification] {
+        // didUpdate comes after every event, before the window draws: a page
+        // switch rebuilds the toolbar and with it the title bar's background.
+        for name in [NSWindow.willStartLiveResizeNotification, NSWindow.didResizeNotification, NSWindow.didEndLiveResizeNotification, NSWindow.didUpdateNotification] {
             let token = NotificationCenter.default.addObserver(forName: name, object: window, queue: nil) { note in
                 if let window = note.object as? NSWindow { apply(window) }
             }
@@ -107,6 +110,9 @@ extension Bridge {
             }
         }
     }
+
+    var commandHeld: Bool { NSEvent.modifierFlags.contains(.command) }
+    var shiftHeld: Bool { NSEvent.modifierFlags.contains(.shift) }
 
     func holdNewWindowsUntilToolbar() {
         let started = Date()
@@ -197,4 +203,10 @@ extension Bridge {
         effect.state = .followsWindowActiveState
         return effect
     }
+}
+
+/// Paints and nothing else: clicks go through it to the toolbar items it
+/// lies under (or over, as Catalyst orders the window's views).
+private final class PaintOnlyView: NSView {
+    override func hitTest(_: NSPoint) -> NSView? { nil }
 }
