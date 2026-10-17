@@ -35,7 +35,9 @@ The first release of Tamio, an SSH client for the Mac.
 
 - Two panes, this Mac and the server, each switchable to any server.
 - Drag files between the panes or from Finder to copy them; folders go whole.
-- Transfers run in a queue with progress, speed, time left, cancel and retry.
+- Drag a file from a server to Finder to download it.
+- Transfers run in a queue with progress, speed, time left, cancel and retry,
+  and a notification tells you when one ends while Tamio is in the background.
 
 ### Agents (MCP)
 
@@ -47,7 +49,17 @@ The first release of Tamio, an SSH client for the Mac.
 - **Settings › MCP** turns the server on or off and sets up Claude Code, Codex
   and the Tamio skill.
 
+### iCloud sync
+
+- Servers, identities, snippets, port forwards and known host keys stay the
+  same on all your Macs, end-to-end encrypted under a passphrase only your
+  devices know.
+- Agent activity from every Mac is kept together, so agents on one Mac know
+  what was done from another.
+
 ### App
 
-- Updates itself: a new version shows at the bottom of the sidebar.
+- Updates itself: a new version shows at the bottom of the sidebar, with its
+  release notes in the update window.
+- Switching between light and dark is smooth.
 - A new icon.
