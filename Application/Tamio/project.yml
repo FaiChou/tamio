@@ -1,6 +1,7 @@
 # The Mac app is a Mac Catalyst app ("Optimize for Mac" idiom) with an AppKit
 # bundle (MacBridge) for what UIKit cannot reach: window material, menu bar
-# items, activation policy and the legacy keychain.
+# items, activation policy, the legacy keychain, and Sparkle (updates), which
+# MacBridge links and carries in its own Frameworks folder.
 # Regenerate the project with: xcodegen generate
 name: Tamio
 options:
@@ -21,7 +22,8 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: 1
+    # The build number is the version: Sparkle orders updates by it.
+    CURRENT_PROJECT_VERSION: $(MARKETING_VERSION)
     DEVELOPMENT_TEAM: NCFNX3LJ83
 targets:
   MacBridge:
@@ -37,6 +39,18 @@ targets:
         INFOPLIST_KEY_NSPrincipalClass: Bridge
         SKIP_INSTALL: YES
         SWIFT_VERSION: "5.0"
+        FRAMEWORK_SEARCH_PATHS: $(SRCROOT)/../../External/Sparkle
+        LD_RUNPATH_SEARCH_PATHS: "@loader_path/../Frameworks"
+        # The script below fetches Sparkle, outside the sandbox.
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+    preBuildScripts:
+      - name: Fetch Sparkle
+        script: bash "$SRCROOT/../../Workflow/Scripts/sparkle.sh"
+        basedOnDependencyAnalysis: false
+    dependencies:
+      - framework: ../../External/Sparkle/Sparkle.framework
+        embed: true
+        codeSign: true
   Tamio:
     type: application
     platform: iOS

@@ -54,6 +54,9 @@ struct SettingsView: View {
                 ConfigHostSettingsSection(id: "about.tamio", keywords: "version build license source github agreement") {
                     AboutSettings().environmentObject(store)
                 },
+                ConfigHostSettingsSection(id: "about.updates", keywords: "update updates sparkle new version check automatically download") {
+                    UpdateSettings()
+                },
                 ConfigHostSettingsSection(id: "about.acknowledgements", keywords: "acknowledgements credits libraries ghostty") {
                     AcknowledgementSettings().environmentObject(store)
                 },
@@ -273,6 +276,41 @@ private struct AboutSettings: View {
         }
         .sheet(item: $document) { item in
             LicenseSheet(document: item) { document = nil }
+        }
+    }
+}
+
+/// Sparkle's switches, read from and written to the updater itself.
+private struct UpdateSettings: View {
+    @ObservedObject private var center = UpdateCenter.shared
+    @State private var checks = Mac.bridge?.automaticallyChecksForUpdates ?? false
+    @State private var downloads = Mac.bridge?.automaticallyDownloadsUpdates ?? false
+    @State private var lastCheck = Mac.bridge?.lastUpdateCheck
+
+    var body: some View {
+        RXDividedStack {
+            if center.isSupported {
+                SwitchRow("Check for updates automatically", description: "Once a day. A new version shows at the bottom of the sidebar.", isOn: Binding(
+                    get: { checks },
+                    set: { checks = $0; Mac.bridge?.automaticallyChecksForUpdates = $0 }
+                ))
+                SwitchRow("Download updates automatically", description: "Ready to install when you quit Tamio.", isOn: Binding(
+                    get: { downloads },
+                    set: { downloads = $0; Mac.bridge?.automaticallyDownloadsUpdates = $0 }
+                ))
+                .disabled(!checks)
+                RXFormRow("Check now", description: lastCheck.map { "Last checked \(RXFormat.relative($0))." } ?? "Not checked yet.") {
+                    Button("Check for Updates…") {
+                        center.checkNow()
+                        lastCheck = Date()
+                    }
+                    .buttonStyle(.rx)
+                }
+            } else {
+                RXFormRow("Updates", description: "This copy of Tamio does not update itself; the release from GitHub does.") {
+                    EmptyView()
+                }
+            }
         }
     }
 }

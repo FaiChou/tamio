@@ -12,6 +12,7 @@
 		127DCFCFF0ED07F74864D03C /* SymbolPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 494A60B5E6422F9A68176956 /* SymbolPicker */; };
 		13B1EBCB526576E408152CE0 /* TamioModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3E56E2E2CB7C5ABCE3270FA /* TamioModule */; };
 		16E0D2F6EA1736735F60C2E7 /* ServerInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9197839CE7A1F24BC409928 /* ServerInspector.swift */; };
+		19BFB663207D43591CCD173D /* Sparkle.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 8ECF6EE811C426DAFDCEFA1A /* Sparkle.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		1D739D0FC4F886FBF900BB47 /* Bench.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6160F6465AF5B5EFF497B1 /* Bench.swift */; };
 		24E5740380D9EAC687D3FC9E /* BatchRunSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0139DAD3C6106A836B899900 /* BatchRunSheet.swift */; };
 		268193D53F1A40646A2783EE /* Bridge+Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E4C6978A408A38D15D6861 /* Bridge+Keychain.swift */; };
@@ -23,10 +24,12 @@
 		3F28E44A7D3F76069A1C963F /* Bridge+Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445C92A373BC041DA54CDCF3 /* Bridge+Windows.swift */; };
 		44AE26FF07198A235D4AADB5 /* TamioEditor in Frameworks */ = {isa = PBXBuildFile; productRef = B1EF69EF2F48C5B3F05F2A7F /* TamioEditor */; };
 		489AF44AD472CC65ACB57634 /* StatusItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC98FA8A3917947D4177007 /* StatusItem.swift */; };
+		4C93A467D097E649F9C04073 /* UpdateCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29183565D571B1DD9EFBC65E /* UpdateCenter.swift */; };
 		4D8520C6A941E8188A7D2F17 /* SnippetEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AD8E54833D616102BA84271 /* SnippetEditorSheet.swift */; };
 		4E0E07201D15B47A69732148 /* Generic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2AC3C2F5C0CE0FD9D6CBC46 /* Generic.swift */; };
 		54421B709F93277EDDD1A28B /* EditorWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360E0F9900E195C0F2AD497 /* EditorWorkspace.swift */; };
 		54C706C4966389E84D9903AD /* EULA in Resources */ = {isa = PBXBuildFile; fileRef = 5AE055DD91FA890DB5DDB079 /* EULA */; };
+		62E0F7CEBD2D0F4E077AB4C4 /* Sparkle.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8ECF6EE811C426DAFDCEFA1A /* Sparkle.framework */; };
 		6847782BF8AA67783B857696 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85358DC98DB406C6FB6D164E /* MainView.swift */; };
 		69917E6BE1A315C777040395 /* StatusItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5A608D6FA4E34DC980FA8E /* StatusItem.swift */; };
 		69FFECCDAACA590F05A1F963 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B043231E7AF65887A269C2 /* SidebarView.swift */; };
@@ -37,6 +40,7 @@
 		71658A0D61BE1808D86BAA58 /* TerminalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C465A43736C58AD6B51CEC59 /* TerminalManager.swift */; };
 		742B1D1D68A0C95C3886F494 /* PortForwardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B70567623556C8B0B16B25 /* PortForwardView.swift */; };
 		75E3C140B9C2A211EA3C9842 /* TerminalManager+Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = F42B19215937CD8331FA07FC /* TerminalManager+Context.swift */; };
+		7608F6A7CF8EEA06C470ABE0 /* Bridge+Updates.swift in Sources */ = {isa = PBXBuildFile; fileRef = C937FCFD7CB1469ED24343D6 /* Bridge+Updates.swift */; };
 		8766A75FC53E74F9069FC9A2 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EAB94544BDE15E396B57A48 /* AppRouter.swift */; };
 		8A07521B9F79187B9B9B0F83 /* IdentitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70FA3DE75DF8292D67006F07 /* IdentitiesView.swift */; };
 		8ED6DCE83F8FD7FBA2CED5C8 /* AgentSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D77332CA29BD257A4BA5AD0 /* AgentSettings.swift */; };
@@ -82,6 +86,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		021508538BF9E8C2802008B4 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				19BFB663207D43591CCD173D /* Sparkle.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9E8EF4795F820A4CACA146F3 /* Embed Dependencies */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -103,6 +118,7 @@
 		0ADB190607A2B7100D337533 /* Bridge+StatusItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+StatusItems.swift"; sourceTree = "<group>"; };
 		0F3921042144F0D341016173 /* SnippetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetsView.swift; sourceTree = "<group>"; };
 		196B098389C5AA99A0C9A7F9 /* MacBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBridge.swift; sourceTree = "<group>"; };
+		29183565D571B1DD9EFBC65E /* UpdateCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCenter.swift; sourceTree = "<group>"; };
 		2AD8E54833D616102BA84271 /* SnippetEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEditorSheet.swift; sourceTree = "<group>"; };
 		2AFB73E4F5A4E0275611622A /* PortForwardBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortForwardBackend.swift; sourceTree = "<group>"; };
 		2C0346AB3930E486C971F3E1 /* tamio-mcp */ = {isa = PBXFileReference; path = "tamio-mcp"; sourceTree = "<group>"; };
@@ -133,6 +149,7 @@
 		89D30D618CFFED4A6386D0E1 /* TamioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TamioApp.swift; sourceTree = "<group>"; };
 		8D6160F6465AF5B5EFF497B1 /* Bench.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bench.swift; sourceTree = "<group>"; };
 		8E42EF3219DBEC406B179547 /* SymbolPicker */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SymbolPicker; path = ../../Foundation/SymbolPicker; sourceTree = SOURCE_ROOT; };
+		8ECF6EE811C426DAFDCEFA1A /* Sparkle.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Sparkle.framework; path = ../../External/Sparkle/Sparkle.framework; sourceTree = "<group>"; };
 		924CB398B52DC9CBB1633708 /* EditorPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorPage.swift; sourceTree = "<group>"; };
 		95B1005E04E501D384F8AEED /* skills */ = {isa = PBXFileReference; lastKnownFileType = folder; name = skills; path = ../../skills; sourceTree = SOURCE_ROOT; };
 		9DDE29F5CD9A23175CCFBCF3 /* PageScaffold.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageScaffold.swift; sourceTree = "<group>"; };
@@ -146,6 +163,7 @@
 		BD5F05A6A10CA869F43251F4 /* ServersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServersView.swift; sourceTree = "<group>"; };
 		BFB533A51130A52BDFA81113 /* PresentError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentError.swift; sourceTree = "<group>"; };
 		C465A43736C58AD6B51CEC59 /* TerminalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalManager.swift; sourceTree = "<group>"; };
+		C937FCFD7CB1469ED24343D6 /* Bridge+Updates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+Updates.swift"; sourceTree = "<group>"; };
 		CDF144CC0C26AC04600899D4 /* PlaceholderColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderColor.swift; sourceTree = "<group>"; };
 		D9D95A164114CD21CB58BAC1 /* AgentBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentBridge.swift; sourceTree = "<group>"; };
 		D9EEF0A9C4110C84CABB1CFD /* MachineStatusView */ = {isa = PBXFileReference; lastKnownFileType = folder; name = MachineStatusView; path = ../../Foundation/MachineStatusView; sourceTree = SOURCE_ROOT; };
@@ -161,6 +179,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		892C3F58CBC0366EEB57FA1F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				62E0F7CEBD2D0F4E077AB4C4 /* Sparkle.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A942DFA1CF4D4B4D01F9156F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -238,6 +264,7 @@
 				80782A0426AD9449CC771A33 /* Packages */,
 				7F3B6D88B6BDD4CC2EF89EC0 /* Shared */,
 				6AC0B13E47AA8789E7F65903 /* tamio */,
+				A7E8C5385D13D845783A686C /* Frameworks */,
 				E3909DDDCFAAC4C7172B6790 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -369,6 +396,7 @@
 				85358DC98DB406C6FB6D164E /* MainView.swift */,
 				9DDE29F5CD9A23175CCFBCF3 /* PageScaffold.swift */,
 				42B043231E7AF65887A269C2 /* SidebarView.swift */,
+				29183565D571B1DD9EFBC65E /* UpdateCenter.swift */,
 			);
 			path = Shell;
 			sourceTree = "<group>";
@@ -380,6 +408,7 @@
 				2FBBD7430CAA9CDB21611223 /* Bridge+Dialogs.swift */,
 				F6E4C6978A408A38D15D6861 /* Bridge+Keychain.swift */,
 				0ADB190607A2B7100D337533 /* Bridge+StatusItems.swift */,
+				C937FCFD7CB1469ED24343D6 /* Bridge+Updates.swift */,
 				445C92A373BC041DA54CDCF3 /* Bridge+Windows.swift */,
 				AD5A608D6FA4E34DC980FA8E /* StatusItem.swift */,
 			);
@@ -395,6 +424,14 @@
 				0F3921042144F0D341016173 /* SnippetsView.swift */,
 			);
 			path = Snippets;
+			sourceTree = "<group>";
+		};
+		A7E8C5385D13D845783A686C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				8ECF6EE811C426DAFDCEFA1A /* Sparkle.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		B30B1E14DFAC3D4ED821EA85 /* FileTransfer */ = {
@@ -490,7 +527,10 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A1F3ED674D119C54DF370F80 /* Build configuration list for PBXNativeTarget "MacBridge" */;
 			buildPhases = (
+				0C2ABC13674928FC7B0B6DDF /* Fetch Sparkle */,
 				5D9ED0B0066EF58CEF0D5E5A /* Sources */,
+				892C3F58CBC0366EEB57FA1F /* Frameworks */,
+				021508538BF9E8C2802008B4 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -565,6 +605,28 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		0C2ABC13674928FC7B0B6DDF /* Fetch Sparkle */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Fetch Sparkle";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "bash \"$SRCROOT/../../Workflow/Scripts/sparkle.sh\"";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		5D9ED0B0066EF58CEF0D5E5A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -573,6 +635,7 @@
 				CE0B076D5BB2EEE12F26C6A7 /* Bridge+Dialogs.swift in Sources */,
 				268193D53F1A40646A2783EE /* Bridge+Keychain.swift in Sources */,
 				A01DA9D4ECDB677FBBFB7443 /* Bridge+StatusItems.swift in Sources */,
+				7608F6A7CF8EEA06C470ABE0 /* Bridge+Updates.swift in Sources */,
 				3F28E44A7D3F76069A1C963F /* Bridge+Windows.swift in Sources */,
 				2BAA1A836A2337D1A8C43CC2 /* Bridge.swift in Sources */,
 				00DF71B80014E5FE8D816DFE /* MacBridging.swift in Sources */,
@@ -625,6 +688,7 @@
 				71658A0D61BE1808D86BAA58 /* TerminalManager.swift in Sources */,
 				70204E86A5AF22D8ED6C79E8 /* TerminalPage.swift in Sources */,
 				E3E5D29578C53B47E407435E /* UIBridge.swift in Sources */,
+				4C93A467D097E649F9C04073 /* UpdateCenter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -709,12 +773,14 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SRCROOT)/../../External/Sparkle",
+					"\"../../External/Sparkle\"",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSPrincipalClass = Bridge;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = sb.moe.tamio.bridge;
 				PRODUCT_NAME = MacBridge;
 				SDKROOT = macosx;
@@ -757,7 +823,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = "$(MARKETING_VERSION)";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = NCFNX3LJ83;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -823,7 +889,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = "$(MARKETING_VERSION)";
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = NCFNX3LJ83;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -853,12 +919,14 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
 				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SRCROOT)/../../External/Sparkle",
+					"\"../../External/Sparkle\"",
+				);
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSPrincipalClass = Bridge;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = sb.moe.tamio.bridge;
 				PRODUCT_NAME = MacBridge;
 				SDKROOT = macosx;

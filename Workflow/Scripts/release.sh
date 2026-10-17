@@ -128,9 +128,14 @@ release_mac() {
     /usr/libexec/PlistBuddy -c 'Delete :com.apple.security.get-task-allow' "$entitlements" 2>/dev/null || true
     local timestamp=(--timestamp)
     [[ "$identity" == "-" ]] && timestamp=(--timestamp=none)
-    find "$app/Contents" -depth \( -name '*.framework' -o -name '*.dylib' -o -name '*.appex' -o -path '*/PlugIns/*.bundle' \) -print0 \
+    # Sparkle, in MacBridge's Frameworks, carries helpers of its own
+    # (Autoupdate, Updater.app, XPC services); -depth signs them before the
+    # framework that holds them, keeping the entitlements they come with.
+    find "$app/Contents" -depth \( -name '*.framework' -o -name '*.dylib' -o -name '*.appex' -o -name '*.xpc' \
+        -o -name '*.app' -o -path '*/Sparkle.framework/Versions/*/Autoupdate' -o -path '*/PlugIns/*.bundle' \) -print0 \
         | while IFS= read -r -d '' nested; do
-            /usr/bin/codesign --force --sign "$identity" --options runtime "${timestamp[@]}" "$nested"
+            /usr/bin/codesign --force --sign "$identity" --options runtime "${timestamp[@]}" \
+                --preserve-metadata=entitlements "$nested"
         done
     /usr/bin/codesign --force --sign "$identity" --options runtime "${timestamp[@]}" \
         --entitlements "$entitlements" "$app"

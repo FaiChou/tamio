@@ -63,6 +63,24 @@ import Foundation
     var commandHeld: Bool { get }
     var shiftHeld: Bool { get }
 
+    // MARK: Updates (Sparkle)
+
+    /// Starts the updater: from then on it checks the feed on its own, once
+    /// a day while automatic checks are on. Call once, at launch.
+    func startUpdater()
+    /// Checks now, and shows what it finds (or that Tamio is up to date).
+    func checkForUpdates()
+    /// Whether a check can start now (none is already going on).
+    var canCheckForUpdates: Bool { get }
+    var automaticallyChecksForUpdates: Bool { get set }
+    var automaticallyDownloadsUpdates: Bool { get set }
+    /// When the feed was last checked, nil before the first check.
+    var lastUpdateCheck: Date? { get }
+    /// A check in the background found a version (its number is passed), or
+    /// the one found was dealt with (nil). The app shows a notice for it in
+    /// place of Sparkle's window, which `checkForUpdates` then brings up.
+    func setUpdateNotice(_ handler: @escaping (String?) -> Void)
+
     // MARK: Dialogs
 
     /// A sheet on the key window. `buttons` are listed first-to-last as in

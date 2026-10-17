@@ -21,6 +21,9 @@ import ObjectiveC
     /// Windows that existed before a popover's window was asked for.
     var windowsBeforePopover: Set<ObjectIdentifier>?
     var updateObserver: NSObjectProtocol?
+    /// Sparkle's updater and its standard windows, once started.
+    var updaterController: AnyObject?
+    var updateReminders: AnyObject?
 
     override required init() {
         super.init()

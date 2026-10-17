@@ -116,6 +116,7 @@ struct ConfigLayout {
         ]),
         Category(id: "about", title: "About", icon: "info.circle", section: .info, groups: [
             Group("Tamio", "Tamio", [.host("about.tamio")]),
+            Group("updates", "Updates", [.host("about.updates")]),
             Group("acknowledgements", "Acknowledgements", [.host("about.acknowledgements")]),
         ]),
     ]

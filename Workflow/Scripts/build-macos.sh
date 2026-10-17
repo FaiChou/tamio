@@ -30,6 +30,10 @@ if [[ "$CODE_SIGN_IDENTITY" != "-" && -z "${DEVELOPMENT_TEAM:-}" ]]; then
 fi
 DEVELOPMENT_TEAM="${DEVELOPMENT_TEAM:-}"
 
+# The MacBridge bundle links Sparkle; its build phase fetches it too, this
+# only spares the build the wait.
+bash "$ROOT_DIR/Workflow/Scripts/sparkle.sh"
+
 xcodebuild \
     -workspace "$ROOT_DIR/App.xcworkspace" \
     -scheme Tamio \

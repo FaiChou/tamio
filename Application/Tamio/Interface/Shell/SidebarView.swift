@@ -9,6 +9,7 @@
 //
 
 import MachineStatusView
+import TamioDesign
 import TamioModule
 import SwiftUI
 
@@ -75,11 +76,14 @@ struct SidebarView: View {
         .animation(.easeInOut(duration: 0.25), value: sessionIDs)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             // Settings stays pinned to the bottom-left corner, drawn exactly like
-            // the rows above.
-            place(.settings, "Settings", systemImage: "gearshape")
-                .help("Settings (⌘,)")
-                .padding(.horizontal, SidebarMetrics.inset)
-                .frame(height: 48, alignment: .top)
+            // the rows above; a new version's notice sits just over it.
+            VStack(alignment: .leading, spacing: RX.Space.s2) {
+                UpdateNotice()
+                place(.settings, "Settings", systemImage: "gearshape")
+                    .help("Settings (⌘,)")
+                    .frame(height: 48, alignment: .top)
+            }
+            .padding(.horizontal, SidebarMetrics.inset)
         }
         .environment(\.sidebarMetrics, metrics)
     }

@@ -32,6 +32,8 @@ struct TamioApp: App {
         LiveStatusCenter.shared.start()
         // Agents reach the servers through the MCP server (Settings › MCP).
         AgentBridge.shared.start()
+        // Release builds look for new versions (Sparkle) once a day.
+        UpdateCenter.shared.start()
 
         // Shared file-transfer core lives in TamioModule; register the
         // platform UI handler it delegates to.
@@ -59,6 +61,11 @@ struct TamioApp: App {
 /// Menu commands: New Server, Settings (Settings is a sidebar destination), navigation.
 struct TamioCommands: Commands {
     var body: some Commands {
+        CommandGroup(after: .appInfo) {
+            if UpdateCenter.shared.isSupported {
+                Button("Check for Updates…") { UpdateCenter.shared.checkNow() }
+            }
+        }
         CommandGroup(replacing: .appSettings) {
             Button("Settings…") { AppRouter.shared.openSettings() }
                 .keyboardShortcut(",", modifiers: .command)

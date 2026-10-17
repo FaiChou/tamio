@@ -1,5 +1,10 @@
 # Pushing a tag "v<version>" builds the Mac disk image (Developer ID signed and
-# notarized) and publishes it as a release. Signing happens only here.
+# notarized), signs it for Sparkle and writes the appcast, and leaves both in a
+# DRAFT release. Nothing reaches anyone until the maintainer publishes the
+# draft (Releases → Edit → Publish release, or `gh release edit v<version>
+# --draft=false`): drafts are invisible, and the app's feed, the latest
+# release's appcast.xml, only ever points at a published release. Signing
+# happens only here.
 #
 # Run by hand (Actions → Release → Run workflow) it only builds, and keeps the
 # products as artifacts of the run; without the secrets the Mac app is then
@@ -11,6 +16,9 @@
 #   NOTARY_KEY, NOTARY_KEY_ID, NOTARY_ISSUER_ID   an App Store Connect API key
 #   or NOTARY_APPLE_ID, NOTARY_PASSWORD           an Apple ID and an
 #                                                 app-specific password
+#   SPARKLE_PRIVATE_KEY                           the EdDSA key that signs
+#                                                 updates (SUPublicEDKey is
+#                                                 its public half)
 
 name: Release
 
@@ -127,17 +135,38 @@ jobs:
           path: DerivedData/Release/Tamio-*.dmg
           if-no-files-found: error
 
-      - name: Publish the release
+      - name: Write the appcast
+        if: env.IS_TAG == 'true'
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$SPARKLE_PRIVATE_KEY" ]]; then
+            echo "::error::No SPARKLE_PRIVATE_KEY in the repository's secrets: the update could not be signed."
+            exit 1
+          fi
+          printf '%s' "$SPARKLE_PRIVATE_KEY" > "$RUNNER_TEMP/sparkle.key"
+          SPARKLE_KEY_FILE="$RUNNER_TEMP/sparkle.key" \
+            bash Workflow/Scripts/appcast.sh DerivedData/Release/Tamio-*.dmg "$GITHUB_REF_NAME" \
+            > DerivedData/Release/appcast.xml
+          cat DerivedData/Release/appcast.xml
+
+      - name: Draft the release
         if: env.IS_TAG == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
-            DerivedData/Release/Tamio-*.dmg \
-            --title "Tamio ${GITHUB_REF_NAME#v}" --generate-notes --verify-tag
+            DerivedData/Release/Tamio-*.dmg DerivedData/Release/appcast.xml \
+            --draft --title "Tamio ${GITHUB_REF_NAME#v}" --generate-notes --verify-tag
+          {
+            echo "### Waiting for approval"
+            echo "Tamio ${GITHUB_REF_NAME#v} is built, notarized and signed, in a draft release."
+            echo "Publish it to ship: \`gh release edit $GITHUB_REF_NAME --draft=false\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remove the signing keychain
         if: always()
         run: |
           security delete-keychain "$RUNNER_TEMP/release.keychain-db" 2>/dev/null || true
-          rm -f "$RUNNER_TEMP/notary.p8" "$RUNNER_TEMP/Tamio.provisionprofile"
+          rm -f "$RUNNER_TEMP/notary.p8" "$RUNNER_TEMP/Tamio.provisionprofile" "$RUNNER_TEMP/sparkle.key"
