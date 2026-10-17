@@ -54,7 +54,7 @@ struct SidebarView: View {
 
                 SidebarHeader("Manage")
                 place(.servers, "Servers", systemImage: "server.rack", badge: store.machineGroup.count)
-                place(.identities, "Identities", systemImage: "person.badge.key", badge: store.identityGroup.count)
+                place(.identities, "Identities", systemImage: "person.badge.key", badge: store.identityGroup.shared.count)
                 place(.snippets, "Snippets", systemImage: "chevron.left.forwardslash.chevron.right", badge: store.snippetGroup.count)
                 place(.portForward, "Port Forward", systemImage: "arrow.left.arrow.right", badge: store.portForwardGroup.count)
 
@@ -247,7 +247,8 @@ private struct OwnerSidebarRow: View {
     private var title: String {
         switch owner {
         case let .server(id):
-            return store.machineGroup[id].name
+            let machine = store.machineGroup[id]
+            return [machine.countryFlag, machine.name].compactMap { $0 }.joined(separator: " ")
         case let .command(id):
             return terminals.sessionContexts.first { $0.id == id }?.displayName ?? "Terminal"
         }

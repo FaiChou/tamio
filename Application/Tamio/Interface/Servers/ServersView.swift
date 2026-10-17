@@ -165,6 +165,9 @@ private struct ServersTable: View {
             TableHeaderLabel("Address").frame(width: columns.address)
             if columns.showIdentity { TableHeaderLabel("Identity").frame(width: columns.identity) }
             if columns.showCPU { TableHeaderLabel("CPU").frame(width: columns.cpu) }
+            if columns.showMemory { TableHeaderLabel("Mem").frame(width: columns.meter) }
+            if columns.showDisk { TableHeaderLabel("Disk").frame(width: columns.meter) }
+            if columns.showNetwork { TableHeaderLabel("Net ↑ ↓").frame(width: columns.network) }
             if columns.showLastUsed { TableHeaderLabel("Last used").frame(width: columns.lastUsed) }
             Color.clear.frame(width: columns.actions, height: 1)
         }
@@ -173,21 +176,36 @@ private struct ServersTable: View {
     }
 }
 
+/// Which columns fit, in the order they give way: status first, then the
+/// identity and last use.
 struct ServerColumns {
     let address: CGFloat = 150
-    let identity: CGFloat = 110
-    let cpu: CGFloat = 110
-    let lastUsed: CGFloat = 120
+    let identity: CGFloat = 130
+    let cpu: CGFloat = 96
+    let meter: CGFloat = 70
+    let network: CGFloat = 150
+    let lastUsed: CGFloat = 110
     let actions: CGFloat = 220
-    let showIdentity: Bool
     let showCPU: Bool
+    let showMemory: Bool
+    let showDisk: Bool
+    let showNetwork: Bool
+    let showIdentity: Bool
     let showLastUsed: Bool
 
     init(width: CGFloat) {
-        let base: CGFloat = 180 + 150 + 220 + 24
-        showCPU = width > base + 110
-        showIdentity = width > base + 110 + 110
-        showLastUsed = width > base + 110 + 110 + 120
+        var room = width - (180 + 150 + 220 + 24)
+        func fits(_ column: CGFloat) -> Bool {
+            guard room >= column else { return false }
+            room -= column
+            return true
+        }
+        showCPU = fits(cpu)
+        showMemory = fits(meter)
+        showDisk = fits(meter)
+        showNetwork = fits(network)
+        showIdentity = fits(identity)
+        showLastUsed = fits(lastUsed)
     }
 }
 
@@ -204,10 +222,13 @@ private struct ServerRow: View {
         ServerLiveReader(machine: machine) { state in
             HStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 1) {
-                    RedactableText(read.name, redacted: store.machineRedacted == .all)
-                        .font(.rxBody)
-                        .foregroundStyle(.rxInk)
-                        .lineLimit(1)
+                    HStack(spacing: 5) {
+                        if let flag = read.countryFlag { Text(flag).font(.system(size: 13)) }
+                        RedactableText(read.name, redacted: store.machineRedacted == .all)
+                            .font(.rxBody)
+                            .foregroundStyle(.rxInk)
+                            .lineLimit(1)
+                    }
                     if !read.comment.isEmpty, store.machineRedacted == .none {
                         Text(read.comment)
                             .font(.rxHelp)
@@ -244,6 +265,21 @@ private struct ServerRow: View {
                     }
                     .frame(width: columns.cpu, alignment: .leading)
                 }
+                if columns.showMemory { percentText(state.memory).frame(width: columns.meter, alignment: .leading) }
+                if columns.showDisk { percentText(state.disk).frame(width: columns.meter, alignment: .leading) }
+                if columns.showNetwork {
+                    Group {
+                        if let up = state.transmit, let down = state.receive {
+                            Text("\(RXFormat.rateString(up))  \(RXFormat.rateString(down))")
+                                .font(.system(size: 12).monospacedDigit())
+                                .foregroundStyle(.rxInk)
+                                .lineLimit(1)
+                        } else {
+                            Text("—").foregroundStyle(.rxInkSecondary)
+                        }
+                    }
+                    .frame(width: columns.network, alignment: .leading)
+                }
                 if columns.showLastUsed {
                     Text(RXFormat.relative(read.lastConnection))
                         .font(.rxBody)
@@ -274,9 +310,27 @@ private struct ServerRow: View {
         .contextMenu { ServerContextMenu(machine: machine) }
     }
 
+    func percentText(_ value: Double?) -> some View {
+        Group {
+            if let value {
+                Text("\(RXFormat.percent(value))%")
+                    .font(.rxBody.monospacedDigit())
+                    .foregroundStyle(rxUsageColor(value, base: .rxInk))
+            } else {
+                Text("—").foregroundStyle(.rxInkSecondary)
+            }
+        }
+    }
+
     func identityName(_ machine: RDMachine) -> String {
-        guard let aid = machine.associatedIdentity, let uid = UUID(uuidString: aid) else { return "Automatic" }
+        let user = machine.loginUsername(with: nil)
+        guard let aid = machine.associatedIdentity, let uid = UUID(uuidString: aid) else {
+            return user.isEmpty ? "Automatic" : "\(user) · Automatic"
+        }
         let identity = store.identityGroup[uid]
-        return identity.username.isEmpty ? "Missing" : identity.username
+        guard identity.hasCredentials else { return "Missing" }
+        let credential = identity.isPrivate ? identity.authDescription : identity.displayName
+        let login = machine.loginUsername(with: identity)
+        return login.isEmpty ? credential : "\(login) · \(credential)"
     }
 }

@@ -19,11 +19,16 @@ public extension ServerStatus {
             public let device: String
             public let rxBytesPerSec: Int
             public let txBytesPerSec: Int
+            /// The interface's counters: bytes since the server booted.
+            public let rxBytesTotal: Int
+            public let txBytesTotal: Int
 
-            public init(device: String, rxBytesPerSec: Int, txBytesPerSec: Int) {
+            public init(device: String, rxBytesPerSec: Int, txBytesPerSec: Int, rxBytesTotal: Int = 0, txBytesTotal: Int = 0) {
                 self.device = device
                 self.rxBytesPerSec = rxBytesPerSec
                 self.txBytesPerSec = txBytesPerSec
+                self.rxBytesTotal = rxBytesTotal
+                self.txBytesTotal = txBytesTotal
             }
 
             public func description() -> String {
@@ -95,7 +100,10 @@ public extension ServerStatus {
                     if rxIncrease < 0 || txIncrease < 0 {
                         continue
                     }
-                    result.append(NetworkInfoElement(device: item.key, rxBytesPerSec: rxIncrease, txBytesPerSec: txIncrease))
+                    result.append(NetworkInfoElement(
+                        device: item.key, rxBytesPerSec: rxIncrease, txBytesPerSec: txIncrease,
+                        rxBytesTotal: target.0, txBytesTotal: target.1
+                    ))
                 }
             }
 
@@ -116,7 +124,10 @@ public extension ServerStatus {
                 let rxIncrease = current.rx - previous.rx
                 let txIncrease = current.tx - previous.tx
                 guard rxIncrease >= 0, txIncrease >= 0 else { return nil }
-                return NetworkInfoElement(device: device, rxBytesPerSec: rxIncrease, txBytesPerSec: txIncrease)
+                return NetworkInfoElement(
+                    device: device, rxBytesPerSec: rxIncrease, txBytesPerSec: txIncrease,
+                    rxBytesTotal: current.rx, txBytesTotal: current.tx
+                )
             }
             self.init(elements: result.sorted { $0.device < $1.device })
         }

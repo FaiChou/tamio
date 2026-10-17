@@ -52,7 +52,7 @@ public extension TamioStore {
         else { return nil }
         return workerState.withLock { state in
             let identity = state.identities.first(where: { $0.id == uuid }) ?? .init()
-            return identity.username.isEmpty ? nil : identity
+            return identity.hasCredentials ? identity : nil
         }
     }
 
@@ -60,9 +60,9 @@ public extension TamioStore {
     var workerIdentitiesForAutoAuth: [RDIdentity] {
         workerState.withLock {
             $0.identities
-                .filter(\.authenticAutomatically)
+                .filter { $0.authenticAutomatically && !$0.isPrivate }
                 // make sure not to reopen too many times
-                .sorted { $0.username < $1.username }
+                .sorted { $0.name < $1.name }
         }
     }
 }

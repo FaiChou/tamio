@@ -59,6 +59,12 @@ public extension ServerStatus {
         return memoryUsedKB / Double(memory.memTotal) * 100
     }
 
+    /// CPUs: the reported count, else the per-core rows, else one.
+    var cores: Int {
+        if cpuCount > 0 { return cpuCount }
+        return max(1, processor.cores.count)
+    }
+
     var hasData: Bool {
         !system.hostname.isEmpty || memory.memTotal > 0
     }
@@ -75,6 +81,10 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
     public let id = UUID()
     public let machine: RDMachine
     let identity: RDIdentity?
+    /// Whether each refresh is recorded on the server as its last
+    /// connection. Background status (server cards) is not: it would save
+    /// and sync the store every few seconds.
+    let recordsConnection: Bool
 
     public let status = ServerStatus()
     @Published public private(set) var phase: Phase = .connecting
@@ -88,9 +98,10 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
 
     private static let queue = DispatchQueue(label: "sb.moe.tamio.monitor", attributes: .concurrent)
 
-    public init(machine: RDMachine, identity: RDIdentity?) {
+    public init(machine: RDMachine, identity: RDIdentity?, recordsConnection: Bool = true) {
         self.machine = machine
         self.identity = identity
+        self.recordsConnection = recordsConnection
         shell = NSRemoteShell.configured(for: machine, timeout: TamioStore.shared.timeoutNumber)
         // Re-publish nested status changes so one observer is enough.
         status.objectWillChange
@@ -111,6 +122,7 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
         private init(previewing machine: RDMachine) {
             self.machine = machine
             identity = nil
+            recordsConnection = false
             shell = NSRemoteShell()
             status.objectWillChange
                 .sink { [weak self] _ in self?.objectWillChange.send() }
@@ -170,6 +182,7 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
                 onMainThread {
                     self.phase = .connected
                     self.isRefreshing = true
+                    guard self.recordsConnection else { return }
                     var read = TamioStore.shared.machineGroup[self.machine.id]
                     if read.isNotPlaceholder() {
                         read.lastBanner = self.shell.remoteBanner ?? read.lastBanner
@@ -210,10 +223,24 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
         }
     }
 
+    /// Runs a command over the session's connection (a process list, the
+    /// containers), nil while it is not connected.
+    public func run(_ command: String, timeout: Double = 15) async -> String? {
+        guard phase == .connected else { return nil }
+        let shell = shell
+        nonisolated(unsafe) var output: String?
+        await blocking {
+            guard shell.isConnected, shell.isAuthenticated else { return }
+            output = ServerStatus.downloadResultFrom(shell: shell, command: command, timeout: timeout)
+        }
+        return output
+    }
+
     private func connectAndAuthenticate() {
         shell.connectAndAuthenticate(
             identity: identity,
-            autoIdentities: TamioStore.shared.workerIdentitiesForAutoAuth
+            autoIdentities: TamioStore.shared.workerIdentitiesForAutoAuth,
+            for: machine
         )
     }
 
@@ -274,3 +301,7 @@ public final class MonitorCenter: ObservableObject {
     }
 
 }
+
+/// Published state changes on the main thread only and the shell is used on
+/// the session's own queue, so a session may be handed between them.
+extension MonitorSession: @unchecked Sendable {}

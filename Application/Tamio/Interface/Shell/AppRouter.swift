@@ -46,8 +46,14 @@ final class AppRouter: ObservableObject {
     /// The last page that is not a session; closing a session returns here.
     private(set) var lastPlace: Route = .home
     @Published var columnVisibility: NavigationSplitViewVisibility = .all
-    /// Presents the server editor for a new server from anywhere (menu, Home, Servers).
-    @Published var presentNewServer = false
+    /// The server editor panel at the trailing edge of the window: a new
+    /// server, or one being edited. Nil when the panel is closed.
+    @Published var serverEditor: ServerEditorTarget?
+    /// Opens the panel for a new server from anywhere (menu, Home, Servers).
+    var presentNewServer: Bool {
+        get { serverEditor == .new }
+        set { serverEditor = newValue ? .new : nil }
+    }
     /// Settings category to show when Settings opens.
     /// Settings follows this itself, so a change of category does not go
     /// through every view that watches the router.
@@ -103,6 +109,17 @@ final class AppRouter: ObservableObject {
         TerminalManager.shared.createSession(withMachineID: machine) { [weak self] context in
             guard let self, self.opensAutomatically else { return }
             self.route = .terminal(context.id)
+        }
+    }
+
+    /// A new terminal on the server that runs `initialCommand` once signed in.
+    func openTerminal(machine: RDMachine.ID, initialCommand: String) {
+        let manager = TerminalManager.shared
+        let machineObject = TamioStore.shared.machineGroup[machine]
+        guard machineObject.isNotPlaceholder() else { return }
+        manager.createSession(withMachineObject: machineObject, force: true) { [weak self] context in
+            context.initialCommand = initialCommand
+            self?.route = .terminal(context.id)
         }
     }
 
@@ -247,6 +264,16 @@ final class AppRouter: ObservableObject {
     func openSettings(_ category: String = SettingsCategory.general) {
         settingsSelection = category
         route = .settings
+    }
+}
+
+enum ServerEditorTarget: Hashable {
+    case new
+    case edit(RDMachine.ID)
+
+    var machine: RDMachine.ID? {
+        if case let .edit(id) = self { return id }
+        return nil
     }
 }
 

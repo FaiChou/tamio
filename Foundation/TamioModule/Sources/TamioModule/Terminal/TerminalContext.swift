@@ -33,6 +33,9 @@ open class TerminalContext: ObservableObject, Identifiable, Equatable {
     }
 
     public var firstConnect = true
+    /// Typed once the shell is open, after the server's startup snippet
+    /// (a container's logs, a shell in it).
+    public var initialCommand: String?
     @Published public var destroyedSession = false {
         didSet {
             if destroyedSession {
@@ -225,7 +228,8 @@ open class TerminalContext: ObservableObject, Identifiable, Equatable {
 
         let result = shell.connectAndAuthenticate(
             identity: identity,
-            autoIdentities: TamioStore.shared.workerIdentitiesForAutoAuth
+            autoIdentities: TamioStore.shared.workerIdentitiesForAutoAuth,
+            for: machine
         ) { [self] hintText in
             putInformation(hintText)
         }
@@ -256,8 +260,20 @@ open class TerminalContext: ObservableObject, Identifiable, Equatable {
             }
         }
 
-        shell.begin(withTerminalType: "xterm") {
+        let startupSnippet = remoteType == .machine ? machine.startupSnippet : nil
+        let initialCommand = initialCommand
+        shell.begin(withTerminalType: "xterm") { [weak self] in
             debugPrint("channel open")
+            // The server's startup snippet, then the command the terminal was
+            // opened for, are typed once the shell is there, as if the user
+            // had typed them.
+            onMainThread {
+                let snippet = startupSnippet.map { TamioStore.shared.snippetGroup[$0].code } ?? ""
+                for code in [snippet, initialCommand ?? ""] where !code.isEmpty {
+                    let typed = code.replacingOccurrences(of: "\r\n", with: "\r").replacingOccurrences(of: "\n", with: "\r")
+                    self?.insertBuffer(typed.hasSuffix("\r") ? typed : typed + "\r")
+                }
+            }
         } withTerminalSize: { [weak self] in
             var size = self?.terminalSize ?? TerminalContext.defaultTerminalSize
             if size.width < 8 || size.height < 8 {

@@ -181,10 +181,10 @@ public class TamioStore: ObservableObject, @unchecked Sendable {
     /// Main thread; worker queues read `workerIdentitiesForAutoAuth`.
     public var identityGroupForAutoAuth: [RDIdentity] {
         identityGroup
-            .identities
+            .shared
             .filter(\.authenticAutomatically)
             // make sure not to reopen too many times
-            .sorted { $0.username < $1.username }
+            .sorted { $0.name < $1.name }
     }
 
     @Published public var machineRedacted: RDMachine.RedactedLevel = .none {

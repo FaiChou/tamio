@@ -86,7 +86,10 @@ public struct RDIdentity: Codable, Identifiable, Equatable, Sendable {
         }
     }
 
-    public func callAuthenticationWith(remote: NSRemoteShell) {
+    /// Signs in as `username`, the server's, with this identity's password or
+    /// key. An identity is only a credential; which user it signs in as is
+    /// the server's business.
+    public func callAuthenticationWith(remote: NSRemoteShell, username: String) {
         if remote.isAuthenticated { return }
         if privateKey.count > 0 || publicKey.count > 0 {
             remote.authenticate(with: username, andPublicKey: publicKey, andPrivateKey: privateKey, andPassword: password)
@@ -108,6 +111,32 @@ public struct RDIdentity: Codable, Identifiable, Equatable, Sendable {
 }
 
 public extension RDIdentity {
+    /// What the identity is called in lists ("Deploy key", "Office password").
+    /// Identities saved before names existed show the user they were made for.
+    var name: String {
+        get { attachment["name"] ?? username }
+        set { attachment["name"] = newValue }
+    }
+
+    /// The name, or what the credential is when it has none.
+    var displayName: String {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        return trimmed.isEmpty ? authDescription : trimmed
+    }
+
+    /// A password or a key to sign in with.
+    var hasCredentials: Bool {
+        !password.isEmpty || !privateKey.isEmpty
+    }
+
+    /// The credentials typed into one server's editor rather than chosen from
+    /// Identities. Hidden from every identity list, never tried on other
+    /// servers, and deleted with its server.
+    var isPrivate: Bool {
+        get { attachment["private"] == "1" }
+        set { attachment["private"] = newValue ? "1" : nil }
+    }
+
     /// "Key pair · ed25519", "Password" style description.
     var authDescription: String {
         if !privateKey.isEmpty {
@@ -119,9 +148,23 @@ public extension RDIdentity {
     }
 
     var keyAlgorithm: String? {
-        let source = publicKey.isEmpty ? privateKey : publicKey
-        for (marker, name) in [("ssh-ed25519", "ed25519"), ("ecdsa-sha2", "ecdsa"), ("ssh-rsa", "rsa"), ("BEGIN RSA", "rsa"), ("BEGIN EC", "ecdsa")] {
-            if source.contains(marker) { return name }
+        RDIdentity.keyAlgorithm(publicKey: publicKey, privateKey: privateKey)
+    }
+
+    /// "ed25519", "rsa" or "ecdsa", read from the public key, else from the
+    /// private key: PEM headers, or the key type inside an OpenSSH key.
+    static func keyAlgorithm(publicKey: String, privateKey: String) -> String? {
+        let markers = [("ssh-ed25519", "ed25519"), ("ecdsa-sha2", "ecdsa"), ("ssh-rsa", "rsa"), ("BEGIN RSA", "rsa"), ("BEGIN EC", "ecdsa")]
+        for (marker, name) in markers where publicKey.contains(marker) { return name }
+        for (marker, name) in markers where privateKey.contains(marker) { return name }
+        // An OpenSSH private key (-----BEGIN OPENSSH PRIVATE KEY-----) is
+        // base64; its public part names the key type in plain bytes.
+        let body = privateKey
+            .components(separatedBy: .newlines)
+            .filter { !$0.hasPrefix("-----") }
+            .joined()
+        if let data = Data(base64Encoded: body), let text = String(data: data, encoding: .isoLatin1) {
+            for (marker, name) in markers where text.contains(marker) { return name }
         }
         return nil
     }

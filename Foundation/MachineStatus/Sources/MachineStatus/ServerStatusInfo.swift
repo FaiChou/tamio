@@ -73,14 +73,19 @@ public class ServerStatus: ObservableObject, Equatable {
             ("platform", "echo \"$TAMIO_KERNEL\""),
             ("cpu-a", "if [ \"$TAMIO_KERNEL\" != Darwin ]; then /bin/cat /proc/stat; fi"),
             ("net-a", "if [ \"$TAMIO_KERNEL\" = Darwin ]; then /usr/sbin/netstat -ibn; else /bin/cat /proc/net/dev; fi"),
+            ("disk-a", "if [ \"$TAMIO_KERNEL\" != Darwin ]; then /bin/cat /proc/diskstats 2>/dev/null; fi"),
             ("darwin-top", "if [ \"$TAMIO_KERNEL\" = Darwin ]; then /usr/bin/top -l 2 -n 0 -s 1; fi"),
             ("wait", "if [ \"$TAMIO_KERNEL\" != Darwin ]; then /bin/sleep 1; fi"),
             ("cpu-b", "if [ \"$TAMIO_KERNEL\" != Darwin ]; then /bin/cat /proc/stat; fi"),
+            ("disk-b", "if [ \"$TAMIO_KERNEL\" != Darwin ]; then /bin/cat /proc/diskstats 2>/dev/null; fi"),
             ("net-b", "if [ \"$TAMIO_KERNEL\" = Darwin ]; then /usr/sbin/netstat -ibn; else /bin/cat /proc/net/dev; fi"),
             ("mem", "if [ \"$TAMIO_KERNEL\" = Darwin ]; then /usr/sbin/sysctl hw.memsize hw.pagesize vm.swapusage; /usr/bin/vm_stat; else /bin/cat /proc/meminfo; fi"),
             ("df", "/bin/df -Pk"),
             ("uptime", "if [ \"$TAMIO_KERNEL\" = Darwin ]; then /bin/date +%s; /usr/sbin/sysctl -n kern.boottime; else /bin/cat /proc/uptime; fi"),
             ("loadavg", "if [ \"$TAMIO_KERNEL\" != Darwin ]; then /bin/cat /proc/loadavg; fi"),
+            ("ncpu", "getconf _NPROCESSORS_ONLN 2>/dev/null || /usr/sbin/sysctl -n hw.ncpu 2>/dev/null"),
+            ("snmp", "if [ \"$TAMIO_KERNEL\" != Darwin ]; then /bin/cat /proc/net/snmp 2>/dev/null; fi"),
+            ("addr", "if [ \"$TAMIO_KERNEL\" != Darwin ]; then ip -o -4 addr show 2>/dev/null; fi"),
         ]
         if includeStatic {
             sections += [
@@ -95,7 +100,8 @@ public class ServerStatus: ObservableObject, Equatable {
             .joined(separator: "\n")
     }
 
-    static func downloadResultFrom(shell: NSRemoteShell, command: String, timeout: Double) -> String {
+    /// Runs one command on an open shell and returns what it printed.
+    public static func downloadResultFrom(shell: NSRemoteShell, command: String, timeout: Double) -> String {
         guard shell.isConnected, shell.isAuthenticated else {
             return ""
         }
@@ -119,6 +125,14 @@ public class ServerStatus: ObservableObject, Equatable {
     public var memory: MemoryInfo = .init()
     public var system: SystemInfo = .init()
     public var network: NetworkInfo = .init()
+    /// Linux only; empty on Darwin.
+    public var diskIO: DiskIOInfo = .init()
+    /// Online CPUs, for scaling the load; 0 when unknown.
+    public var cpuCount = 0
+    /// Linux only.
+    public var tcp: TCPInfo = .init()
+    /// Each interface's first IPv4 address; Linux only.
+    public var addresses: [String: String] = [:]
 
     // not all server have gpu, bro
     public var graphics: GraphicsInfo? = nil
@@ -129,6 +143,10 @@ public class ServerStatus: ObservableObject, Equatable {
             lhs.memory == rhs.memory &&
             lhs.system == rhs.system &&
             lhs.network == rhs.network &&
+            lhs.diskIO == rhs.diskIO &&
+            lhs.tcp == rhs.tcp &&
+            lhs.cpuCount == rhs.cpuCount &&
+            lhs.addresses == rhs.addresses &&
             lhs.graphics == rhs.graphics
     }
 
@@ -221,6 +239,10 @@ public class ServerStatus: ObservableObject, Equatable {
             uptime = ProcParsers.parseUptime(sections["uptime"] ?? "")
         }
         let fileSystem = FileSystemInfo(dfPk: sections["df"] ?? "")
+        let diskIO = isDarwin ? DiskIOInfo() : DiskIOInfo(diskstatsBefore: sections["disk-a"], diskstatsAfter: sections["disk-b"])
+        let tcp = TCPInfo(snmp: sections["snmp"] ?? "")
+        let cpuCount = Int((sections["ncpu"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)) ?? 0
+        let addresses = Self.parseIPv4Addresses(sections["addr"] ?? "")
         let system = SystemInfo(
             release: releaseName,
             uptimeInSec: uptime,
@@ -243,6 +265,10 @@ public class ServerStatus: ObservableObject, Equatable {
             self.memory = memory
             self.system = system
             self.network = network
+            self.diskIO = diskIO
+            self.tcp = tcp
+            self.cpuCount = cpuCount
+            self.addresses = addresses
             self.graphics = graphics
         }
     }

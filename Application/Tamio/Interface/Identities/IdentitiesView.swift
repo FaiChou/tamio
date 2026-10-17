@@ -2,7 +2,9 @@
 //  IdentitiesView.swift
 //  Tamio (macOS)
 //
-//  Identities grouped by group, with the editor beside the list.
+//  Identities grouped by group, with the editor beside the list. An identity
+//  is a credential, a password or a key; the user it signs in as belongs to
+//  each server.
 //
 
 import TamioModule
@@ -16,11 +18,11 @@ struct IdentitiesView: View {
     @State private var creating = false
 
     var filtered: [RDIdentity] {
-        let all = store.identityGroup.identities
+        let all = store.identityGroup.shared
         guard !searchText.isEmpty else { return all }
         let key = searchText.lowercased()
         return all.filter {
-            $0.username.lowercased().contains(key)
+            $0.name.lowercased().contains(key)
                 || $0.group.lowercased().contains(key)
                 || $0.comment.lowercased().contains(key)
         }
@@ -34,7 +36,7 @@ struct IdentitiesView: View {
             return lhs.localizedStandardCompare(rhs) == .orderedAscending
         }
         return names.map { name in
-            (name, identities.filter { $0.group == name }.sorted { $0.username < $1.username })
+            (name, identities.filter { $0.group == name }.sorted { $0.displayName.localizedStandardCompare($1.displayName) == .orderedAscending })
         }
     }
 
@@ -42,18 +44,18 @@ struct IdentitiesView: View {
         PageScaffold(
             search: $searchText,
             searchPrompt: "Search identities",
-            primary: ToolbarAction("New Identity", systemImage: "plus", primary: true) { creating = true }
+            primary: ToolbarAction("New Key", systemImage: "plus", primary: true) { creating = true }
         ) {
         } trailing: {
         } header: {
             PageTitle("Identities")
         } content: {
-            if store.identityGroup.identities.isEmpty {
+            if store.identityGroup.shared.isEmpty {
                 EmptyStateView(
                     "No identities yet",
                     systemImage: "person",
-                    message: "A username with a password or key.",
-                    actionTitle: "New Identity"
+                    message: "SSH keys you can use on any server, as any user.",
+                    actionTitle: "New Key"
                 ) {
                     creating = true
                 }
@@ -62,7 +64,7 @@ struct IdentitiesView: View {
                 HStack(alignment: .top, spacing: RX.Space.s4) {
                     list
                         .frame(width: 320)
-                    if let selection, store.identityGroup.identities.contains(where: { $0.id == selection }) {
+                    if let selection, store.identityGroup.shared.contains(where: { $0.id == selection }) {
                         IdentityDetail(identity: selection)
                             .id(selection)
                     } else {
@@ -118,9 +120,9 @@ private struct IdentityRow: View {
     var body: some View {
         HStack(spacing: RX.Space.s2) {
             VStack(alignment: .leading, spacing: 1) {
-                Text(identity.username.isEmpty ? "No username" : identity.username)
+                Text(identity.displayName)
                     .font(.rxBody)
-                    .foregroundStyle(identity.username.isEmpty ? Color.rxInkSecondary : Color.rxInk)
+                    .foregroundStyle(Color.rxInk)
                     .lineLimit(1)
                 Text(identity.authDescription)
                     .font(.rxHelp)
@@ -149,9 +151,9 @@ private struct IdentityRow: View {
 enum IdentityActions {
     static func duplicate(_ id: RDIdentity.ID) {
         var copy = TamioStore.shared.identityGroup[id]
-        guard !copy.username.isEmpty else { return }
+        guard copy.hasCredentials else { return }
         copy.id = UUID()
-        copy.comment = copy.comment.isEmpty ? "Copy" : copy.comment + " (copy)"
+        copy.name = copy.displayName + " copy"
         TamioStore.shared.identityGroup.insert(copy)
     }
 
@@ -160,7 +162,7 @@ enum IdentityActions {
         let identity = store.identityGroup[id]
         let users = store.machineGroup.machines.filter { $0.associatedIdentity == id.uuidString }.count
         UIBridge.requiresConfirmation(
-            message: "Delete identity \(identity.username)?",
+            message: "Delete identity \(identity.displayName)?",
             informative: users > 0
                 ? "\(users) server\(users == 1 ? "" : "s") use it and will try automatic identities instead."
                 : "Its password and keys are removed from Tamio.",
@@ -191,8 +193,8 @@ private struct IdentityDetail: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top) {
-                // The username is the first field below; the header says
-                // where the identity is used.
+                // The name is the first field below; the header says where
+                // the identity is used.
                 HelpText(usageLine.isEmpty ? "Not used by any server" : usageLine)
                 Spacer()
                 Menu {
@@ -249,25 +251,25 @@ private struct IdentityDetail: View {
 /// Editable copy of an identity.
 struct IdentityDraft: Equatable {
     enum Method: Hashable {
-        case keyPair
+        case key
         case password
     }
 
-    var username = ""
+    var name = ""
     var group = ""
-    var method: Method = .password
+    var method: Method = .key
     var password = ""
     var privateKey = ""
     var publicKey = ""
     var comment = ""
-    var automatic = true
+    var automatic = false
 
     init() {}
 
     init(_ identity: RDIdentity) {
-        username = identity.username
+        name = identity.name
         group = identity.group
-        method = identity.privateKey.isEmpty ? .password : .keyPair
+        method = identity.privateKey.isEmpty && !identity.password.isEmpty ? .password : .key
         password = identity.password
         privateKey = identity.privateKey
         publicKey = identity.publicKey
@@ -275,15 +277,41 @@ struct IdentityDraft: Equatable {
         automatic = identity.authenticAutomatically
     }
 
-    var isValid: Bool { !username.trimmingCharacters(in: .whitespaces).isEmpty }
+    var trimmedPrivateKey: String { privateKey.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+    /// Why the identity cannot be saved yet, or nil.
+    var problem: String? {
+        switch method {
+        case .password:
+            return password.isEmpty ? "Type the password." : nil
+        case .key:
+            if trimmedPrivateKey.isEmpty { return "Paste or load the private key." }
+            if !trimmedPrivateKey.contains("PRIVATE KEY") {
+                return trimmedPrivateKey.hasPrefix("ssh-") || trimmedPrivateKey.hasPrefix("ecdsa-")
+                    ? "That is a public key. The private key starts with -----BEGIN … PRIVATE KEY-----."
+                    : "This does not look like a private key: it starts with -----BEGIN … PRIVATE KEY-----."
+            }
+            return nil
+        }
+    }
+
+    var isValid: Bool { problem == nil }
 
     func apply(to identity: RDIdentity) -> RDIdentity {
         var result = identity
-        result.username = username.trimmingCharacters(in: .whitespaces)
+        result.name = name.trimmingCharacters(in: .whitespaces)
         result.group = group
-        result.password = password
-        result.privateKey = method == .keyPair ? privateKey : ""
-        result.publicKey = method == .keyPair ? publicKey : ""
+        switch method {
+        case .password:
+            result.password = password
+            result.privateKey = ""
+            result.publicKey = ""
+        case .key:
+            // The password field is the key's passphrase.
+            result.password = password
+            result.privateKey = trimmedPrivateKey + "\n"
+            result.publicKey = publicKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
         result.comment = comment
         result.authenticAutomatically = automatic
         return result
@@ -292,7 +320,7 @@ struct IdentityDraft: Equatable {
     /// RDIdentity compares by id only, so compare the edited fields.
     func differs(from identity: RDIdentity) -> Bool {
         let edited = apply(to: identity)
-        return edited.username != identity.username
+        return edited.name != identity.name
             || edited.group != identity.group
             || edited.password != identity.password
             || edited.privateKey != identity.privateKey
@@ -302,16 +330,27 @@ struct IdentityDraft: Equatable {
     }
 }
 
-/// Username, Group, Key pair / Password, keys, Password, Comment, Authenticate automatically.
+/// Name, Group, the key (pasted, loaded or generated), Passphrase, Comment.
+/// No username: that is set on each server. Identities are SSH keys; one
+/// saved with a password before keeps it, editable here.
 struct IdentityForm: View {
     @Binding var draft: IdentityDraft
     @EnvironmentObject var store: TamioStore
+    @State private var showsSecret = false
+    /// Whether the identity already was a password one when the form opened.
+    @State private var allowsPassword: Bool?
+    /// Whether the form opened with a private key, one already saved.
+    @State private var savedPrivateKey = false
+
+    var algorithm: String? {
+        RDIdentity.keyAlgorithm(publicKey: draft.publicKey, privateKey: draft.privateKey)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top, spacing: RX.Space.s4) {
-                RXField("Username") {
-                    TextField("root", text: $draft.username)
+                RXField("Name") {
+                    TextField(draft.method == .key ? "Deploy key" : "Office password", text: $draft.name)
                         .textFieldStyle(.rx)
                         .disableAutocorrection(true)
                 }
@@ -320,95 +359,198 @@ struct IdentityForm: View {
                         .textFieldStyle(.rx)
                 }
             }
-            RXField("Authentication") {
-                RXSegmented(selection: $draft.method, options: [
-                    .init(.keyPair, "Key pair"),
-                    .init(.password, "Password"),
-                ], caps: false, fullWidth: true)
-            }
-            if draft.method == .keyPair {
-                RXField("Private key") {
-                    KeyField(
-                        text: $draft.privateKey,
-                        masked: true,
-                        placeholder: "No private key loaded",
-                        loadTitle: "Load Private Key…",
-                        matches: { $0.contains("PRIVATE KEY") }
-                    )
+            if allowsPassword == true {
+                RXField("Authentication") {
+                    RXSegmented(selection: $draft.method, options: [
+                        .init(.key, "SSH key"),
+                        .init(.password, "Password"),
+                    ], caps: false, fullWidth: true)
                 }
-                RXField("Public key", help: "Optional") {
-                    KeyField(
+            }
+            if draft.method == .key {
+                RXField(
+                    "Private key",
+                    help: algorithm.map { "\($0.uppercased()) key. Ed25519, RSA and ECDSA keys work, in OpenSSH or PEM format." }
+                        ?? "Ed25519, RSA and ECDSA keys work, in OpenSSH or PEM format."
+                ) {
+                    if draft.privateKey.isEmpty {
+                        KeyEditor(
+                            text: $draft.privateKey,
+                            placeholder: "Paste the private key: -----BEGIN OPENSSH PRIVATE KEY-----",
+                            loadTitle: "Load from File…",
+                            height: 120
+                        ) {
+                            Button("Generate Ed25519 Key") { generate() }
+                                .buttonStyle(.rx(size: .small))
+                                .help("Make a new key pair; add its public key to the server's ~/.ssh/authorized_keys")
+                        }
+                    } else {
+                        // Once in, a private key is never shown again: not here,
+                        // not in a copy. It can only be replaced.
+                        SealedKeyRow(algorithm: algorithm) { replacePrivateKey() }
+                    }
+                }
+                RXField("Public key", help: "Goes in the server's ~/.ssh/authorized_keys. Optional for signing in.") {
+                    KeyEditor(
                         text: $draft.publicKey,
-                        masked: false,
-                        placeholder: "No public key loaded",
-                        loadTitle: "Load Public Key…",
-                        matches: looksLikePublicKey
-                    )
+                        placeholder: "ssh-ed25519 AAAA… user@host",
+                        loadTitle: "Load from File…",
+                        height: 54
+                    ) {
+                        if !draft.publicKey.isEmpty {
+                            Button("Copy") { UIBridge.sendPasteboard(str: draft.publicKey) }
+                                .buttonStyle(.rx(size: .small))
+                        }
+                    }
                 }
                 RXField("Passphrase") {
-                    SecureField("None", text: $draft.password)
-                        .textFieldStyle(.rx)
+                    secretField("None", text: $draft.password)
                 }
             } else {
                 RXField("Password") {
-                    SecureField("Required", text: $draft.password)
-                        .textFieldStyle(.rx)
+                    secretField("Required", text: $draft.password)
                 }
             }
             RXField("Comment") {
                 TextField("Optional", text: $draft.comment)
                     .textFieldStyle(.rx)
             }
-            Hairline()
-            SwitchRow(
-                "Authenticate automatically",
-                description: "Required for Quick Connect.",
-                isOn: $draft.automatic
-            )
+            if let problem = draft.problem, !(draft.method == .key && draft.trimmedPrivateKey.isEmpty) {
+                HelpText(problem, isError: true)
+            }
+        }
+        .onAppear {
+            if allowsPassword == nil {
+                allowsPassword = draft.method == .password
+                savedPrivateKey = !draft.privateKey.isEmpty
+            }
+        }
+    }
+
+    /// Clears the private key so another can be pasted, loaded or generated;
+    /// asks first for a key that was already saved.
+    func replacePrivateKey() {
+        let clear = {
+            draft.privateKey = ""
+            draft.publicKey = ""
+            draft.password = ""
+        }
+        guard savedPrivateKey else { return clear() }
+        UIBridge.requiresConfirmation(
+            message: "Replace this private key?",
+            informative: "The saved key is discarded when you save. Servers that trust it will not accept a new key until its public key is added.",
+            confirmTitle: "Replace",
+            destructive: true
+        ) { confirmed in
+            if confirmed { clear() }
+        }
+    }
+
+    func generate() {
+        let replace = {
+            // A text view being edited keeps its own text and writes it back
+            // over a new value, so editing ends before the keys are filled in.
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            DispatchQueue.main.async {
+                let comment = draft.name.isEmpty ? "tamio" : draft.name.replacingOccurrences(of: " ", with: "-")
+                let pair = SSHKeyGenerator.ed25519(comment: comment)
+                draft.privateKey = pair.privateKey
+                draft.publicKey = pair.publicKey
+                draft.password = ""
+                if draft.name.isEmpty { draft.name = "Ed25519 key" }
+            }
+        }
+        replace()
+    }
+
+    func secretField(_ placeholder: String, text: Binding<String>) -> some View {
+        HStack(spacing: RX.Space.s1) {
+            Group {
+                if showsSecret {
+                    TextField(placeholder, text: text)
+                } else {
+                    SecureField(placeholder, text: text)
+                }
+            }
+            .textFieldStyle(.rx)
+            Button {
+                showsSecret.toggle()
+            } label: {
+                Label(showsSecret ? "Hide" : "Show", systemImage: showsSecret ? "eye.slash" : "eye")
+            }
+            .buttonStyle(.rx(.plain, iconOnly: true))
         }
     }
 }
 
-/// An OpenSSH public key starts with its algorithm — and ecdsa-sha2-* and the
-/// FIDO sk-* types contain no "ssh-" for a substring check to find.
-private func looksLikePublicKey(_ string: String) -> Bool {
-    let prefixes = ["ssh-rsa", "ssh-ed25519", "ecdsa-sha2-", "sk-ssh-", "sk-ecdsa-"]
-    let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
-    return prefixes.contains { trimmed.hasPrefix($0) }
-}
-
-/// A key shown in `code`, masked when private, with Load, Copy and Clear.
-private struct KeyField: View {
-    @Binding var text: String
-    let masked: Bool
-    let placeholder: String
-    let loadTitle: String
-    let matches: (String) -> Bool
-
-    var display: String {
-        guard !text.isEmpty else { return "" }
-        let lines = text.split(separator: "\n").map(String.init)
-        if masked {
-            let header = lines.first ?? ""
-            let bytes = text.utf8.count
-            return "\(header)  •••••••• \(bytes) bytes"
-        }
-        return text.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
+/// A private key that is in: its kind and a Replace button, never its text.
+private struct SealedKeyRow: View {
+    let algorithm: String?
+    let replace: () -> Void
 
     var body: some View {
         HStack(spacing: RX.Space.s2) {
-            RXValueField(display, placeholder: placeholder, monospaced: true)
-            if !text.isEmpty {
-                if !masked {
-                    RXIconButton("Copy", systemImage: "doc.on.doc") {
-                        UIBridge.sendPasteboard(str: text)
-                    }
+            Image(systemName: "lock.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(.rxInkSecondary)
+            Text("••••••••••••")
+                .font(.rxCode)
+                .foregroundStyle(.rxInkSecondary)
+            Text(algorithm.map { "\($0.uppercased()) private key" } ?? "Private key")
+                .font(.rxBody)
+                .foregroundStyle(.rxInk)
+            Spacer(minLength: 0)
+            Button("Replace…", action: replace)
+                .buttonStyle(.rx(size: .small))
+                .help("Paste, load or generate another key")
+        }
+        .padding(.horizontal, RX.Space.s3)
+        .frame(height: 40)
+        .rxFieldBackground()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(algorithm.map { "\($0) private key, hidden" } ?? "Private key, hidden")
+    }
+}
+
+/// A key typed or pasted in place, with Load from File…, Clear and any
+/// extra buttons.
+struct KeyEditor<Extra: View>: View {
+    @Binding var text: String
+    let placeholder: String
+    let loadTitle: String
+    let height: CGFloat
+    @ViewBuilder var extra: () -> Extra
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: RX.Space.s2) {
+            ZStack(alignment: .topLeading) {
+                if text.isEmpty {
+                    Text(placeholder)
+                        .font(.rxCode)
+                        .foregroundStyle(.rxInkTertiary)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 8)
+                        .allowsHitTesting(false)
                 }
-                RXIconButton("Remove", systemImage: "minus.circle") { text = "" }
+                TextEditor(text: $text)
+                    .font(.rxCode)
+                    .scrollContentBackground(.hidden)
+                    .disableAutocorrection(true)
+                    .textInputAutocapitalization(.never)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 2)
             }
-            Button(loadTitle) { load() }
-                .buttonStyle(.rx)
+            .frame(height: height)
+            .rxFieldBackground()
+            HStack(spacing: RX.Space.s2) {
+                Button(loadTitle) { load() }
+                    .buttonStyle(.rx(size: .small))
+                extra()
+                if !text.isEmpty {
+                    Button("Clear") { text = "" }
+                        .buttonStyle(.rx(.plain, size: .small))
+                }
+            }
         }
     }
 
@@ -428,20 +570,14 @@ private struct KeyField: View {
                 UIBridge.presentError(with: "The file could not be read as text.")
                 return
             }
-            if matches(string) {
-                text = string
-            } else {
-                onMainThread(delay: 0.3) {
-                    UIBridge.requiresConfirmation(
-                        message: "This file does not look like a \(masked ? "private" : "public") key",
-                        informative: "Load it anyway?",
-                        confirmTitle: "Load"
-                    ) { confirmed in
-                        if confirmed { text = string }
-                    }
-                }
-            }
+            text = string.trimmingCharacters(in: .whitespacesAndNewlines)
         }
+    }
+}
+
+extension KeyEditor where Extra == EmptyView {
+    init(text: Binding<String>, placeholder: String, loadTitle: String, height: CGFloat) {
+        self.init(text: text, placeholder: placeholder, loadTitle: loadTitle, height: height) { EmptyView() }
     }
 }
 
@@ -454,25 +590,15 @@ struct IdentityEditorSheet: View {
     @State private var draft = IdentityDraft()
 
     var body: some View {
-        SheetScaffold("New Identity") {
+        SheetScaffold("New SSH Key") {
             IdentityForm(draft: $draft)
         } footer: {
             Spacer()
             Button("Cancel") { onComplete(nil) }
                 .buttonStyle(.rx)
                 .keyboardShortcut(.cancelAction)
-            Button("Create") {
-                var base = RDIdentity(
-                    username: "",
-                    password: "",
-                    privateKey: "",
-                    publicKey: "",
-                    lastRecentUsed: .init(timeIntervalSince1970: 0),
-                    comment: "",
-                    group: "",
-                    authenticAutomatically: true,
-                    attachment: [:]
-                )
+            Button("Add Key") {
+                var base = RDIdentity(lastRecentUsed: .init(timeIntervalSince1970: 0))
                 base = draft.apply(to: base)
                 store.identityGroup.insert(base)
                 onComplete(base.id)

@@ -19,7 +19,13 @@ public struct RDIdentityGroup: Codable, Identifiable, RDGroup {
         set { identities = newValue }
     }
 
+    /// The identities shown in Identities and offered to every server: all
+    /// but the private ones a server editor keeps for its own server.
+    public var shared: [RDIdentity] {
+        identities.filter { !$0.isPrivate }
+    }
+
     public static func accepts(_ item: RDIdentity) -> Bool {
-        !item.username.isEmpty
+        item.hasCredentials || !item.name.isEmpty
     }
 }

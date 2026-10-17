@@ -11,6 +11,7 @@
 		0D996008869B53B9E095749C /* PageScaffold.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DDE29F5CD9A23175CCFBCF3 /* PageScaffold.swift */; };
 		127DCFCFF0ED07F74864D03C /* SymbolPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 494A60B5E6422F9A68176956 /* SymbolPicker */; };
 		13B1EBCB526576E408152CE0 /* TamioModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3E56E2E2CB7C5ABCE3270FA /* TamioModule */; };
+		16E0D2F6EA1736735F60C2E7 /* ServerInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9197839CE7A1F24BC409928 /* ServerInspector.swift */; };
 		1D739D0FC4F886FBF900BB47 /* Bench.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6160F6465AF5B5EFF497B1 /* Bench.swift */; };
 		24E5740380D9EAC687D3FC9E /* BatchRunSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0139DAD3C6106A836B899900 /* BatchRunSheet.swift */; };
 		268193D53F1A40646A2783EE /* Bridge+Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E4C6978A408A38D15D6861 /* Bridge+Keychain.swift */; };
@@ -46,7 +47,6 @@
 		B7E46F6E3621804D80A5BE16 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB9E4DDA19C6E86B44842578 /* HomeView.swift */; };
 		BAE3684CDFE3B0B184ABE62A /* EditorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924CB398B52DC9CBB1633708 /* EditorPage.swift */; };
 		BD3114CB7B4AEB7FD75D9F78 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F41A429DA891AEEB06DA914 /* SettingsView.swift */; };
-		C26F9310124BEFF7D59E79D3 /* ServerEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1015F288DAF6954EBCEA0C /* ServerEditorSheet.swift */; };
 		C78E22FC07482B9FD7C71BF3 /* Tamio.icon in Resources */ = {isa = PBXBuildFile; fileRef = 2FB6F8223DEF8EF4B924113F /* Tamio.icon */; };
 		C9FEBCB474F1E41E73964E8A /* CodeEditorUI in Frameworks */ = {isa = PBXBuildFile; productRef = C13282051CBC5F6ED6B0BE8E /* CodeEditorUI */; };
 		CDB7D6F8C9F1090FEDE29866 /* MacBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 196B098389C5AA99A0C9A7F9 /* MacBridge.swift */; };
@@ -61,8 +61,10 @@
 		E3E5D29578C53B47E407435E /* UIBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A62CDF7C5C29EFAD66CB9EAC /* UIBridge.swift */; };
 		E6098F60C95ECE7525E88946 /* PlaceholderColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDF144CC0C26AC04600899D4 /* PlaceholderColor.swift */; };
 		EACDC3F0CDA599CFD2B1BE38 /* TamioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D30D618CFFED4A6386D0E1 /* TamioApp.swift */; };
+		EB87D94F557DAFC57811CD08 /* ServerEditorDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478253D7DC3B55196BDD73C9 /* ServerEditorDialog.swift */; };
 		ECD3BB0A68E4995B319A09DF /* ServersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD5F05A6A10CA869F43251F4 /* ServersView.swift */; };
 		F1711314D089AB7A5A4E9E09 /* StatusItem+Loop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73A13CE60279936C7F4C1052 /* StatusItem+Loop.swift */; };
+		F1CD9381398E9A71678A3A7E /* StatusCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61330E5384D161665EEA7851 /* StatusCard.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -105,8 +107,10 @@
 		2FBBD7430CAA9CDB21611223 /* Bridge+Dialogs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+Dialogs.swift"; sourceTree = "<group>"; };
 		42B043231E7AF65887A269C2 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		445C92A373BC041DA54CDCF3 /* Bridge+Windows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+Windows.swift"; sourceTree = "<group>"; };
+		478253D7DC3B55196BDD73C9 /* ServerEditorDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerEditorDialog.swift; sourceTree = "<group>"; };
 		5AE055DD91FA890DB5DDB079 /* EULA */ = {isa = PBXFileReference; path = EULA; sourceTree = "<group>"; };
 		5BF8E05669BAD48CA9ADC146 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		61330E5384D161665EEA7851 /* StatusCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusCard.swift; sourceTree = "<group>"; };
 		615A9FAD4A0F752FBD542810 /* BatchSnippetExecContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchSnippetExecContext.swift; sourceTree = "<group>"; };
 		627EF753C015164E236752BC /* CodeMirrorUI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CodeMirrorUI; path = ../../External/CodeMirrorUI; sourceTree = SOURCE_ROOT; };
 		679A47FAE8BD5AB800A76194 /* Tamio.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tamio.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -127,6 +131,7 @@
 		9DDE29F5CD9A23175CCFBCF3 /* PageScaffold.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageScaffold.swift; sourceTree = "<group>"; };
 		A2AC3C2F5C0CE0FD9D6CBC46 /* Generic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Generic.swift; sourceTree = "<group>"; };
 		A62CDF7C5C29EFAD66CB9EAC /* UIBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIBridge.swift; sourceTree = "<group>"; };
+		A9197839CE7A1F24BC409928 /* ServerInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerInspector.swift; sourceTree = "<group>"; };
 		AD5A608D6FA4E34DC980FA8E /* StatusItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItem.swift; sourceTree = "<group>"; };
 		B6CC5569F4B99AA76686C4D0 /* TamioEditor */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TamioEditor; path = ../../Foundation/TamioEditor; sourceTree = SOURCE_ROOT; };
 		BC9ACCCD82006879E4BFB703 /* MonitorPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitorPage.swift; sourceTree = "<group>"; };
@@ -145,7 +150,6 @@
 		F5BD85D2A70187112CEC7FAB /* MachineStatus */ = {isa = PBXFileReference; lastKnownFileType = folder; name = MachineStatus; path = ../../Foundation/MachineStatus; sourceTree = SOURCE_ROOT; };
 		F6E4C6978A408A38D15D6861 /* Bridge+Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+Keychain.swift"; sourceTree = "<group>"; };
 		FB9E4DDA19C6E86B44842578 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		FF1015F288DAF6954EBCEA0C /* ServerEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerEditorSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -398,6 +402,8 @@
 			isa = PBXGroup;
 			children = (
 				FB9E4DDA19C6E86B44842578 /* HomeView.swift */,
+				A9197839CE7A1F24BC409928 /* ServerInspector.swift */,
+				61330E5384D161665EEA7851 /* StatusCard.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -415,7 +421,7 @@
 			isa = PBXGroup;
 			children = (
 				75878EF1BDD335D8738E8C39 /* ServerActions.swift */,
-				FF1015F288DAF6954EBCEA0C /* ServerEditorSheet.swift */,
+				478253D7DC3B55196BDD73C9 /* ServerEditorDialog.swift */,
 				BD5F05A6A10CA869F43251F4 /* ServersView.swift */,
 			);
 			path = Servers;
@@ -572,12 +578,14 @@
 				742B1D1D68A0C95C3886F494 /* PortForwardView.swift in Sources */,
 				B1602E1EB9701A0DAEBB7EED /* PresentError.swift in Sources */,
 				D228D67549129E4CB2A357B6 /* ServerActions.swift in Sources */,
-				C26F9310124BEFF7D59E79D3 /* ServerEditorSheet.swift in Sources */,
+				EB87D94F557DAFC57811CD08 /* ServerEditorDialog.swift in Sources */,
+				16E0D2F6EA1736735F60C2E7 /* ServerInspector.swift in Sources */,
 				ECD3BB0A68E4995B319A09DF /* ServersView.swift in Sources */,
 				BD3114CB7B4AEB7FD75D9F78 /* SettingsView.swift in Sources */,
 				69FFECCDAACA590F05A1F963 /* SidebarView.swift in Sources */,
 				4D8520C6A941E8188A7D2F17 /* SnippetEditorSheet.swift in Sources */,
 				D3CDEBCD8F8F7C158C37684E /* SnippetsView.swift in Sources */,
+				F1CD9381398E9A71678A3A7E /* StatusCard.swift in Sources */,
 				F1711314D089AB7A5A4E9E09 /* StatusItem+Loop.swift in Sources */,
 				489AF44AD472CC65ACB57634 /* StatusItem.swift in Sources */,
 				EACDC3F0CDA599CFD2B1BE38 /* TamioApp.swift in Sources */,

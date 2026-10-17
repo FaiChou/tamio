@@ -8,6 +8,7 @@
 import CodeEditorUI
 import TamioModule
 import TamioTerminal
+import MachineStatusView
 import SwiftUI
 import UIKit
 
@@ -25,6 +26,8 @@ struct TamioApp: App {
         Mac.installLegacyKeyStore()
         _ = TamioStore.shared
         CloudSync.shared.start()
+        // Every server card shows live status without opening a monitor.
+        LiveStatusCenter.shared.start()
 
         // Shared file-transfer core lives in TamioModule; register the
         // platform UI handler it delegates to.
@@ -94,6 +97,7 @@ enum MainWindow {
             // The toolbar holds page controls only; the page title is in the content.
             scene.titlebar?.titleVisibility = .hidden
             scene.titlebar?.toolbarStyle = .unified
+            scene.titlebar?.separatorStyle = .none
             scene.sizeRestrictions?.minimumSize = minimumSize
         }
         Mac.bridge?.installBackdrop(for: window)

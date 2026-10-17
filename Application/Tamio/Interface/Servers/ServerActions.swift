@@ -13,9 +13,7 @@ import SwiftUI
 enum ServerActions {
     @MainActor
     static func edit(_ machine: RDMachine.ID) {
-        SheetPresenter.present { dismiss in
-            ServerEditorSheet(machine: machine, close: dismiss)
-        }
+        AppRouter.shared.serverEditor = .edit(machine)
     }
 
     static func duplicate(_ machine: RDMachine.ID) {
@@ -30,6 +28,15 @@ enum ServerActions {
             var copy = original
             copy.id = UUID()
             copy.name = original.name + " copy"
+            // A private identity belongs to one server: the copy gets its own.
+            if let raw = original.associatedIdentity, let id = UUID(uuidString: raw),
+               store.identityGroup[id].isPrivate
+            {
+                var identity = store.identityGroup[id]
+                identity.id = UUID()
+                store.identityGroup.insert(identity)
+                copy.associatedIdentity = identity.id.uuidString
+            }
             store.machineGroup.insert(copy)
         }
     }
@@ -51,6 +58,11 @@ enum ServerActions {
             for machine in machines {
                 if let session = MonitorCenter.shared.session(for: machine) {
                     MonitorCenter.shared.end(session.id)
+                }
+                if let raw = store.machineGroup[machine].associatedIdentity, let id = UUID(uuidString: raw),
+                   store.identityGroup[id].isPrivate
+                {
+                    store.identityGroup.delete(id)
                 }
                 store.machineGroup.delete(machine)
             }
@@ -219,33 +231,42 @@ struct ServerContextMenu: View {
 
 /// Live figures of a server while its monitor is open.
 struct ServerLiveState {
-    let cpu: Double?
-    let memory: Double?
+    var cpu: Double?
+    var memory: Double?
+    var disk: Double?
+    var receive: Double?
+    var transmit: Double?
 
+    /// From the server's open monitor, else its background status.
     @MainActor
     static func of(_ machine: RDMachine.ID) -> ServerLiveState {
-        if let session = MonitorCenter.shared.session(for: machine),
-           session.phase == .connected, session.status.hasData
-        {
-            return ServerLiveState(
-                cpu: Double(session.status.processor.summary.sumUsed),
-                memory: session.status.memoryUsedPercent
-            )
-        }
-        return ServerLiveState(cpu: nil, memory: nil)
+        guard let session = LiveStatusCenter.shared.session(for: machine),
+              session.phase == .connected, session.status.hasData
+        else { return ServerLiveState() }
+        let status = session.status
+        let root = status.fileSystem.elements.first { $0.mountPoint == "/" }
+            ?? status.fileSystem.elements.max { $0.percent < $1.percent }
+        let physical = status.network.elements.filter { !NetworkFilter.isVirtual($0.device) }
+        return ServerLiveState(
+            cpu: Double(status.processor.summary.sumUsed),
+            memory: status.memoryUsedPercent,
+            disk: root.map { Double($0.percent) },
+            receive: Double(physical.map(\.rxBytesPerSec).reduce(0, +)),
+            transmit: Double(physical.map(\.txBytesPerSec).reduce(0, +))
+        )
     }
 }
 
-/// Re-renders its content as the server's monitor or terminal changes.
+/// Re-renders its content as the server's status changes.
 struct ServerLiveReader<Content: View>: View {
     let machine: RDMachine.ID
     @ViewBuilder let content: (ServerLiveState) -> Content
 
+    @ObservedObject private var live = LiveStatusCenter.shared
     @ObservedObject private var monitors = MonitorCenter.shared
-    @ObservedObject private var terminals = TerminalManager.shared
 
     var body: some View {
-        if let session = monitors.session(for: machine) {
+        if let session = live.session(for: machine) {
             SessionReader(session: session) { content(ServerLiveState.of(machine)) }
         } else {
             content(ServerLiveState.of(machine))

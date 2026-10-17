@@ -9,6 +9,7 @@
 
 import TamioModule
 import TamioTerminal
+import MachineStatusView
 import SwiftUI
 
 struct SettingsView: View {
@@ -189,22 +190,31 @@ private struct HostKeysRow: View {
     }
 }
 
+/// Live status on the server cards and the Servers table.
 private struct MonitorSettings: View {
     @EnvironmentObject var store: TamioStore
-    private let intervals = [5, 10, 15, 30, 60]
+    @ObservedObject private var live = LiveStatusCenter.shared
+    private let intervals = [3, 5, 10, 15, 30, 60]
 
     var body: some View {
-        RXFormRow("Refresh", description: "How often an open monitor reads the server.") {
-            Picker("Refresh", selection: Binding(get: { max(5, store.monitorInterval) }, set: { store.monitorInterval = $0 })) {
-                ForEach(intervals, id: \.self) { seconds in
-                    Text("Every \(seconds) s").tag(seconds)
+        RXDividedStack {
+            SwitchRow(
+                "Live server status",
+                description: "Every server with a password or key shows its load, CPU, memory, disk and traffic, over a connection of its own.",
+                isOn: $live.isEnabled
+            )
+            RXFormRow("Refresh", description: "How often servers and open monitors are read.") {
+                Picker("Refresh", selection: Binding(get: { max(3, store.monitorInterval) }, set: { store.monitorInterval = $0 })) {
+                    ForEach(intervals, id: \.self) { seconds in
+                        Text("Every \(seconds) s").tag(seconds)
+                    }
+                    if !intervals.contains(max(3, store.monitorInterval)) {
+                        Text("Every \(store.monitorInterval) s").tag(store.monitorInterval)
+                    }
                 }
-                if !intervals.contains(max(5, store.monitorInterval)) {
-                    Text("Every \(store.monitorInterval) s").tag(store.monitorInterval)
-                }
+                .labelsHidden()
+                .fixedSize()
             }
-            .labelsHidden()
-            .fixedSize()
         }
     }
 }

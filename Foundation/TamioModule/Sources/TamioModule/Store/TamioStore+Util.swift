@@ -171,13 +171,10 @@ public extension TamioStore {
                machine.remotePort == withPort
             {
                 if let withUsername = withUsername {
-                    guard let sid = machine.associatedIdentity,
-                          let rid = UUID(uuidString: sid)
-                    else {
-                        continue
-                    }
-                    let identity = identityGroup[rid]
-                    if identity.username == withUsername {
+                    let identity = machine.associatedIdentity
+                        .flatMap(UUID.init(uuidString:))
+                        .map { identityGroup[$0] }
+                    if machine.loginUsername(with: identity) == withUsername {
                         return machine.id
                     } else {
                         continue

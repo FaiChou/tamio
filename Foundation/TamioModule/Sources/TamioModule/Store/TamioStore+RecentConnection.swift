@@ -31,14 +31,9 @@ public extension TamioStore {
                 return command.command
             case let .machine(machineID):
                 let machine = TamioStore.shared.machineGroup[machineID]
-                guard let associatedIdentity = machine.associatedIdentity else {
-                    return ""
-                }
-                guard let username = TamioStore.shared.identityGroup.identities.filter({ identity in
-                    identity.id.uuidString == associatedIdentity
-                }).first?.username else {
-                    return ""
-                }
+                let identity = machine.associatedIdentity.flatMap(UUID.init(uuidString:)).map { TamioStore.shared.identityGroup[$0] }
+                let username = machine.loginUsername(with: identity)
+                guard !username.isEmpty else { return "" }
                 return "ssh \(username)@\(machine.remoteAddress) -p \(machine.remotePort)"
             }
         }

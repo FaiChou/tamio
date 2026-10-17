@@ -44,9 +44,9 @@ public class SnippetExecSession {
         // store's auto identities instead of failing outright. Reads are
         // the store's worker snapshot: runs happen on background queues.
         if let identity = TamioStore.shared.workerAssociatedIdentity(for: machine) {
-            identity.callAuthenticationWith(remote: shell)
+            identity.callAuthenticationWith(remote: shell, username: machine.loginUsername(with: identity))
         } else {
-            shell.authenticateWithAutoIdentities(TamioStore.shared.workerIdentitiesForAutoAuth)
+            shell.authenticateWithAutoIdentities(TamioStore.shared.workerIdentitiesForAutoAuth, for: machine)
         }
         guard shell.isConnected, shell.isAuthenticated else { return .authenticateFailed }
         shell.beginExecute(

@@ -124,7 +124,7 @@ public class PortForwardContext: ObservableObject, Identifiable {
             putLifecycle(.failedAuthenticate)
             return
         }
-        identity.callAuthenticationWith(remote: shell)
+        identity.callAuthenticationWith(remote: shell, username: machine.loginUsername(with: identity))
         guard shell.isAuthenticated else {
             putLifecycle(.failedAuthenticate)
             return

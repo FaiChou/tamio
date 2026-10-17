@@ -57,6 +57,46 @@ public struct RDMachine: Codable, Identifiable, Equatable, Sendable {
         }
     }
 
+    /// The user to sign in as. The identity only says how (password or key).
+    public var username: String {
+        get { attachment["username"] ?? "" }
+        set { attachment["username"] = newValue.isEmpty ? nil : newValue }
+    }
+
+    /// The user a server signs in as when none is set.
+    public static let defaultUsername = "root"
+
+    /// The server's user; for a server saved before servers had one, the user
+    /// its identity was made for; else root.
+    public func loginUsername(with identity: RDIdentity?) -> String {
+        if !username.isEmpty { return username }
+        if let legacy = identity?.username, !legacy.isEmpty { return legacy }
+        return Self.defaultUsername
+    }
+
+    /// Free-form labels ("prod", "tokyo") for search and filtering.
+    public var tags: [String] {
+        get {
+            (attachment["tags"] ?? "")
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+        }
+        set {
+            let joined = newValue
+                .map { $0.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: ",", with: " ") }
+                .filter { !$0.isEmpty }
+                .joined(separator: ",")
+            attachment["tags"] = joined.isEmpty ? nil : joined
+        }
+    }
+
+    /// A snippet typed into the terminal once it has signed in.
+    public var startupSnippet: RDSnippet.ID? {
+        get { attachment["startup.snippet"].flatMap(UUID.init(uuidString:)) }
+        set { attachment["startup.snippet"] = newValue?.uuidString }
+    }
+
     // convince
 
     public func isQualifiedForSearch(text: String) -> Bool {
@@ -67,18 +107,16 @@ public struct RDMachine: Codable, Identifiable, Equatable, Sendable {
         if group.description.lowercased().contains(searchText) { return true }
         if lastBanner.description.lowercased().contains(searchText) { return true }
         if comment.description.lowercased().contains(searchText) { return true }
+        if tags.contains(where: { $0.lowercased().contains(searchText) }) { return true }
         return false
     }
 
     public func shortDescription(withComment: Bool = true) -> String {
         var build = name + " "
-        if let aid = associatedIdentity,
-           let uid = UUID(uuidString: aid)
-        {
-            let identity = TamioStore.shared.identityGroup[uid]
-            if !identity.username.isEmpty {
-                build += identity.username + "@"
-            }
+        let identity = associatedIdentity.flatMap(UUID.init(uuidString:)).map { TamioStore.shared.identityGroup[$0] }
+        let user = loginUsername(with: identity)
+        if !user.isEmpty {
+            build += user + "@"
         }
         build += remoteAddress
         if remotePort != "22" {
@@ -97,13 +135,10 @@ public struct RDMachine: Codable, Identifiable, Equatable, Sendable {
     public func getCommand(insertLeadingSSH: Bool = true) -> String {
         var build = ""
         let leading = insertLeadingSSH ? "ssh " : ""
-        if let id = associatedIdentity,
-           let rid = UUID(uuidString: id)
-        {
-            let oid = TamioStore.shared.identityGroup[rid]
-            if !oid.username.isEmpty {
-                build = leading + "\(oid.username)@\(remoteAddress)"
-            }
+        let identity = associatedIdentity.flatMap(UUID.init(uuidString:)).map { TamioStore.shared.identityGroup[$0] }
+        let user = loginUsername(with: identity)
+        if !user.isEmpty {
+            build = leading + "\(user)@\(remoteAddress)"
         }
         if build.isEmpty {
             build = leading + "\(remoteAddress)"

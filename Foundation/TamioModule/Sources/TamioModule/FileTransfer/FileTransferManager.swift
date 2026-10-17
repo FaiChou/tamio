@@ -43,7 +43,7 @@ public class FileTransferManager: ObservableObject {
         var get: RDIdentity?
         if let sid = machine.associatedIdentity,
            let uid = UUID(uuidString: sid),
-           TamioStore.shared.identityGroup[uid].username.count > 0
+           TamioStore.shared.identityGroup[uid].hasCredentials
         {
             get = TamioStore.shared.identityGroup[uid]
         }

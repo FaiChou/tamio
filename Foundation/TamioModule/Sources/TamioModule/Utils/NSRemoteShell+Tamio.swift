@@ -38,23 +38,27 @@ public extension NSRemoteShell {
         applyConnection(host: machine.remoteAddress, port: machine.remotePort, timeout: timeout)
     }
 
-    /// Tries each identity in order, reconnecting when the username changes
-    /// (the remote side authenticates per connection, so a new username needs
-    /// a fresh connection). Returns true when the shell ends up authenticated.
+    /// Tries each identity in order as the server's user, reconnecting when
+    /// the user changes (a server saved before servers had a user signs in as
+    /// each identity's own; the remote side authenticates per connection).
+    /// Returns true when the shell ends up authenticated.
     @discardableResult
     func authenticateWithAutoIdentities(
         _ identities: [RDIdentity],
+        for machine: RDMachine,
         hint: ((String) -> Void)? = nil
     ) -> Bool {
         var previousUsername: String?
         for identity in identities {
-            hint?("[i] trying to authenticate with \(identity.shortDescription())")
-            if let prev = previousUsername, prev != identity.username {
+            let username = machine.loginUsername(with: identity)
+            guard !username.isEmpty else { continue }
+            hint?("[i] trying to authenticate as \(username) with \(identity.displayName)")
+            if let prev = previousUsername, prev != username {
                 requestDisconnectAndWait()
                 requestConnectAndWait()
             }
-            previousUsername = identity.username
-            identity.callAuthenticationWith(remote: self)
+            previousUsername = username
+            identity.callAuthenticationWith(remote: self, username: username)
             if isConnected, isAuthenticated {
                 break
             }
@@ -79,15 +83,16 @@ public extension NSRemoteShell {
     func connectAndAuthenticate(
         identity: RDIdentity?,
         autoIdentities: [RDIdentity],
+        for machine: RDMachine,
         hint: ((String) -> Void)? = nil
     ) -> ConnectAndAuthenticateResult {
         KnownHosts.install()
         requestConnectAndWait()
         guard isConnected else { return .connectFailed }
         if let identity {
-            identity.callAuthenticationWith(remote: self)
+            identity.callAuthenticationWith(remote: self, username: machine.loginUsername(with: identity))
         } else {
-            authenticateWithAutoIdentities(autoIdentities, hint: hint)
+            authenticateWithAutoIdentities(autoIdentities, for: machine, hint: hint)
         }
         return isConnected && isAuthenticated ? .success : .authenticateFailed
     }

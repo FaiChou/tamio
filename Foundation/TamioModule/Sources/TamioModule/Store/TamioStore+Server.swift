@@ -17,7 +17,7 @@ public extension TamioStore {
               let uuid = UUID(uuidString: raw)
         else { return nil }
         let identity = identityGroup[uuid]
-        return identity.username.isEmpty ? nil : identity
+        return identity.hasCredentials ? identity : nil
     }
 
     @discardableResult

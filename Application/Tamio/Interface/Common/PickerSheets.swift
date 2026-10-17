@@ -155,7 +155,7 @@ struct IdentityPickerSheet: View {
     var body: some View {
         SheetScaffold("Choose Identity") {
             ScrollView {
-                if store.identityGroup.identities.isEmpty {
+                if store.identityGroup.shared.isEmpty {
                     EmptyStateView(
                         "No identities yet",
                         systemImage: "person",
@@ -165,7 +165,7 @@ struct IdentityPickerSheet: View {
                     }
                 } else {
                     RXDividedStack {
-                        ForEach(store.identityGroup.identities) { identity in
+                        ForEach(store.identityGroup.shared) { identity in
                             Button {
                                 selection = identity.id
                             } label: {
@@ -174,7 +174,7 @@ struct IdentityPickerSheet: View {
                                         .font(.system(size: 15))
                                         .foregroundStyle(selection == identity.id ? Color.rxAccent : Color.rxControlBorder)
                                     VStack(alignment: .leading, spacing: 1) {
-                                        Text(identity.username)
+                                        Text(identity.displayName)
                                             .font(.rxBody)
                                             .foregroundStyle(.rxInk)
                                         Text(identity.authDescription)

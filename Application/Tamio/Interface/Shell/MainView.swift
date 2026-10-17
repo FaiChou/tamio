@@ -86,10 +86,24 @@ struct MainView: View {
             }
         }
         .animation(.easeOut(duration: 0.2), value: store.globalProgressInPresent)
-        .sheet(isPresented: $router.presentNewServer) {
-            ServerEditorSheet(machine: nil)
-                .environmentObject(TamioStore.shared)
+        // New / Edit Server: a dialog over the dimmed window.
+        .overlay {
+            if let target = router.serverEditor {
+                ZStack {
+                    Color.rxScrim
+                        .ignoresSafeArea()
+                        .contentShape(Rectangle())
+                        .onTapGesture { NotificationCenter.default.post(name: .serverEditorWantsClose, object: nil) }
+                        .transition(.opacity)
+                    ServerEditorDialog(target: target)
+                        .id(target)
+                        .environmentObject(TamioStore.shared)
+                        .padding(RX.Space.s6)
+                        .transition(.scale(scale: 0.96).combined(with: .opacity))
+                }
+            }
         }
+        .animation(.spring(response: 0.3, dampingFraction: 0.86), value: router.serverEditor)
         .sheet(isPresented: $openLicenseAgreement) {
             AgreementSheet()
         }

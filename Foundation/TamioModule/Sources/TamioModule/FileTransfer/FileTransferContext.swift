@@ -155,7 +155,8 @@ public class FileTransferContext: ObservableObject, Identifiable, Equatable {
         debugPrint("\(self) \(#function) \(machine.id)")
         let result = shell.connectAndAuthenticate(
             identity: identity,
-            autoIdentities: TamioStore.shared.workerIdentitiesForAutoAuth
+            autoIdentities: TamioStore.shared.workerIdentitiesForAutoAuth,
+            for: machine
         ) { [self] hintText in
             putInformation(hintText)
         }

@@ -60,7 +60,7 @@ class MenubarTool {
             let identity = TamioStore.shared.identityGroup[identity]
             // Callers validate these invariants and present errors already;
             // degrade gracefully instead of crashing the whole app.
-            guard machine.isNotPlaceholder(), !identity.username.isEmpty else {
+            guard machine.isNotPlaceholder(), identity.hasCredentials else {
                 debugPrint("failed to create status item: malformed machine or identity")
                 return nil
             }
