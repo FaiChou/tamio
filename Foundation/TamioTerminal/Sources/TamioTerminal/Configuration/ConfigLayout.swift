@@ -64,6 +64,11 @@ struct ConfigLayout {
             Group("ssh", "SSH", [.host("connection.ssh")]),
             Group("monitor", "Monitor", [.host("connection.monitor")]),
         ]),
+        Category(id: "mcp", title: "MCP", icon: "sparkles", section: .app, groups: [
+            Group("server", "MCP Server", [.host("mcp.server")]),
+            Group("setup", "Set Up an Agent", [.host("mcp.setup")]),
+            Group("activity", "Agent Activity", [.host("mcp.activity")]),
+        ]),
         Category(id: "text", title: "Text", icon: "textformat", section: .terminal, groups: [
             Group("font", "Font", keys: ["font-family", "font-style", "font-size", "font-thicken", "font-thicken-strength"]),
             Group("styles", "Bold and Italic", keys: [

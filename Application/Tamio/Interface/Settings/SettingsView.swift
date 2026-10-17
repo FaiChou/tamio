@@ -42,6 +42,15 @@ struct SettingsView: View {
                 ConfigHostSettingsSection(id: "connection.monitor", keywords: "monitor refresh interval status") {
                     MonitorSettings().environmentObject(store)
                 },
+                ConfigHostSettingsSection(id: "mcp.server", keywords: "mcp agent ai claude codex server model context protocol") {
+                    AgentServerSettings()
+                },
+                ConfigHostSettingsSection(id: "mcp.setup", keywords: "mcp agent skill install prompt claude codex command") {
+                    AgentSetupSettings()
+                },
+                ConfigHostSettingsSection(id: "mcp.activity", keywords: "mcp agent activity log history") {
+                    AgentActivitySettings()
+                },
                 ConfigHostSettingsSection(id: "about.tamio", keywords: "version build license source github agreement") {
                     AboutSettings().environmentObject(store)
                 },

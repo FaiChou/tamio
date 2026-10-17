@@ -1,0 +1,29 @@
+#!/bin/bash
+#
+# tamio-mcp: the stdio MCP server command for agents. It relays the client's
+# stdin and stdout to the Tamio app that contains it, over the app's private
+# socket, opening Tamio in the background when it is not running.
+#
+#   claude mcp add tamio -- /Applications/Tamio.app/Contents/Resources/tamio-mcp
+
+set -u
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP="$(cd "$HERE/../.." && pwd)"
+BUNDLE_ID="${TAMIO_BUNDLE_ID:-$(/usr/bin/defaults read "$APP/Contents/Info" CFBundleIdentifier 2>/dev/null || echo sb.moe.tamio)}"
+SOCKET="${TAMIO_SOCKET:-$HOME/Library/Application Support/$BUNDLE_ID/agent.sock}"
+
+if [ ! -S "$SOCKET" ]; then
+    /usr/bin/open -g -a "$APP" 2>/dev/null || /usr/bin/open -g -b "$BUNDLE_ID" 2>/dev/null
+    for _ in $(seq 1 75); do
+        [ -S "$SOCKET" ] && break
+        sleep 0.2
+    done
+fi
+
+if [ ! -S "$SOCKET" ]; then
+    echo "Tamio's MCP server is not running. Open Tamio and turn on Settings › MCP › MCP server." >&2
+    exit 1
+fi
+
+exec /usr/bin/nc -U "$SOCKET"

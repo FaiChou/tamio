@@ -30,6 +30,8 @@ struct TamioApp: App {
         CloudSync.shared.start()
         // Every server card shows live status without opening a monitor.
         LiveStatusCenter.shared.start()
+        // Agents reach the servers through the MCP server (Settings › MCP).
+        AgentBridge.shared.start()
 
         // Shared file-transfer core lives in TamioModule; register the
         // platform UI handler it delegates to.

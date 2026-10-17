@@ -948,6 +948,33 @@ existing Tamio data to migrate.
 
 ## 8. Agent access: Tamio MCP server
 
+> **Revised 2026-10-17 (implemented).** Where this section and the notes below
+> differ, the notes win:
+> - **Full management, secrets write-only.** Beyond reading hosts, metrics and
+>   `ssh_config` and running commands, agents can add / update / remove servers,
+>   SSH key identities (`add_identity` with `generate: true` returns only the
+>   public key; an imported `private_key` or `password` goes in and never comes
+>   back out), snippets and port forwards (add, start, stop, remove). Every one of
+>   these asks the user (Allow / Allow for 1 Hour / Deny). A test
+>   (`AgentServerTests`) saves secrets and checks that no read tool or resource
+>   returns them.
+> - **Per-server agent activity, for every Mac.** Each approved action is
+>   recorded on the servers it concerns (client, device, command, per-server
+>   exit codes, outcome, also when declined). Agents that act by their own ssh
+>   report it with `log_activity`; `get_activity` gives the next agent the
+>   history. The MCP instructions and the skill tell agents to do both. The log
+>   is an item kind of the E2EE iCloud sync (§7), so another Mac's Tamio and its
+>   agents see it. It shows in each server's inspector (Activity) and in
+>   Settings › MCP.
+> - **Settings › MCP**: the server is **on by default**; the page has the Claude
+>   Code command, the Codex config, **Install Skill** (copies the skill bundled
+>   in the app to `~/.claude/skills/tamio`) with its shell command, and a prompt
+>   to paste into any agent. The skill lives in the repo at `Skills/tamio/SKILL.md`.
+> - The stdio command is `Tamio.app/Contents/Resources/tamio-mcp`, a shell script
+>   that relays to the socket with `nc -U` (no extra binary). The socket is
+>   `~/Library/Application Support/<bundle id>/agent.sock`, mode 0600, and only
+>   the user's own processes may connect (`getpeereid`).
+
 ### 8.1 Goal
 
 AI agents (Claude Code, Codex, Cursor, any MCP client) can see the user's hosts

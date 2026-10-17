@@ -18,7 +18,7 @@ struct ServerInspector: View {
     let machine: RDMachine.ID
     let close: () -> Void
 
-    enum Tab: Hashable { case overview, processes, containers }
+    enum Tab: Hashable { case overview, processes, containers, activity }
 
     @EnvironmentObject var store: TamioStore
     @ObservedObject private var live = LiveStatusCenter.shared
@@ -39,6 +39,7 @@ struct ServerInspector: View {
                     .init(.overview, "Overview"),
                     .init(.processes, "Processes"),
                     .init(.containers, "Containers"),
+                    .init(.activity, "Activity"),
                 ], caps: false)
                 .fixedSize()
                 Button(action: close) {
@@ -51,7 +52,9 @@ struct ServerInspector: View {
             .padding(.horizontal, RX.Space.s4)
             .padding(.top, RX.Space.s2)
             .padding(.bottom, RX.Space.s3)
-            if let session = live.session(for: machine) {
+            if tab == .activity {
+                ServerActivity(machine: machine)
+            } else if let session = live.session(for: machine) {
                 switch tab {
                 case .overview:
                     ScrollView { InspectorOverview(session: session).padding(.horizontal, RX.Space.s4).padding(.bottom, RX.Space.s4) }
@@ -59,6 +62,8 @@ struct ServerInspector: View {
                     ProcessList(session: session)
                 case .containers:
                     ContainerList(session: session, machine: machine)
+                case .activity:
+                    EmptyView()
                 }
             } else {
                 EmptyStateView("No live status", systemImage: "key", message: "Add a password or key to this server to see it.")
@@ -71,6 +76,34 @@ struct ServerInspector: View {
         )
         .padding(.trailing, RX.Space.s3)
         .padding(.bottom, RX.Space.s3)
+    }
+}
+
+// MARK: - Activity
+
+/// What agents did on this server, from every Mac, newest first.
+private struct ServerActivity: View {
+    let machine: RDMachine.ID
+    @ObservedObject private var log = AgentServer.shared.log
+
+    var body: some View {
+        let entries = log.entries(for: machine).reversed()
+        if entries.isEmpty {
+            EmptyStateView("No agent activity", systemImage: "sparkles", message: "What agents run or change here, through Tamio or reported by them, shows here.")
+                .frame(maxHeight: .infinity)
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: RX.Space.s3) {
+                    ForEach(Array(entries)) { entry in
+                        AgentActivityRow(entry: entry)
+                            .padding(RX.Space.s3)
+                            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.rxSurfaceSunken))
+                    }
+                }
+                .padding(.horizontal, RX.Space.s4)
+                .padding(.bottom, RX.Space.s4)
+            }
+        }
     }
 }
 

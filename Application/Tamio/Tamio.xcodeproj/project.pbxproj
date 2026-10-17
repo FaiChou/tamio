@@ -19,6 +19,7 @@
 		2E25F3ECB61794C861B0CF8D /* FileTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = E65511B75249BC895041BD82 /* FileTable.swift */; };
 		2E4369F69EA9DF974DF27F6A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5BF8E05669BAD48CA9ADC146 /* Assets.xcassets */; };
 		30833C8DDC18BF730D6FD3B2 /* DoubleConfirm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 746C74A073F34EF4BFF12FA4 /* DoubleConfirm.swift */; };
+		379177E7299187B4931F2F9C /* Skills in Resources */ = {isa = PBXBuildFile; fileRef = 8815320B0ADA6F5284A9F228 /* Skills */; };
 		3F28E44A7D3F76069A1C963F /* Bridge+Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445C92A373BC041DA54CDCF3 /* Bridge+Windows.swift */; };
 		44AE26FF07198A235D4AADB5 /* TamioEditor in Frameworks */ = {isa = PBXBuildFile; productRef = B1EF69EF2F48C5B3F05F2A7F /* TamioEditor */; };
 		489AF44AD472CC65ACB57634 /* StatusItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC98FA8A3917947D4177007 /* StatusItem.swift */; };
@@ -38,15 +39,18 @@
 		75E3C140B9C2A211EA3C9842 /* TerminalManager+Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = F42B19215937CD8331FA07FC /* TerminalManager+Context.swift */; };
 		8766A75FC53E74F9069FC9A2 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EAB94544BDE15E396B57A48 /* AppRouter.swift */; };
 		8A07521B9F79187B9B9B0F83 /* IdentitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70FA3DE75DF8292D67006F07 /* IdentitiesView.swift */; };
+		8ED6DCE83F8FD7FBA2CED5C8 /* AgentSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D77332CA29BD257A4BA5AD0 /* AgentSettings.swift */; };
 		A01DA9D4ECDB677FBBFB7443 /* Bridge+StatusItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ADB190607A2B7100D337533 /* Bridge+StatusItems.swift */; };
 		A97740C2E4CAAC7E3E21C4DB /* PortForwardBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AFB73E4F5A4E0275611622A /* PortForwardBackend.swift */; };
 		ADF9F497480AAECF8EFA2978 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 0536A2AD7F379DA9E4410736 /* LICENSE */; };
 		B1602E1EB9701A0DAEBB7EED /* PresentError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB533A51130A52BDFA81113 /* PresentError.swift */; };
 		B2DEED12A1C4505ABEED8FF8 /* BatchSnippetExecContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615A9FAD4A0F752FBD542810 /* BatchSnippetExecContext.swift */; };
 		B347AFC662FEA41D342D2394 /* MonitorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9ACCCD82006879E4BFB703 /* MonitorPage.swift */; };
+		B407B4973269B8D2FF62A6CF /* AgentBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9D95A164114CD21CB58BAC1 /* AgentBridge.swift */; };
 		B7E46F6E3621804D80A5BE16 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB9E4DDA19C6E86B44842578 /* HomeView.swift */; };
 		BAE3684CDFE3B0B184ABE62A /* EditorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924CB398B52DC9CBB1633708 /* EditorPage.swift */; };
 		BD3114CB7B4AEB7FD75D9F78 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F41A429DA891AEEB06DA914 /* SettingsView.swift */; };
+		C5B61FEFE6D29C674F851CDE /* tamio-mcp in Resources */ = {isa = PBXBuildFile; fileRef = 2C0346AB3930E486C971F3E1 /* tamio-mcp */; };
 		C78E22FC07482B9FD7C71BF3 /* Tamio.icon in Resources */ = {isa = PBXBuildFile; fileRef = 2FB6F8223DEF8EF4B924113F /* Tamio.icon */; };
 		C9FEBCB474F1E41E73964E8A /* CodeEditorUI in Frameworks */ = {isa = PBXBuildFile; productRef = C13282051CBC5F6ED6B0BE8E /* CodeEditorUI */; };
 		CDB7D6F8C9F1090FEDE29866 /* MacBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 196B098389C5AA99A0C9A7F9 /* MacBridge.swift */; };
@@ -101,10 +105,12 @@
 		196B098389C5AA99A0C9A7F9 /* MacBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBridge.swift; sourceTree = "<group>"; };
 		2AD8E54833D616102BA84271 /* SnippetEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEditorSheet.swift; sourceTree = "<group>"; };
 		2AFB73E4F5A4E0275611622A /* PortForwardBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortForwardBackend.swift; sourceTree = "<group>"; };
+		2C0346AB3930E486C971F3E1 /* tamio-mcp */ = {isa = PBXFileReference; path = "tamio-mcp"; sourceTree = "<group>"; };
 		2EAB94544BDE15E396B57A48 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
 		2F41A429DA891AEEB06DA914 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		2FB6F8223DEF8EF4B924113F /* Tamio.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Tamio.icon; sourceTree = "<group>"; };
 		2FBBD7430CAA9CDB21611223 /* Bridge+Dialogs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+Dialogs.swift"; sourceTree = "<group>"; };
+		3D77332CA29BD257A4BA5AD0 /* AgentSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSettings.swift; sourceTree = "<group>"; };
 		42B043231E7AF65887A269C2 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		445C92A373BC041DA54CDCF3 /* Bridge+Windows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+Windows.swift"; sourceTree = "<group>"; };
 		478253D7DC3B55196BDD73C9 /* ServerEditorDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerEditorDialog.swift; sourceTree = "<group>"; };
@@ -124,6 +130,7 @@
 		83EF894C99EF1CDFECB5DD2D /* MacBridging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBridging.swift; sourceTree = "<group>"; };
 		85124054BC012460F503B9FB /* Bridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bridge.swift; sourceTree = "<group>"; };
 		85358DC98DB406C6FB6D164E /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		8815320B0ADA6F5284A9F228 /* Skills */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Skills; path = ../../Skills; sourceTree = SOURCE_ROOT; };
 		89D30D618CFFED4A6386D0E1 /* TamioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TamioApp.swift; sourceTree = "<group>"; };
 		8D6160F6465AF5B5EFF497B1 /* Bench.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bench.swift; sourceTree = "<group>"; };
 		8E42EF3219DBEC406B179547 /* SymbolPicker */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SymbolPicker; path = ../../Foundation/SymbolPicker; sourceTree = SOURCE_ROOT; };
@@ -140,6 +147,7 @@
 		BFB533A51130A52BDFA81113 /* PresentError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentError.swift; sourceTree = "<group>"; };
 		C465A43736C58AD6B51CEC59 /* TerminalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalManager.swift; sourceTree = "<group>"; };
 		CDF144CC0C26AC04600899D4 /* PlaceholderColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderColor.swift; sourceTree = "<group>"; };
+		D9D95A164114CD21CB58BAC1 /* AgentBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentBridge.swift; sourceTree = "<group>"; };
 		D9EEF0A9C4110C84CABB1CFD /* MachineStatusView */ = {isa = PBXFileReference; lastKnownFileType = folder; name = MachineStatusView; path = ../../Foundation/MachineStatusView; sourceTree = SOURCE_ROOT; };
 		DEAB5056B28A3AFF05957C93 /* TerminalPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalPage.swift; sourceTree = "<group>"; };
 		DEC98FA8A3917947D4177007 /* StatusItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItem.swift; sourceTree = "<group>"; };
@@ -170,6 +178,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		02FDC9BF0F8FBC5CF0F4A538 /* Agents */ = {
+			isa = PBXGroup;
+			children = (
+				D9D95A164114CD21CB58BAC1 /* AgentBridge.swift */,
+				3D77332CA29BD257A4BA5AD0 /* AgentSettings.swift */,
+			);
+			path = Agents;
+			sourceTree = "<group>";
+		};
 		03313B71E1EA79D99A263A0F /* Settings */ = {
 			isa = PBXGroup;
 			children = (
@@ -184,6 +201,14 @@
 				A2AC3C2F5C0CE0FD9D6CBC46 /* Generic.swift */,
 			);
 			path = Utils;
+			sourceTree = "<group>";
+		};
+		1821063B6838553E9674AECB /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				2C0346AB3930E486C971F3E1 /* tamio-mcp */,
+			);
+			path = Helpers;
 			sourceTree = "<group>";
 		};
 		24F23FA7E95240C2A8404D0A /* Monitor */ = {
@@ -208,6 +233,7 @@
 				D6BF2DDAAAE00E92D349385F /* Application */,
 				96C34961680B6B9328978AA9 /* Bridge */,
 				3F83A2691D179B1D009F575D /* Extension */,
+				1821063B6838553E9674AECB /* Helpers */,
 				493537BBE2EEB8BD3E33A0CD /* Interface */,
 				80782A0426AD9449CC771A33 /* Packages */,
 				7F3B6D88B6BDD4CC2EF89EC0 /* Shared */,
@@ -255,6 +281,7 @@
 		493537BBE2EEB8BD3E33A0CD /* Interface */ = {
 			isa = PBXGroup;
 			children = (
+				02FDC9BF0F8FBC5CF0F4A538 /* Agents */,
 				3E7BEA237CB82C6DFBB79605 /* Common */,
 				41A89053F21599D873689555 /* Editor */,
 				B30B1E14DFAC3D4ED821EA85 /* FileTransfer */,
@@ -288,6 +315,7 @@
 			isa = PBXGroup;
 			children = (
 				767CF33A427B2C6C6677E1BF /* Resources */,
+				8815320B0ADA6F5284A9F228 /* Skills */,
 			);
 			name = tamio;
 			path = ../..;
@@ -529,7 +557,9 @@
 				2E4369F69EA9DF974DF27F6A /* Assets.xcassets in Resources */,
 				54C706C4966389E84D9903AD /* EULA in Resources */,
 				ADF9F497480AAECF8EFA2978 /* LICENSE in Resources */,
+				379177E7299187B4931F2F9C /* Skills in Resources */,
 				C78E22FC07482B9FD7C71BF3 /* Tamio.icon in Resources */,
+				C5B61FEFE6D29C674F851CDE /* tamio-mcp in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -554,6 +584,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B407B4973269B8D2FF62A6CF /* AgentBridge.swift in Sources */,
+				8ED6DCE83F8FD7FBA2CED5C8 /* AgentSettings.swift in Sources */,
 				8766A75FC53E74F9069FC9A2 /* AppRouter.swift in Sources */,
 				24E5740380D9EAC687D3FC9E /* BatchRunSheet.swift in Sources */,
 				B2DEED12A1C4505ABEED8FF8 /* BatchSnippetExecContext.swift in Sources */,

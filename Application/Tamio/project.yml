@@ -52,6 +52,12 @@ targets:
       - path: ../../Resources/Tamio.icon
         buildPhase: resources
         type: folder.iconcomposer
+      # The agents' MCP command and skill (Settings › MCP).
+      - path: Helpers/tamio-mcp
+        buildPhase: resources
+      - path: ../../Skills
+        buildPhase: resources
+        type: folder
     settings:
       base:
         PRODUCT_NAME: Tamio
