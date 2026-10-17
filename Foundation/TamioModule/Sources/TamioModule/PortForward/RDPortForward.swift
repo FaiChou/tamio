@@ -8,7 +8,7 @@
 import Foundation
 import NSRemoteShell
 
-public struct RDPortForward: Codable, Identifiable, Equatable {
+public struct RDPortForward: Codable, Identifiable, Equatable, Sendable {
     public init(
         id: UUID = .init(),
         forwardOrientation: ForwardOrientation = .listenLocal,
@@ -29,7 +29,7 @@ public struct RDPortForward: Codable, Identifiable, Equatable {
 
     public var id: UUID
 
-    public enum ForwardOrientation: String, Codable, CaseIterable {
+    public enum ForwardOrientation: String, Codable, CaseIterable, Sendable {
         case listenLocal = "Local"
         case listenRemote = "Remote"
     }

@@ -13,7 +13,8 @@ import Foundation
 
 /// The stored form: how the key was derived, and the sealed document.
 struct SyncEnvelope: Codable {
-    static let currentVersion = 1
+    /// 2 adds snippets, port forwards, known hosts and agent activity.
+    static let currentVersion = 2
 
     var version = SyncEnvelope.currentVersion
     var salt: Data

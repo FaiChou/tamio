@@ -2,8 +2,10 @@
 //  CloudSync.swift
 //  TamioModule
 //
-//  Keeps the servers and identities of this device and of the user's other
-//  devices the same, through iCloud. It is off until turned on in Settings.
+//  Keeps the servers, identities, snippets, port forwards and known hosts of
+//  this device and of the user's other devices the same, and their agent
+//  activity together, through iCloud, sealed under a passphrase only the
+//  devices know. It is off until turned on in Settings.
 //
 
 import Combine
@@ -52,6 +54,21 @@ public final class CloudSync: ObservableObject {
         }
     }
 
+    @Published public var syncsSnippets: Bool { didSet { kindChanged(syncsSnippets, oldValue, Key.snippets) { $0.snippets = [:] } } }
+    @Published public var syncsPortForwards: Bool { didSet { kindChanged(syncsPortForwards, oldValue, Key.portForwards) { $0.portForwards = [:] } } }
+    @Published public var syncsKnownHosts: Bool { didSet { kindChanged(syncsKnownHosts, oldValue, Key.knownHosts) { $0.knownHosts = [:] } } }
+    @Published public var syncsActivity: Bool { didSet { kindChanged(syncsActivity, oldValue, Key.activity) { _ in } } }
+
+    /// A kind turned on or off: what this device knew of it is forgotten, so
+    /// turned on again it starts from what is stored.
+    private func kindChanged(_ value: Bool, _ old: Bool, _ key: String, forget: (inout SyncState) -> Void) {
+        guard value != old else { return }
+        defaults.set(value, forKey: key)
+        forget(&state)
+        generation += 1
+        sync()
+    }
+
     /// Why sync cannot be turned on here, if it cannot.
     public var problem: String? {
         if !TamioStore.savesChanges { return "Tamio could not read its key from the keychain, so nothing is saved or synced." }
@@ -67,6 +84,10 @@ public final class CloudSync: ObservableObject {
         static let on = "sb.moe.tamio.sync.enabled"
         static let servers = "sb.moe.tamio.sync.servers"
         static let identities = "sb.moe.tamio.sync.identities"
+        static let snippets = "sb.moe.tamio.sync.snippets"
+        static let portForwards = "sb.moe.tamio.sync.portForwards"
+        static let knownHosts = "sb.moe.tamio.sync.knownHosts"
+        static let activity = "sb.moe.tamio.sync.activity"
     }
 
     /// The passphrase as it is kept on the device: with the servers and
@@ -97,10 +118,17 @@ public final class CloudSync: ObservableObject {
     private var observers: Set<AnyCancellable> = []
 
     private init() {
-        defaults.register(defaults: [Key.servers: true, Key.identities: true])
+        defaults.register(defaults: [
+            Key.servers: true, Key.identities: true, Key.snippets: true,
+            Key.portForwards: true, Key.knownHosts: true, Key.activity: true,
+        ])
         isOn = defaults.bool(forKey: Key.on)
         syncsServers = defaults.bool(forKey: Key.servers)
         syncsIdentities = defaults.bool(forKey: Key.identities)
+        syncsSnippets = defaults.bool(forKey: Key.snippets)
+        syncsPortForwards = defaults.bool(forKey: Key.portForwards)
+        syncsKnownHosts = defaults.bool(forKey: Key.knownHosts)
+        syncsActivity = defaults.bool(forKey: Key.activity)
         #if DEBUG
             if ProcessInfo.processInfo.environment["TAMIO_SYNC_LOCAL"] != nil {
                 transport = LocalTransport()
@@ -123,29 +151,33 @@ public final class CloudSync: ObservableObject {
         // Asks iCloud for what it has, well before Settings asks whether
         // there is anything.
         _ = transport.read()
-        Publishers.Merge(
-            store.$machineGroup.dropFirst().map { _ in () },
-            store.$identityGroup.dropFirst().map { _ in () }
+        // Whatever sync carries, changed here.
+        let changes = Publishers.MergeMany(
+            store.$machineGroup.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            store.$identityGroup.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            store.$snippetGroup.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            store.$portForwardGroup.dropFirst().map { _ in () }.eraseToAnyPublisher(),
+            NotificationCenter.default.publisher(for: KnownHosts.didChange).map { _ in () }.eraseToAnyPublisher(),
+            AgentServer.shared.log.$entries.dropFirst().map { _ in () }.eraseToAnyPublisher()
         )
-        .sink { [weak self] in
-            // The generation count is only meaningful when every change is
-            // published on the main thread; the store enforces that in
-            // DEBUG builds, and this guard keeps RELEASE ones safe.
-            guard Thread.isMainThread else { return }
-            MainActor.assumeIsolated { self?.generation += 1 }
-        }
-        .store(in: &observers)
+        .share()
+        changes
+            .sink { [weak self] in
+                // The generation count is only meaningful when every change is
+                // published on the main thread; the store enforces that in
+                // DEBUG builds, and this guard keeps RELEASE ones safe.
+                guard Thread.isMainThread else { return }
+                MainActor.assumeIsolated { self?.generation += 1 }
+            }
+            .store(in: &observers)
         // The publishers fire before the value is set; by the time the delay
         // has passed the store has it.
-        Publishers.Merge(
-            store.$machineGroup.dropFirst().map { _ in () },
-            store.$identityGroup.dropFirst().map { _ in () }
-        )
-        .debounce(for: .seconds(2), scheduler: DispatchQueue.main)
-        .sink { [weak self] in
-            MainActor.assumeIsolated { self?.sync() }
-        }
-        .store(in: &observers)
+        changes
+            .debounce(for: .seconds(2), scheduler: DispatchQueue.main)
+            .sink { [weak self] in
+                MainActor.assumeIsolated { self?.sync() }
+            }
+            .store(in: &observers)
         #if canImport(UIKit)
             NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
                 .sink { [weak self] _ in
@@ -270,8 +302,17 @@ public final class CloudSync: ObservableObject {
             remote: transport.read(),
             key: key
         )
+        input.snippets = store.snippetGroup.snippets
+        input.portForwards = store.portForwardGroup.forwards
+        input.knownHosts = KnownHosts.shared.syncEntries()
+        input.activity = AgentServer.shared.log.entries
+        input.activityClearedAt = AgentServer.shared.log.clearedAt
         input.syncsMachines = syncsServers
         input.syncsIdentities = syncsIdentities
+        input.syncsSnippets = syncsSnippets
+        input.syncsPortForwards = syncsPortForwards
+        input.syncsKnownHosts = syncsKnownHosts
+        input.syncsActivity = syncsActivity
         input.replacesRemote = replacesNext
         replacesNext = false
 
@@ -327,6 +368,40 @@ public final class CloudSync: ObservableObject {
                 }
                 store.identityGroup = group
             }
+            if !done.snippets.isEmpty {
+                var group = store.snippetGroup
+                for change in done.snippets {
+                    switch change {
+                    case let .put(snippet): group.insert(snippet)
+                    case let .remove(id): group.delete(id)
+                    }
+                }
+                store.snippetGroup = group
+            }
+            if !done.portForwards.isEmpty {
+                var group = store.portForwardGroup
+                for change in done.portForwards {
+                    switch change {
+                    case let .put(forward): group.insert(forward)
+                    case let .remove(id): group.delete(id)
+                    }
+                }
+                store.portForwardGroup = group
+            }
+            if !done.knownHosts.isEmpty {
+                var put: [KnownHostEntry] = []
+                var removed: [UUID] = []
+                for change in done.knownHosts {
+                    switch change {
+                    case let .put(entry): put.append(entry)
+                    case let .remove(id): removed.append(id)
+                    }
+                }
+                KnownHosts.shared.applySynced(put: put, remove: removed)
+            }
+            // Another device's activity is added, not recorded: it is not
+            // sent on as this device's own.
+            for entry in done.activity { AgentServer.shared.log.merge(entry) }
             state = done.state
             if let upload = done.upload {
                 do {

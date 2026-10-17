@@ -66,6 +66,18 @@ public struct CloudSyncSettings: View {
                     description: "User names, passwords and private keys.",
                     isOn: $sync.syncsIdentities
                 )
+                SwitchRow("Snippets", description: "Saved commands and their groups.", isOn: $sync.syncsSnippets)
+                SwitchRow("Port forwards", description: "Local and remote forwards, and the server each uses.", isOn: $sync.syncsPortForwards)
+                SwitchRow(
+                    "Known hosts",
+                    description: "The servers' keys: one trusted on a device is trusted on the others.",
+                    isOn: $sync.syncsKnownHosts
+                )
+                SwitchRow(
+                    "Agent activity",
+                    description: "What agents did on each server, so agents on other devices know.",
+                    isOn: $sync.syncsActivity
+                )
                 RXFormRow("Passphrase", description: "After a change, your other devices ask for the new one.") {
                     Button("Change…") { asking = .change }
                         .buttonStyle(.rx(size: .small))

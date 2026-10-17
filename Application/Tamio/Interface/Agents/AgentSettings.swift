@@ -95,7 +95,7 @@ struct AgentActivitySettings: View {
                     Button("Clear Activity…") {
                         UIBridge.requiresConfirmation(
                             message: "Clear all agent activity?",
-                            informative: "It is cleared on this Mac only.",
+                            informative: "It is cleared on this Mac only; with iCloud sync, other Macs keep theirs.",
                             confirmTitle: "Clear",
                             destructive: true
                         ) { if $0 { log.clear() } }

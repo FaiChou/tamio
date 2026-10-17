@@ -105,11 +105,40 @@ final class CloudKeyValueTransport: SyncTransport {
     /// Stands in for iCloud on a build that has none, to see sync at work on
     /// one device. Set TAMIO_SYNC_LOCAL in the environment.
     @MainActor
+    /// iCloud stood in for, to try sync without it: the app's defaults, or a
+    /// file named by TAMIO_SYNC_FILE that several copies of the app share,
+    /// each looking for the others' writes every two seconds.
     final class LocalTransport: SyncTransport {
         private static let key = "sb.moe.tamio.debug.sync"
-        var changed: (() -> Void)?
+        private let file = ProcessInfo.processInfo.environment["TAMIO_SYNC_FILE"].map { URL(fileURLWithPath: $0) }
+        private var seen: Data?
+        private var timer: Timer?
+        var changed: (() -> Void)? {
+            didSet {
+                guard file != nil, timer == nil else { return }
+                seen = read()
+                timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+                    guard let self else { return }
+                    let now = read()
+                    if now != seen { seen = now; changed?() }
+                }
+            }
+        }
+
         var problem: String? { nil }
-        func read() -> Data? { UserDefaults.standard.data(forKey: Self.key) }
-        func write(_ data: Data?) throws { UserDefaults.standard.set(data, forKey: Self.key) }
+
+        func read() -> Data? {
+            if let file { return try? Data(contentsOf: file) }
+            return UserDefaults.standard.data(forKey: Self.key)
+        }
+
+        func write(_ data: Data?) throws {
+            if let file {
+                if let data { try data.write(to: file, options: .atomic) } else { try? FileManager.default.removeItem(at: file) }
+                seen = data
+                return
+            }
+            UserDefaults.standard.set(data, forKey: Self.key)
+        }
     }
 #endif

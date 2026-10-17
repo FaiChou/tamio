@@ -3,7 +3,9 @@
 //  TamioModule
 //
 //  What is synced, and how two copies are brought together: item by item, the
-//  later change wins, and a deletion is a change like any other.
+//  later change wins, and a deletion is a change like any other. Agent
+//  activity is a log, not items to edit: every device's entries are kept,
+//  the latest of them, and nothing is deleted.
 //
 
 import CryptoKit
@@ -18,6 +20,25 @@ struct SyncDocument: Codable, Sendable {
 
     var machines: [String: Entry<RDMachine>] = [:]
     var identities: [String: Entry<RDIdentity>] = [:]
+    var snippets: [String: Entry<RDSnippet>] = [:]
+    var portForwards: [String: Entry<RDPortForward>] = [:]
+    var knownHosts: [String: Entry<KnownHostEntry>] = [:]
+    /// The latest agent activity of every device, oldest first.
+    var activity: [AgentActivity] = []
+}
+
+extension SyncDocument {
+    // A document from a version that synced fewer kinds has no entry for
+    // the others.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        machines = try container.decodeIfPresent([String: Entry<RDMachine>].self, forKey: .machines) ?? [:]
+        identities = try container.decodeIfPresent([String: Entry<RDIdentity>].self, forKey: .identities) ?? [:]
+        snippets = try container.decodeIfPresent([String: Entry<RDSnippet>].self, forKey: .snippets) ?? [:]
+        portForwards = try container.decodeIfPresent([String: Entry<RDPortForward>].self, forKey: .portForwards) ?? [:]
+        knownHosts = try container.decodeIfPresent([String: Entry<KnownHostEntry>].self, forKey: .knownHosts) ?? [:]
+        activity = try container.decodeIfPresent([AgentActivity].self, forKey: .activity) ?? []
+    }
 }
 
 /// What this device last knew of each item: enough to tell what has changed
@@ -31,6 +52,20 @@ struct SyncState: Codable, Sendable, Equatable {
 
     var machines: [String: Stamp] = [:]
     var identities: [String: Stamp] = [:]
+    var snippets: [String: Stamp] = [:]
+    var portForwards: [String: Stamp] = [:]
+    var knownHosts: [String: Stamp] = [:]
+}
+
+extension SyncState {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        machines = try container.decodeIfPresent([String: Stamp].self, forKey: .machines) ?? [:]
+        identities = try container.decodeIfPresent([String: Stamp].self, forKey: .identities) ?? [:]
+        snippets = try container.decodeIfPresent([String: Stamp].self, forKey: .snippets) ?? [:]
+        portForwards = try container.decodeIfPresent([String: Stamp].self, forKey: .portForwards) ?? [:]
+        knownHosts = try container.decodeIfPresent([String: Stamp].self, forKey: .knownHosts) ?? [:]
+    }
 }
 
 /// A change to make on this device.
@@ -77,6 +112,54 @@ extension RDIdentity: SyncItem {
         var copy = self
         copy.lastRecentUsed = local.lastRecentUsed
         return copy
+    }
+}
+
+extension RDSnippet: SyncItem {
+    var content: RDSnippet { self }
+    func arriving(over _: RDSnippet?) -> RDSnippet { self }
+}
+
+extension RDPortForward: SyncItem {
+    var content: RDPortForward { self }
+    func arriving(over _: RDPortForward?) -> RDPortForward { self }
+}
+
+extension KnownHostEntry: SyncItem {
+    var content: KnownHostEntry { self }
+    func arriving(over _: KnownHostEntry?) -> KnownHostEntry { self }
+}
+
+/// Agent activity in iCloud: the latest entries of every device, each with
+/// the end of its output shortened, so the log stays small.
+enum SyncActivity {
+    static let limit = 200
+    static let tailLimit = 600
+
+    static func trimmed(_ entry: AgentActivity) -> AgentActivity {
+        var copy = entry
+        copy.results = copy.results.map { result in
+            var result = result
+            if result.tail.count > tailLimit { result.tail = String(result.tail.suffix(tailLimit)) }
+            return result
+        }
+        return copy
+    }
+
+    /// The stored entries with this device's, the latest `limit`; and those
+    /// of other devices this one lacks, apart from any from before it was
+    /// last cleared.
+    static func combine(
+        local: [AgentActivity], remote: [AgentActivity], clearedAt: Date?
+    ) -> (entries: [AgentActivity], arrived: [AgentActivity], dirty: Bool) {
+        var byID: [UUID: AgentActivity] = [:]
+        for entry in remote { byID[entry.id] = entry }
+        for entry in local.suffix(limit) where byID[entry.id] == nil { byID[entry.id] = trimmed(entry) }
+        let entries = Array(byID.values.sorted { ($0.date, $0.id.uuidString) < ($1.date, $1.id.uuidString) }.suffix(limit))
+        let localIDs = Set(local.map(\.id))
+        let arrived = entries.filter { !localIDs.contains($0.id) && $0.date > (clearedAt ?? .distantPast) }
+        let dirty = entries.map(\.id) != remote.map(\.id)
+        return (entries, arrived, dirty)
     }
 }
 

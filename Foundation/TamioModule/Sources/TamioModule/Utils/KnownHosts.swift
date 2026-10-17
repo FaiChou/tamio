@@ -12,6 +12,28 @@ import CryptoKit
 import Foundation
 import NSRemoteShell
 
+/// One saved key as sync carries it: the address and its key, under an id
+/// made from the address, the same on every device.
+public struct KnownHostEntry: Codable, Sendable, Identifiable, Equatable {
+    public let id: UUID
+    public let name: String
+    public let line: String
+
+    public init(name: String, line: String) {
+        id = Self.id(for: name)
+        self.name = name
+        self.line = line
+    }
+
+    static func id(for name: String) -> UUID {
+        var bytes = Array(SHA256.hash(data: Data(("known-host:" + name).utf8)).prefix(16))
+        bytes[6] = (bytes[6] & 0x0F) | 0x50
+        bytes[8] = (bytes[8] & 0x3F) | 0x80
+        return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+                           bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]))
+    }
+}
+
 public final class KnownHosts: @unchecked Sendable {
     public struct HostKey: Equatable, Sendable {
         /// The algorithm as SSH names it, "ssh-ed25519" for one.
@@ -59,6 +81,8 @@ public final class KnownHosts: @unchecked Sendable {
         guard let line = saved[name] else {
             saved[name] = Self.line(for: offered)
             defaults.set(saved, forKey: storageKey)
+        Self.announceChange()
+            Self.announceChange()
             refused[name] = nil
             return true
         }
@@ -98,6 +122,7 @@ public final class KnownHosts: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         defaults.removeObject(forKey: storageKey)
+        Self.announceChange()
         refused.removeAll()
     }
 
@@ -118,6 +143,34 @@ public final class KnownHosts: @unchecked Sendable {
         lines.append("Offered: \(offered.type) \(offered.fingerprint)")
         lines.append("If the server was reinstalled or its keys were replaced, choose Forget Host Key for it and connect again. If not, something may be intercepting the connection.")
         return lines.joined(separator: "\n")
+    }
+
+    // MARK: Sync
+
+    /// Posted when a key is saved or forgotten.
+    public static let didChange = Notification.Name("sb.moe.tamio.knownHostsChanged")
+
+    private static func announceChange() {
+        DispatchQueue.main.async { NotificationCenter.default.post(name: didChange, object: nil) }
+    }
+
+    /// Every saved key, as sync carries it.
+    public func syncEntries() -> [KnownHostEntry] {
+        lock.lock()
+        defer { lock.unlock() }
+        return entries().map { KnownHostEntry(name: $0.key, line: $0.value) }
+    }
+
+    /// Keys saved or forgotten on another device.
+    public func applySynced(put: [KnownHostEntry], remove: [UUID]) {
+        guard !put.isEmpty || !remove.isEmpty else { return }
+        lock.lock()
+        var saved = entries()
+        let removed = Set(remove)
+        for name in saved.keys where removed.contains(KnownHostEntry.id(for: name)) { saved[name] = nil }
+        for entry in put { saved[entry.name] = entry.line }
+        defaults.set(saved, forKey: storageKey)
+        lock.unlock()
     }
 
     private func entries() -> [String: String] {

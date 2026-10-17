@@ -12,6 +12,12 @@ import Foundation
 struct SyncInput: Sendable {
     var machines: [RDMachine]
     var identities: [RDIdentity]
+    var snippets: [RDSnippet] = []
+    var portForwards: [RDPortForward] = []
+    var knownHosts: [KnownHostEntry] = []
+    var activity: [AgentActivity] = []
+    /// When this device's activity log was last cleared.
+    var activityClearedAt: Date?
     var state: SyncState
     var passphrase: String
     /// The stored envelope, if there is one.
@@ -20,6 +26,10 @@ struct SyncInput: Sendable {
     var key: SyncCipher.Key?
     var syncsMachines = true
     var syncsIdentities = true
+    var syncsSnippets = true
+    var syncsPortForwards = true
+    var syncsKnownHosts = true
+    var syncsActivity = true
     /// Seal under a new key from `passphrase`, whatever is stored. What is
     /// stored is merged first if `key`, the one in use until now, still opens
     /// it; otherwise this device's data takes its place.
@@ -41,6 +51,11 @@ enum SyncOutcome: Sendable {
     struct Done: Sendable {
         var machines: [SyncChange<RDMachine>]
         var identities: [SyncChange<RDIdentity>]
+        var snippets: [SyncChange<RDSnippet>] = []
+        var portForwards: [SyncChange<RDPortForward>] = []
+        var knownHosts: [SyncChange<KnownHostEntry>] = []
+        /// Activity of other devices to add to this one's log.
+        var activity: [AgentActivity] = []
         var state: SyncState
         var key: SyncCipher.Key
         /// The envelope to store, when it changed.
@@ -57,7 +72,7 @@ enum SyncSession {
         if input.replacesRemote {
             if let remote = input.remote, let old = input.key,
                let envelope = try? JSONDecoder().decode(SyncEnvelope.self, from: remote),
-               envelope.version == SyncEnvelope.currentVersion,
+               envelope.version <= SyncEnvelope.currentVersion,
                envelope.salt == old.salt, envelope.rounds == old.rounds,
                let plain = try? SyncCipher.open(envelope, with: old),
                let decoded = try? JSONDecoder().decode(SyncDocument.self, from: plain)
@@ -98,25 +113,36 @@ enum SyncSession {
         )
         var state = input.state
         var dirty = !stored
-        var machineChanges: [SyncChange<RDMachine>] = []
-        var identityChanges: [SyncChange<RDIdentity>] = []
+        var done = SyncOutcome.Done(machines: [], identities: [], state: state, key: sealing)
 
-        // A kind that is not synced here is passed on as it was stored.
-        if input.syncsMachines {
+        // Each kind is merged on its own; one that is not synced here is
+        // passed on as it was stored.
+        func merge<Value: SyncItem>(
+            _ syncs: Bool, _ local: [Value],
+            _ stamps: WritableKeyPath<SyncState, [String: SyncState.Stamp]>,
+            _ entries: WritableKeyPath<SyncDocument, [String: SyncDocument.Entry<Value>]>,
+            _ changes: WritableKeyPath<SyncOutcome.Done, [SyncChange<Value>]>
+        ) {
+            guard syncs else { return }
             let merged = SyncMerge.reconcile(
-                local: input.machines, state: &state.machines, remote: document.machines, now: input.now
+                local: local, state: &state[keyPath: stamps], remote: document[keyPath: entries], now: input.now
             )
-            document.machines = merged.entries
-            machineChanges = merged.changes
+            document[keyPath: entries] = merged.entries
+            done[keyPath: changes] = merged.changes
             dirty = dirty || merged.dirty
         }
-        if input.syncsIdentities {
-            let merged = SyncMerge.reconcile(
-                local: input.identities, state: &state.identities, remote: document.identities, now: input.now
+        merge(input.syncsMachines, input.machines, \.machines, \.machines, \.machines)
+        merge(input.syncsIdentities, input.identities, \.identities, \.identities, \.identities)
+        merge(input.syncsSnippets, input.snippets, \.snippets, \.snippets, \.snippets)
+        merge(input.syncsPortForwards, input.portForwards, \.portForwards, \.portForwards, \.portForwards)
+        merge(input.syncsKnownHosts, input.knownHosts, \.knownHosts, \.knownHosts, \.knownHosts)
+        if input.syncsActivity {
+            let combined = SyncActivity.combine(
+                local: input.activity, remote: document.activity, clearedAt: input.activityClearedAt
             )
-            document.identities = merged.entries
-            identityChanges = merged.changes
-            dirty = dirty || merged.dirty
+            document.activity = combined.entries
+            done.activity = combined.arrived
+            dirty = dirty || combined.dirty
         }
 
         var upload: Data?
@@ -128,8 +154,8 @@ enum SyncSession {
             else { return .unreadable }
             upload = sealed
         }
-        return .done(.init(
-            machines: machineChanges, identities: identityChanges, state: state, key: sealing, upload: upload
-        ))
+        done.state = state
+        done.upload = upload
+        return .done(done)
     }
 }

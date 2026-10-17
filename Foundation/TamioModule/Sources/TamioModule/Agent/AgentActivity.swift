@@ -93,8 +93,17 @@ public final class AgentActivityLog: ObservableObject {
         entries.filter { $0.hosts.contains(machine.uuidString) }
     }
 
+    /// When this device's log was last cleared: sync brings back nothing
+    /// from before then.
+    public var clearedAt: Date? {
+        UserDefaults.standard.object(forKey: Self.clearedKey) as? Date
+    }
+
+    private static let clearedKey = "sb.moe.tamio.agentActivity.clearedAt"
+
     public func clear() {
         entries = []
+        UserDefaults.standard.set(Date(), forKey: Self.clearedKey)
         save()
     }
 
