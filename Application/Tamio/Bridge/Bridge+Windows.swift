@@ -113,6 +113,7 @@ extension Bridge {
 
     var commandHeld: Bool { NSEvent.modifierFlags.contains(.command) }
     var shiftHeld: Bool { NSEvent.modifierFlags.contains(.shift) }
+    var isFrontmost: Bool { NSApp.isActive }
 
     func holdNewWindowsUntilToolbar() {
         let started = Date()

@@ -62,6 +62,9 @@ import Foundation
     /// a selection (SwiftUI's tap modifiers are not on Mac Catalyst).
     var commandHeld: Bool { get }
     var shiftHeld: Bool { get }
+    /// Whether Tamio is the app in front. UIKit on the Mac calls the app
+    /// active as long as a window shows.
+    var isFrontmost: Bool { get }
 
     // MARK: Updates (Sparkle)
 

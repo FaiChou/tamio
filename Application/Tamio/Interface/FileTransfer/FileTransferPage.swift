@@ -976,7 +976,8 @@ enum TransferNotifier {
     private static var asked = false
 
     static func finished(_ job: TransferJob) {
-        guard UIApplication.shared.applicationState != .active, job.state != .cancelled else { return }
+        let inFront = Mac.bridge?.isFrontmost ?? (UIApplication.shared.applicationState == .active)
+        guard !inFront, job.state != .cancelled else { return log("in front: no notification") }
         let center = UNUserNotificationCenter.current()
         let content = UNMutableNotificationContent()
         switch job.state {
@@ -989,13 +990,32 @@ enum TransferNotifier {
         }
         content.sound = .default
         let request = UNNotificationRequest(identifier: job.id.uuidString, content: content, trigger: nil)
-        if asked {
-            center.add(request)
-        } else {
-            asked = true
-            center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
-                if granted { center.add(request) }
+        let post = {
+            center.add(request) { error in
+                log("\(content.title): \(content.body) -> \(error.map { "\($0)" } ?? "posted")")
             }
         }
+        if asked {
+            post()
+        } else {
+            asked = true
+            center.requestAuthorization(options: [.alert, .sound]) { granted, error in
+                log("authorization: \(granted)\(error.map { " \($0)" } ?? "")")
+                if granted { post() }
+            }
+        }
+    }
+
+    /// TAMIO_NOTIFY_LOG=<file>, in debug builds, records what happens to each
+    /// notification, to check one was posted.
+    private nonisolated static func log(_ line: String) {
+        #if DEBUG
+            guard let path = ProcessInfo.processInfo.environment["TAMIO_NOTIFY_LOG"],
+                  let handle = FileHandle(forWritingAtPath: path)
+            else { return }
+            handle.seekToEndOfFile()
+            handle.write(Data((line + "\n").utf8))
+            handle.closeFile()
+        #endif
     }
 }
