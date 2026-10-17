@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
-  <title>Tamio prompt chevron</title>
-  <!-- The chevron 300,322 → 516,512 → 300,702 drawn 124 wide with round caps
-       and join, as one outline: a stroke's join shows as a seam in glass. -->
-  <path fill="#FFFFFF" d="M340.95 275.44 L556.95 465.44 A62 62 0 0 1 556.95 558.56 L340.95 748.56 A62 62 0 0 1 259.05 655.44 L422.12 512 L259.05 368.56 A62 62 0 0 1 340.95 275.44 Z"/>
+  <title>Tamio prompt</title>
+  <!-- The chevron 358,400 → 518,540 → 358,680, 88 wide with round caps and
+       join, as one outline; then the cursor. -->
+  <path fill="#1F4FD1" d="M385.97 366.89 L545.97 506.89 A44 44 0 0 1 545.97 573.11 L385.97 713.11 A44 44 0 0 1 328.03 646.89 L450.2 540 L328.03 433.11 A44 44 0 0 1 385.97 366.89 Z"/>
+  <rect x="560" y="646" width="150" height="66" rx="33" fill="#19B8F0"/>
 </svg>
