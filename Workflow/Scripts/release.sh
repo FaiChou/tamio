@@ -5,8 +5,8 @@
 #
 # Usage:
 #   bash Workflow/Scripts/release.sh            # both
-#   bash Workflow/Scripts/release.sh mac        # catussh-<version>.dmg
-#   bash Workflow/Scripts/release.sh ios        # catussh-<version>.ipa
+#   bash Workflow/Scripts/release.sh mac        # Tamio-<version>.dmg
+#   bash Workflow/Scripts/release.sh ios        # Tamio-<version>.ipa
 #
 # Products are written to $DERIVED_DATA_PATH/Release.
 #
@@ -88,7 +88,7 @@ notarize() {
 release_mac() {
     local identity="${CODE_SIGN_IDENTITY:-}"
     if [[ -z "$identity" ]]; then
-        identity="$(security find-identity -v -p codesigning \
+        identity="$(security find-identity -v -p codesigning | grep -v CSSMERR \
             | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' | head -1)"
     fi
     if [[ -z "$identity" ]]; then
@@ -110,11 +110,11 @@ release_mac() {
         exit 1
     }
 
-    local built="$DERIVED_DATA_PATH/Build/Products/Release-maccatalyst/catussh.app"
+    local built="$DERIVED_DATA_PATH/Build/Products/Release-maccatalyst/Tamio.app"
     local version stage app
     version="$(version_of "$built/Contents/Info.plist")"
     stage="$OUTPUT_DIR/mac"
-    app="$stage/catussh.app"
+    app="$stage/Tamio.app"
     rm -rf "$stage"
     mkdir -p "$stage"
     ditto "$built" "$app"
@@ -137,10 +137,10 @@ release_mac() {
     /usr/bin/codesign --verify --deep --strict --all-architectures "$app"
 
     step "Mac: making the disk image"
-    local image="$OUTPUT_DIR/catussh-$version.dmg"
+    local image="$OUTPUT_DIR/Tamio-$version.dmg"
     rm -f "$image"
     ln -s /Applications "$stage/Applications"
-    hdiutil create -volname "catussh $version" -srcfolder "$stage" -fs HFS+ -format UDZO -ov "$image" >/dev/null
+    hdiutil create -volname "Tamio $version" -srcfolder "$stage" -fs HFS+ -format UDZO -ov "$image" >/dev/null
     if [[ "$identity" == "-" ]]; then
         printf 'Signed ad hoc: %s will not open on another Mac.\n' "$(basename "$image")"
     else
@@ -158,7 +158,7 @@ release_ios() {
     local ios_data="$DERIVED_DATA_PATH/iOS"
     if ! xcodebuild \
         -workspace "$ROOT_DIR/App.xcworkspace" \
-        -scheme mCatussh \
+        -scheme TamioMobile \
         -configuration Release \
         -destination 'generic/platform=iOS' \
         -derivedDataPath "$ios_data" \
@@ -170,14 +170,14 @@ release_ios() {
     fi
 
     step "iOS: packaging"
-    local built="$ios_data/Build/Products/Release-iphoneos/mCatussh.app"
+    local built="$ios_data/Build/Products/Release-iphoneos/TamioMobile.app"
     local version stage archive
     version="$(version_of "$built/Info.plist")"
     stage="$OUTPUT_DIR/ios"
-    archive="$OUTPUT_DIR/catussh-$version.ipa"
+    archive="$OUTPUT_DIR/Tamio-$version.ipa"
     rm -rf "$stage" "$archive"
     mkdir -p "$stage/Payload"
-    ditto "$built" "$stage/Payload/catussh.app"
+    ditto "$built" "$stage/Payload/Tamio.app"
     (cd "$stage" && /usr/bin/zip -qry "$archive" Payload)
     rm -rf "$stage"
     printf '%s\n' "$archive"
@@ -187,4 +187,4 @@ release_ios() {
 [[ "$TARGET" == all || "$TARGET" == ios ]] && release_ios
 
 step "Done"
-ls -lh "$OUTPUT_DIR"/catussh-* | awk '{print "  " $5 "  " $9}'
+ls -lh "$OUTPUT_DIR"/Tamio-* | awk '{print "  " $5 "  " $9}'

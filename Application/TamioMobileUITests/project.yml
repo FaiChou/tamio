@@ -1,0 +1,25 @@
+# UI tests for the iOS app (TamioMobile). They drive the installed app by bundle
+# identifier, so install TamioMobile on the simulator first; see README.md here.
+# Regenerate the project with: xcodegen generate
+name: TamioMobileUITests
+options:
+  bundleIdPrefix: sb.moe.tamio
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  TamioMobileUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Tests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "6.0"
+        CODE_SIGNING_ALLOWED: NO
+schemes:
+  TamioMobileUITests:
+    build:
+      targets:
+        TamioMobileUITests: [test]
+    test:
+      targets: [TamioMobileUITests]

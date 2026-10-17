@@ -1,6 +1,6 @@
 //
 //  ServerInfo.swift
-//  catussh
+//  Tamio
 //
 //  Created by Lakr Aream on 2022/2/12.
 //
@@ -9,8 +9,8 @@ import Combine
 import Foundation
 import NSRemoteShell
 
-/// Mirror of CatusshModule's `onMainThread`; MachineStatus sits below
-/// CatusshModule in the package graph and cannot import it.
+/// Mirror of TamioModule's `onMainThread`; MachineStatus sits below
+/// TamioModule in the package graph and cannot import it.
 /// - Parameter run: the job to be fired on the main thread
 func onMainThread(delay: Double = 0, run: @escaping () -> Void) {
     // Preserve the legacy model callbacks without claiming the models are Sendable.
@@ -55,7 +55,7 @@ public class ServerStatus: ObservableObject, Equatable {
     /// section on a full-line match, which kernel /proc payloads, df rows
     /// and os-release assignments can never produce. That is what the old
     /// "[*******]" token could not promise inside two samples of one file.
-    static let sectionMarkerPrefix = "<<<CATUSSH-SECTION:"
+    static let sectionMarkerPrefix = "<<<TAMIO-SECTION:"
     static let sectionMarkerSuffix = ">>>"
 
     /// `nvidia-smi` stays a command of its own: it is slow and missing on
@@ -70,28 +70,28 @@ public class ServerStatus: ObservableObject, Equatable {
     /// while a connection stays up.
     static func monitorScript(includeStatic: Bool) -> String {
         var sections = [
-            ("platform", "echo \"$CATUSSH_KERNEL\""),
-            ("cpu-a", "if [ \"$CATUSSH_KERNEL\" != Darwin ]; then /bin/cat /proc/stat; fi"),
-            ("net-a", "if [ \"$CATUSSH_KERNEL\" = Darwin ]; then /usr/sbin/netstat -ibn; else /bin/cat /proc/net/dev; fi"),
-            ("darwin-top", "if [ \"$CATUSSH_KERNEL\" = Darwin ]; then /usr/bin/top -l 2 -n 0 -s 1; fi"),
-            ("wait", "if [ \"$CATUSSH_KERNEL\" != Darwin ]; then /bin/sleep 1; fi"),
-            ("cpu-b", "if [ \"$CATUSSH_KERNEL\" != Darwin ]; then /bin/cat /proc/stat; fi"),
-            ("net-b", "if [ \"$CATUSSH_KERNEL\" = Darwin ]; then /usr/sbin/netstat -ibn; else /bin/cat /proc/net/dev; fi"),
-            ("mem", "if [ \"$CATUSSH_KERNEL\" = Darwin ]; then /usr/sbin/sysctl hw.memsize hw.pagesize vm.swapusage; /usr/bin/vm_stat; else /bin/cat /proc/meminfo; fi"),
+            ("platform", "echo \"$TAMIO_KERNEL\""),
+            ("cpu-a", "if [ \"$TAMIO_KERNEL\" != Darwin ]; then /bin/cat /proc/stat; fi"),
+            ("net-a", "if [ \"$TAMIO_KERNEL\" = Darwin ]; then /usr/sbin/netstat -ibn; else /bin/cat /proc/net/dev; fi"),
+            ("darwin-top", "if [ \"$TAMIO_KERNEL\" = Darwin ]; then /usr/bin/top -l 2 -n 0 -s 1; fi"),
+            ("wait", "if [ \"$TAMIO_KERNEL\" != Darwin ]; then /bin/sleep 1; fi"),
+            ("cpu-b", "if [ \"$TAMIO_KERNEL\" != Darwin ]; then /bin/cat /proc/stat; fi"),
+            ("net-b", "if [ \"$TAMIO_KERNEL\" = Darwin ]; then /usr/sbin/netstat -ibn; else /bin/cat /proc/net/dev; fi"),
+            ("mem", "if [ \"$TAMIO_KERNEL\" = Darwin ]; then /usr/sbin/sysctl hw.memsize hw.pagesize vm.swapusage; /usr/bin/vm_stat; else /bin/cat /proc/meminfo; fi"),
             ("df", "/bin/df -Pk"),
-            ("uptime", "if [ \"$CATUSSH_KERNEL\" = Darwin ]; then /bin/date +%s; /usr/sbin/sysctl -n kern.boottime; else /bin/cat /proc/uptime; fi"),
-            ("loadavg", "if [ \"$CATUSSH_KERNEL\" != Darwin ]; then /bin/cat /proc/loadavg; fi"),
+            ("uptime", "if [ \"$TAMIO_KERNEL\" = Darwin ]; then /bin/date +%s; /usr/sbin/sysctl -n kern.boottime; else /bin/cat /proc/uptime; fi"),
+            ("loadavg", "if [ \"$TAMIO_KERNEL\" != Darwin ]; then /bin/cat /proc/loadavg; fi"),
         ]
         if includeStatic {
             sections += [
                 ("hostname", "/bin/hostname 2>/dev/null || hostname 2>/dev/null || echo \"localhost\""),
-                ("os-release", "if [ \"$CATUSSH_KERNEL\" = Darwin ]; then /usr/bin/sw_vers; else /bin/cat /etc/os-release; fi"),
+                ("os-release", "if [ \"$TAMIO_KERNEL\" = Darwin ]; then /usr/bin/sw_vers; else /bin/cat /etc/os-release; fi"),
             ]
         }
         let commands = sections.map { name, command in
             "echo '\(sectionMarkerPrefix)\(name)\(sectionMarkerSuffix)'\n\(command)"
         }
-        return (["CATUSSH_KERNEL=\"$(/usr/bin/uname -s)\""] + commands)
+        return (["TAMIO_KERNEL=\"$(/usr/bin/uname -s)\""] + commands)
             .joined(separator: "\n")
     }
 
@@ -132,7 +132,7 @@ public class ServerStatus: ObservableObject, Equatable {
             lhs.graphics == rhs.graphics
     }
 
-    private static let queue = DispatchQueue(label: "me.mizorewww.rayon.info", attributes: .concurrent)
+    private static let queue = DispatchQueue(label: "sb.moe.tamio.info", attributes: .concurrent)
 
     /// Hostname and os-release cannot change while a connection stays up,
     /// so they are read once and reused until the monitor reports a

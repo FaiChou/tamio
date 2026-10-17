@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build catussh and install it on this Mac and on every iPhone and iPad that is
+# Build Tamio and install it on this Mac and on every iPhone and iPad that is
 # paired with it and reachable (over USB or the local network).
 #
 # Usage:
@@ -28,7 +28,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-$ROOT_DIR/DerivedData}"
-BUNDLE_ID="me.mizorewww.rayon"
+BUNDLE_ID="sb.moe.tamio"
 # What the app was called before; its data on this Mac is carried over once.
 FORMER_BUNDLE_ID="wiki.qaq.ray0n"
 TARGET="${1:-all}"
@@ -69,7 +69,7 @@ report_former_mac_data() {
     done
     if [[ -e "$seed" ]]; then
         printf 'The data saved as %s was NOT carried over: the system left it at %s.\n' "$FORMER_BUNDLE_ID" "$seed" >&2
-        printf 'Quit catussh, run `defaults delete %s; defaults import %s "%s"`, delete that file and open catussh again.\n' "$BUNDLE_ID" "$BUNDLE_ID" "$seed" >&2
+        printf 'Quit Tamio, run `defaults delete %s; defaults import %s "%s"`, delete that file and open Tamio again.\n' "$BUNDLE_ID" "$BUNDLE_ID" "$seed" >&2
         failed+=("Mac (former data not carried over)")
     else
         printf 'Carried over the data saved as %s.\n' "$FORMER_BUNDLE_ID"
@@ -78,22 +78,22 @@ report_former_mac_data() {
 
 install_mac() {
     step "Mac: building and installing to /Applications"
-    if pgrep -f "/Applications/catussh.app/Contents/MacOS/catussh" >/dev/null; then
-        printf 'catussh is running; asking it to quit.\n'
-        osascript -e 'tell application "/Applications/catussh.app" to quit' >/dev/null 2>&1 || true
+    if pgrep -f "/Applications/Tamio.app/Contents/MacOS/Tamio" >/dev/null; then
+        printf 'Tamio is running; asking it to quit.\n'
+        osascript -e 'tell application "/Applications/Tamio.app" to quit' >/dev/null 2>&1 || true
         for _ in $(seq 1 60); do
-            pgrep -f "/Applications/catussh.app/Contents/MacOS/catussh" >/dev/null || break
+            pgrep -f "/Applications/Tamio.app/Contents/MacOS/Tamio" >/dev/null || break
             sleep 1
         done
-        if pgrep -f "/Applications/catussh.app/Contents/MacOS/catussh" >/dev/null; then
-            printf 'catussh is still running (is it asking something?). Quit it and run again.\n' >&2
-            failed+=("Mac (catussh did not quit)")
+        if pgrep -f "/Applications/Tamio.app/Contents/MacOS/Tamio" >/dev/null; then
+            printf 'Tamio is still running (is it asking something?). Quit it and run again.\n' >&2
+            failed+=("Mac (Tamio did not quit)")
             return
         fi
     fi
     if bash "$ROOT_DIR/Workflow/Scripts/install-macos.sh"; then
         adopt_former_mac_data
-        open "/Applications/catussh.app"
+        open "/Applications/Tamio.app"
         report_former_mac_data
     else
         failed+=("Mac (build or install failed)")
@@ -165,7 +165,7 @@ install_ios() {
     local ios_data="$DERIVED_DATA_PATH/iOS"
     if ! xcodebuild \
         -workspace "$ROOT_DIR/App.xcworkspace" \
-        -scheme mCatussh \
+        -scheme TamioMobile \
         -configuration Release \
         -destination 'generic/platform=iOS' \
         -derivedDataPath "$ios_data" \
@@ -178,10 +178,10 @@ install_ios() {
     fi
 
     step "iOS: signing ($identity, team $team)"
-    local app="$ios_data/Signed/catussh.app"
+    local app="$ios_data/Signed/Tamio.app"
     rm -rf "$ios_data/Signed"
     mkdir -p "$ios_data/Signed"
-    ditto "$ios_data/Build/Products/Release-iphoneos/mCatussh.app" "$app"
+    ditto "$ios_data/Build/Products/Release-iphoneos/TamioMobile.app" "$app"
     cp "$profile" "$app/embedded.mobileprovision"
     local entitlements="$ios_data/Signed/entitlements.plist"
     cat > "$entitlements" <<EOF

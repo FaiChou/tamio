@@ -6,8 +6,8 @@ import PackageDescription
 let package = Package(
     name: "MachineStatusView",
     platforms: [
-        .macOS(.v13),
-        .iOS(.v16),
+        .macOS(.v14),
+        .iOS(.v17),
     ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
@@ -18,12 +18,12 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "MachineStatus", path: "../MachineStatus"),
-        .package(name: "CatusshModule", path: "../CatusshModule"),
+        .package(name: "TamioModule", path: "../TamioModule"),
     ],
     targets: [
         .target(
             name: "MachineStatusView",
-            dependencies: ["MachineStatus", "CatusshModule"],
+            dependencies: ["MachineStatus", "TamioModule"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
     ]

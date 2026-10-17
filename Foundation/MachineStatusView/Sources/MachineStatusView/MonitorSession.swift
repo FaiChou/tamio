@@ -10,7 +10,7 @@ import Combine
 import Foundation
 import MachineStatus
 import NSRemoteShell
-import CatusshModule
+import TamioModule
 
 /// Samples collected by the app while a monitor is open (one per refresh).
 public struct MonitorHistory: Equatable {
@@ -86,12 +86,12 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
     private var updateTask: Task<Void, Never>?
     private var cancellables = Set<AnyCancellable>()
 
-    private static let queue = DispatchQueue(label: "me.mizorewww.monitor", attributes: .concurrent)
+    private static let queue = DispatchQueue(label: "sb.moe.tamio.monitor", attributes: .concurrent)
 
     public init(machine: RDMachine, identity: RDIdentity?) {
         self.machine = machine
         self.identity = identity
-        shell = NSRemoteShell.configured(for: machine, timeout: CatusshStore.shared.timeoutNumber)
+        shell = NSRemoteShell.configured(for: machine, timeout: TamioStore.shared.timeoutNumber)
         // Re-publish nested status changes so one observer is enough.
         status.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
@@ -151,7 +151,7 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
 
     public var refreshInterval: Int {
         // Read from the update loop's task; the store's worker snapshot.
-        max(1, CatusshStore.shared.workerMonitorInterval)
+        max(1, TamioStore.shared.workerMonitorInterval)
     }
 
     private func updateLoop() async {
@@ -170,11 +170,11 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
                 onMainThread {
                     self.phase = .connected
                     self.isRefreshing = true
-                    var read = CatusshStore.shared.machineGroup[self.machine.id]
+                    var read = TamioStore.shared.machineGroup[self.machine.id]
                     if read.isNotPlaceholder() {
                         read.lastBanner = self.shell.remoteBanner ?? read.lastBanner
                         read.lastConnection = Date()
-                        CatusshStore.shared.machineGroup[self.machine.id] = read
+                        TamioStore.shared.machineGroup[self.machine.id] = read
                     }
                 }
                 let timeout = max(10, Double(refreshInterval * 2))
@@ -213,7 +213,7 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
     private func connectAndAuthenticate() {
         shell.connectAndAuthenticate(
             identity: identity,
-            autoIdentities: CatusshStore.shared.workerIdentitiesForAutoAuth
+            autoIdentities: TamioStore.shared.workerIdentitiesForAutoAuth
         )
     }
 
@@ -259,11 +259,11 @@ public final class MonitorCenter: ObservableObject {
     @discardableResult
     public func begin(for machineID: RDMachine.ID) throws -> MonitorSession {
         if let existing = session(for: machineID) { return existing }
-        let machine = CatusshStore.shared.machineGroup[machineID]
+        let machine = TamioStore.shared.machineGroup[machineID]
         guard machine.isNotPlaceholder() else { throw BeginError.malformedMachine }
-        let session = MonitorSession(machine: machine, identity: CatusshStore.shared.associatedIdentity(for: machine))
+        let session = MonitorSession(machine: machine, identity: TamioStore.shared.associatedIdentity(for: machine))
         sessions.append(session)
-        CatusshStore.shared.storeRecentIfNeeded(from: machineID)
+        TamioStore.shared.storeRecentIfNeeded(from: machineID)
         return session
     }
 

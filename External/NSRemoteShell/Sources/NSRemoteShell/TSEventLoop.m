@@ -27,7 +27,7 @@
         _associatedThread = [[NSThread alloc] initWithTarget:self
                                                     selector:@selector(associatedThreadHandler)
                                                       object:NULL];
-        NSString *threadName = [[NSString alloc] initWithFormat:@"me.mizorewww.shell.%p", parent];
+        NSString *threadName = [[NSString alloc] initWithFormat:@"sb.moe.tamio.shell.%p", parent];
         [_associatedThread setName:threadName];
         NSRLog(@"opening thread %@", threadName);
         [_associatedThread start];
@@ -76,7 +76,7 @@
     }
 #if DEBUG
     NSString *name = [[NSThread currentThread] name];
-    NSString *want = [[NSString alloc] initWithFormat:@"me.mizorewww.shell.%p", self.parent];
+    NSString *want = [[NSString alloc] initWithFormat:@"sb.moe.tamio.shell.%p", self.parent];
     if (![name isEqualToString:want]) {
         NSRLog(@"\n\n");
         NSRLog(@"[E] shell name mismatch");

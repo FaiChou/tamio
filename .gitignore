@@ -117,5 +117,5 @@ xcuserdata/
 yarn-debug.log*
 yarn-error.log*
 
-# Generated from Application/mCatusshUITests/project.yml by xcodegen
-Application/mCatusshUITests/mCatusshUITests.xcodeproj/
+# Generated from Application/TamioMobileUITests/project.yml by xcodegen
+Application/TamioMobileUITests/TamioMobileUITests.xcodeproj/

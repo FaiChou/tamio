@@ -2,13 +2,10 @@
 <Workspace
    version = "1.0">
    <FileRef
-      location = "group:Application/catussh/catussh.xcodeproj">
+      location = "group:Application/Tamio/Tamio.xcodeproj">
    </FileRef>
    <FileRef
-      location = "group:Application/mCatussh/mCatussh.xcodeproj">
-   </FileRef>
-   <FileRef
-      location = "group:Foundation/CatusshModule">
+      location = "group:Foundation/TamioModule">
    </FileRef>
    <FileRef
       location = "group:Foundation/MachineStatus">
@@ -41,12 +38,12 @@
       location = "group:Foundation/XMLCoder">
    </FileRef>
    <FileRef
-      location = "group:Foundation/CatusshTerminal">
+      location = "group:Foundation/TamioTerminal">
    </FileRef>
    <FileRef
-      location = "group:Foundation/CatusshDesign">
+      location = "group:Foundation/TamioDesign">
    </FileRef>
    <FileRef
-      location = "group:Foundation/CatusshEditor">
+      location = "group:Foundation/TamioEditor">
    </FileRef>
 </Workspace>

@@ -1,0 +1,925 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		00DF71B80014E5FE8D816DFE /* MacBridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EF894C99EF1CDFECB5DD2D /* MacBridging.swift */; };
+		0D996008869B53B9E095749C /* PageScaffold.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DDE29F5CD9A23175CCFBCF3 /* PageScaffold.swift */; };
+		127DCFCFF0ED07F74864D03C /* SymbolPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 494A60B5E6422F9A68176956 /* SymbolPicker */; };
+		13B1EBCB526576E408152CE0 /* TamioModule in Frameworks */ = {isa = PBXBuildFile; productRef = A3E56E2E2CB7C5ABCE3270FA /* TamioModule */; };
+		1D739D0FC4F886FBF900BB47 /* Bench.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D6160F6465AF5B5EFF497B1 /* Bench.swift */; };
+		24E5740380D9EAC687D3FC9E /* BatchRunSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0139DAD3C6106A836B899900 /* BatchRunSheet.swift */; };
+		268193D53F1A40646A2783EE /* Bridge+Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E4C6978A408A38D15D6861 /* Bridge+Keychain.swift */; };
+		2BAA1A836A2337D1A8C43CC2 /* Bridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85124054BC012460F503B9FB /* Bridge.swift */; };
+		2E25F3ECB61794C861B0CF8D /* FileTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = E65511B75249BC895041BD82 /* FileTable.swift */; };
+		2E4369F69EA9DF974DF27F6A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5BF8E05669BAD48CA9ADC146 /* Assets.xcassets */; };
+		30833C8DDC18BF730D6FD3B2 /* DoubleConfirm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 746C74A073F34EF4BFF12FA4 /* DoubleConfirm.swift */; };
+		3F28E44A7D3F76069A1C963F /* Bridge+Windows.swift in Sources */ = {isa = PBXBuildFile; fileRef = 445C92A373BC041DA54CDCF3 /* Bridge+Windows.swift */; };
+		44AE26FF07198A235D4AADB5 /* TamioEditor in Frameworks */ = {isa = PBXBuildFile; productRef = B1EF69EF2F48C5B3F05F2A7F /* TamioEditor */; };
+		489AF44AD472CC65ACB57634 /* StatusItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC98FA8A3917947D4177007 /* StatusItem.swift */; };
+		4D8520C6A941E8188A7D2F17 /* SnippetEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AD8E54833D616102BA84271 /* SnippetEditorSheet.swift */; };
+		4E0E07201D15B47A69732148 /* Generic.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2AC3C2F5C0CE0FD9D6CBC46 /* Generic.swift */; };
+		54421B709F93277EDDD1A28B /* EditorWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8360E0F9900E195C0F2AD497 /* EditorWorkspace.swift */; };
+		54C706C4966389E84D9903AD /* EULA in Resources */ = {isa = PBXBuildFile; fileRef = 5AE055DD91FA890DB5DDB079 /* EULA */; };
+		6847782BF8AA67783B857696 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85358DC98DB406C6FB6D164E /* MainView.swift */; };
+		69917E6BE1A315C777040395 /* StatusItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5A608D6FA4E34DC980FA8E /* StatusItem.swift */; };
+		69FFECCDAACA590F05A1F963 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B043231E7AF65887A269C2 /* SidebarView.swift */; };
+		6AA31BBD468ACB76811DAF5B /* MacBridge.bundle in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = BCF708B6593CBB1CEF797F97 /* MacBridge.bundle */; platformFilter = maccatalyst; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6AC16DD7B59C49A3DE4CAF35 /* MenubarTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DB86E586C8CCFF7474F9F75 /* MenubarTool.swift */; };
+		6F5544749BEC10660E0A1A3C /* MacBridging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EF894C99EF1CDFECB5DD2D /* MacBridging.swift */; };
+		70204E86A5AF22D8ED6C79E8 /* TerminalPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEAB5056B28A3AFF05957C93 /* TerminalPage.swift */; };
+		71658A0D61BE1808D86BAA58 /* TerminalManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C465A43736C58AD6B51CEC59 /* TerminalManager.swift */; };
+		742B1D1D68A0C95C3886F494 /* PortForwardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08B70567623556C8B0B16B25 /* PortForwardView.swift */; };
+		75E3C140B9C2A211EA3C9842 /* TerminalManager+Context.swift in Sources */ = {isa = PBXBuildFile; fileRef = F42B19215937CD8331FA07FC /* TerminalManager+Context.swift */; };
+		8766A75FC53E74F9069FC9A2 /* AppRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EAB94544BDE15E396B57A48 /* AppRouter.swift */; };
+		8A07521B9F79187B9B9B0F83 /* IdentitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70FA3DE75DF8292D67006F07 /* IdentitiesView.swift */; };
+		A01DA9D4ECDB677FBBFB7443 /* Bridge+StatusItems.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ADB190607A2B7100D337533 /* Bridge+StatusItems.swift */; };
+		A97740C2E4CAAC7E3E21C4DB /* PortForwardBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AFB73E4F5A4E0275611622A /* PortForwardBackend.swift */; };
+		ADF9F497480AAECF8EFA2978 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 0536A2AD7F379DA9E4410736 /* LICENSE */; };
+		B1602E1EB9701A0DAEBB7EED /* PresentError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB533A51130A52BDFA81113 /* PresentError.swift */; };
+		B2DEED12A1C4505ABEED8FF8 /* BatchSnippetExecContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615A9FAD4A0F752FBD542810 /* BatchSnippetExecContext.swift */; };
+		B347AFC662FEA41D342D2394 /* MonitorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9ACCCD82006879E4BFB703 /* MonitorPage.swift */; };
+		B7E46F6E3621804D80A5BE16 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB9E4DDA19C6E86B44842578 /* HomeView.swift */; };
+		BAE3684CDFE3B0B184ABE62A /* EditorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924CB398B52DC9CBB1633708 /* EditorPage.swift */; };
+		BD3114CB7B4AEB7FD75D9F78 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F41A429DA891AEEB06DA914 /* SettingsView.swift */; };
+		C26F9310124BEFF7D59E79D3 /* ServerEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1015F288DAF6954EBCEA0C /* ServerEditorSheet.swift */; };
+		C78E22FC07482B9FD7C71BF3 /* Tamio.icon in Resources */ = {isa = PBXBuildFile; fileRef = 2FB6F8223DEF8EF4B924113F /* Tamio.icon */; };
+		C9FEBCB474F1E41E73964E8A /* CodeEditorUI in Frameworks */ = {isa = PBXBuildFile; productRef = C13282051CBC5F6ED6B0BE8E /* CodeEditorUI */; };
+		CDB7D6F8C9F1090FEDE29866 /* MacBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 196B098389C5AA99A0C9A7F9 /* MacBridge.swift */; };
+		CE0B076D5BB2EEE12F26C6A7 /* Bridge+Dialogs.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FBBD7430CAA9CDB21611223 /* Bridge+Dialogs.swift */; };
+		CEF40A995067F231A4D0EA2B /* FileTransferPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00A9886FBD07731927E83976 /* FileTransferPage.swift */; };
+		CF37E0D0838256CCF710E5CA /* PickerSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80EB68B4D88CEA4A817A8E92 /* PickerSheets.swift */; };
+		D1D0396FAEDB018B7190200C /* TamioTerminal in Frameworks */ = {isa = PBXBuildFile; productRef = 900B91A7225C8DDE182DAFFA /* TamioTerminal */; };
+		D228D67549129E4CB2A357B6 /* ServerActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75878EF1BDD335D8738E8C39 /* ServerActions.swift */; };
+		D3CDEBCD8F8F7C158C37684E /* SnippetsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3921042144F0D341016173 /* SnippetsView.swift */; };
+		DA0FCE8BE1CAB49BF7A258D9 /* MachineStatus in Frameworks */ = {isa = PBXBuildFile; productRef = 1987DCCA328D465E700EAF67 /* MachineStatus */; };
+		E288C769C302172FF2B4E21B /* MachineStatusView in Frameworks */ = {isa = PBXBuildFile; productRef = E178D6448CCD527E2E86C9A7 /* MachineStatusView */; };
+		E3E5D29578C53B47E407435E /* UIBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A62CDF7C5C29EFAD66CB9EAC /* UIBridge.swift */; };
+		E6098F60C95ECE7525E88946 /* PlaceholderColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDF144CC0C26AC04600899D4 /* PlaceholderColor.swift */; };
+		EACDC3F0CDA599CFD2B1BE38 /* TamioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D30D618CFFED4A6386D0E1 /* TamioApp.swift */; };
+		ECD3BB0A68E4995B319A09DF /* ServersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD5F05A6A10CA869F43251F4 /* ServersView.swift */; };
+		F1711314D089AB7A5A4E9E09 /* StatusItem+Loop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73A13CE60279936C7F4C1052 /* StatusItem+Loop.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		65255C9F8F972AB15ABFE3B6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 9630C66B0B9FFBC28BEEAB02 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C709EE1135997D26A3D577E1;
+			remoteInfo = MacBridge;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		9E8EF4795F820A4CACA146F3 /* Embed Dependencies */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				6AA31BBD468ACB76811DAF5B /* MacBridge.bundle in Embed Dependencies */,
+			);
+			name = "Embed Dependencies";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		00A9886FBD07731927E83976 /* FileTransferPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTransferPage.swift; sourceTree = "<group>"; };
+		0139DAD3C6106A836B899900 /* BatchRunSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchRunSheet.swift; sourceTree = "<group>"; };
+		0536A2AD7F379DA9E4410736 /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
+		08B70567623556C8B0B16B25 /* PortForwardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortForwardView.swift; sourceTree = "<group>"; };
+		0ADB190607A2B7100D337533 /* Bridge+StatusItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+StatusItems.swift"; sourceTree = "<group>"; };
+		0F3921042144F0D341016173 /* SnippetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetsView.swift; sourceTree = "<group>"; };
+		196B098389C5AA99A0C9A7F9 /* MacBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBridge.swift; sourceTree = "<group>"; };
+		2AD8E54833D616102BA84271 /* SnippetEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEditorSheet.swift; sourceTree = "<group>"; };
+		2AFB73E4F5A4E0275611622A /* PortForwardBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortForwardBackend.swift; sourceTree = "<group>"; };
+		2EAB94544BDE15E396B57A48 /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
+		2F41A429DA891AEEB06DA914 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		2FB6F8223DEF8EF4B924113F /* Tamio.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = Tamio.icon; sourceTree = "<group>"; };
+		2FBBD7430CAA9CDB21611223 /* Bridge+Dialogs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+Dialogs.swift"; sourceTree = "<group>"; };
+		42B043231E7AF65887A269C2 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		445C92A373BC041DA54CDCF3 /* Bridge+Windows.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+Windows.swift"; sourceTree = "<group>"; };
+		5AE055DD91FA890DB5DDB079 /* EULA */ = {isa = PBXFileReference; path = EULA; sourceTree = "<group>"; };
+		5BF8E05669BAD48CA9ADC146 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		615A9FAD4A0F752FBD542810 /* BatchSnippetExecContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchSnippetExecContext.swift; sourceTree = "<group>"; };
+		627EF753C015164E236752BC /* CodeMirrorUI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CodeMirrorUI; path = ../../External/CodeMirrorUI; sourceTree = SOURCE_ROOT; };
+		679A47FAE8BD5AB800A76194 /* Tamio.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Tamio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		6DB86E586C8CCFF7474F9F75 /* MenubarTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarTool.swift; sourceTree = "<group>"; };
+		70FA3DE75DF8292D67006F07 /* IdentitiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdentitiesView.swift; sourceTree = "<group>"; };
+		73A13CE60279936C7F4C1052 /* StatusItem+Loop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StatusItem+Loop.swift"; sourceTree = "<group>"; };
+		746C74A073F34EF4BFF12FA4 /* DoubleConfirm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoubleConfirm.swift; sourceTree = "<group>"; };
+		75878EF1BDD335D8738E8C39 /* ServerActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerActions.swift; sourceTree = "<group>"; };
+		80EB68B4D88CEA4A817A8E92 /* PickerSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickerSheets.swift; sourceTree = "<group>"; };
+		8360E0F9900E195C0F2AD497 /* EditorWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorWorkspace.swift; sourceTree = "<group>"; };
+		83EF894C99EF1CDFECB5DD2D /* MacBridging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBridging.swift; sourceTree = "<group>"; };
+		85124054BC012460F503B9FB /* Bridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bridge.swift; sourceTree = "<group>"; };
+		85358DC98DB406C6FB6D164E /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		89D30D618CFFED4A6386D0E1 /* TamioApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TamioApp.swift; sourceTree = "<group>"; };
+		8D6160F6465AF5B5EFF497B1 /* Bench.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bench.swift; sourceTree = "<group>"; };
+		8E42EF3219DBEC406B179547 /* SymbolPicker */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SymbolPicker; path = ../../Foundation/SymbolPicker; sourceTree = SOURCE_ROOT; };
+		924CB398B52DC9CBB1633708 /* EditorPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorPage.swift; sourceTree = "<group>"; };
+		9DDE29F5CD9A23175CCFBCF3 /* PageScaffold.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageScaffold.swift; sourceTree = "<group>"; };
+		A2AC3C2F5C0CE0FD9D6CBC46 /* Generic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Generic.swift; sourceTree = "<group>"; };
+		A62CDF7C5C29EFAD66CB9EAC /* UIBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIBridge.swift; sourceTree = "<group>"; };
+		AD5A608D6FA4E34DC980FA8E /* StatusItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItem.swift; sourceTree = "<group>"; };
+		B6CC5569F4B99AA76686C4D0 /* TamioEditor */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TamioEditor; path = ../../Foundation/TamioEditor; sourceTree = SOURCE_ROOT; };
+		BC9ACCCD82006879E4BFB703 /* MonitorPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonitorPage.swift; sourceTree = "<group>"; };
+		BCF708B6593CBB1CEF797F97 /* MacBridge.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacBridge.bundle; sourceTree = BUILT_PRODUCTS_DIR; };
+		BD5F05A6A10CA869F43251F4 /* ServersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServersView.swift; sourceTree = "<group>"; };
+		BFB533A51130A52BDFA81113 /* PresentError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentError.swift; sourceTree = "<group>"; };
+		C465A43736C58AD6B51CEC59 /* TerminalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalManager.swift; sourceTree = "<group>"; };
+		CDF144CC0C26AC04600899D4 /* PlaceholderColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderColor.swift; sourceTree = "<group>"; };
+		D9EEF0A9C4110C84CABB1CFD /* MachineStatusView */ = {isa = PBXFileReference; lastKnownFileType = folder; name = MachineStatusView; path = ../../Foundation/MachineStatusView; sourceTree = SOURCE_ROOT; };
+		DEAB5056B28A3AFF05957C93 /* TerminalPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalPage.swift; sourceTree = "<group>"; };
+		DEC98FA8A3917947D4177007 /* StatusItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItem.swift; sourceTree = "<group>"; };
+		E1C8F84215AD9EB54FE4A357 /* TamioModule */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TamioModule; path = ../../Foundation/TamioModule; sourceTree = SOURCE_ROOT; };
+		E65511B75249BC895041BD82 /* FileTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileTable.swift; sourceTree = "<group>"; };
+		E988D91DA0615DD582AF24E9 /* TamioTerminal */ = {isa = PBXFileReference; lastKnownFileType = folder; name = TamioTerminal; path = ../../Foundation/TamioTerminal; sourceTree = SOURCE_ROOT; };
+		F42B19215937CD8331FA07FC /* TerminalManager+Context.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TerminalManager+Context.swift"; sourceTree = "<group>"; };
+		F5BD85D2A70187112CEC7FAB /* MachineStatus */ = {isa = PBXFileReference; lastKnownFileType = folder; name = MachineStatus; path = ../../Foundation/MachineStatus; sourceTree = SOURCE_ROOT; };
+		F6E4C6978A408A38D15D6861 /* Bridge+Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+Keychain.swift"; sourceTree = "<group>"; };
+		FB9E4DDA19C6E86B44842578 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		FF1015F288DAF6954EBCEA0C /* ServerEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerEditorSheet.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A942DFA1CF4D4B4D01F9156F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				13B1EBCB526576E408152CE0 /* TamioModule in Frameworks */,
+				D1D0396FAEDB018B7190200C /* TamioTerminal in Frameworks */,
+				44AE26FF07198A235D4AADB5 /* TamioEditor in Frameworks */,
+				DA0FCE8BE1CAB49BF7A258D9 /* MachineStatus in Frameworks */,
+				E288C769C302172FF2B4E21B /* MachineStatusView in Frameworks */,
+				127DCFCFF0ED07F74864D03C /* SymbolPicker in Frameworks */,
+				C9FEBCB474F1E41E73964E8A /* CodeEditorUI in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		03313B71E1EA79D99A263A0F /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				2F41A429DA891AEEB06DA914 /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		13092B2D70006A6E18255C35 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				A2AC3C2F5C0CE0FD9D6CBC46 /* Generic.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		24F23FA7E95240C2A8404D0A /* Monitor */ = {
+			isa = PBXGroup;
+			children = (
+				BC9ACCCD82006879E4BFB703 /* MonitorPage.swift */,
+			);
+			path = Monitor;
+			sourceTree = "<group>";
+		};
+		2648723B7CBDB8F5EBB7E5F7 /* Identities */ = {
+			isa = PBXGroup;
+			children = (
+				70FA3DE75DF8292D67006F07 /* IdentitiesView.swift */,
+			);
+			path = Identities;
+			sourceTree = "<group>";
+		};
+		3B3CC432189BA6C0914DF9D8 = {
+			isa = PBXGroup;
+			children = (
+				D6BF2DDAAAE00E92D349385F /* Application */,
+				96C34961680B6B9328978AA9 /* Bridge */,
+				3F83A2691D179B1D009F575D /* Extension */,
+				493537BBE2EEB8BD3E33A0CD /* Interface */,
+				80782A0426AD9449CC771A33 /* Packages */,
+				7F3B6D88B6BDD4CC2EF89EC0 /* Shared */,
+				6AC0B13E47AA8789E7F65903 /* tamio */,
+				E3909DDDCFAAC4C7172B6790 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		3E7BEA237CB82C6DFBB79605 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				80EB68B4D88CEA4A817A8E92 /* PickerSheets.swift */,
+			);
+			path = Common;
+			sourceTree = "<group>";
+		};
+		3F83A2691D179B1D009F575D /* Extension */ = {
+			isa = PBXGroup;
+			children = (
+				54B60CBB7144AFB49836F503 /* UIBridge */,
+				13092B2D70006A6E18255C35 /* Utils */,
+			);
+			path = Extension;
+			sourceTree = "<group>";
+		};
+		3FBC74AC25BE07FCB1D958FE /* Menubar */ = {
+			isa = PBXGroup;
+			children = (
+				6DB86E586C8CCFF7474F9F75 /* MenubarTool.swift */,
+				DEC98FA8A3917947D4177007 /* StatusItem.swift */,
+				73A13CE60279936C7F4C1052 /* StatusItem+Loop.swift */,
+			);
+			path = Menubar;
+			sourceTree = "<group>";
+		};
+		41A89053F21599D873689555 /* Editor */ = {
+			isa = PBXGroup;
+			children = (
+				924CB398B52DC9CBB1633708 /* EditorPage.swift */,
+				8360E0F9900E195C0F2AD497 /* EditorWorkspace.swift */,
+			);
+			path = Editor;
+			sourceTree = "<group>";
+		};
+		493537BBE2EEB8BD3E33A0CD /* Interface */ = {
+			isa = PBXGroup;
+			children = (
+				3E7BEA237CB82C6DFBB79605 /* Common */,
+				41A89053F21599D873689555 /* Editor */,
+				B30B1E14DFAC3D4ED821EA85 /* FileTransfer */,
+				D9E386D333B8F47C465E5679 /* Home */,
+				2648723B7CBDB8F5EBB7E5F7 /* Identities */,
+				3FBC74AC25BE07FCB1D958FE /* Menubar */,
+				24F23FA7E95240C2A8404D0A /* Monitor */,
+				848AE2C4DB73E298A122DE8A /* PortForward */,
+				EA1A0B3175426CDFA1C96CCF /* Servers */,
+				03313B71E1EA79D99A263A0F /* Settings */,
+				8963826341C72F4CB8E0C5C7 /* Shell */,
+				9BA9F5D69A53E9A7FD84B0E4 /* Snippets */,
+				C45AC04BF9EF83A970E52F65 /* Terminal */,
+			);
+			path = Interface;
+			sourceTree = "<group>";
+		};
+		54B60CBB7144AFB49836F503 /* UIBridge */ = {
+			isa = PBXGroup;
+			children = (
+				746C74A073F34EF4BFF12FA4 /* DoubleConfirm.swift */,
+				196B098389C5AA99A0C9A7F9 /* MacBridge.swift */,
+				CDF144CC0C26AC04600899D4 /* PlaceholderColor.swift */,
+				BFB533A51130A52BDFA81113 /* PresentError.swift */,
+				A62CDF7C5C29EFAD66CB9EAC /* UIBridge.swift */,
+			);
+			path = UIBridge;
+			sourceTree = "<group>";
+		};
+		6AC0B13E47AA8789E7F65903 /* tamio */ = {
+			isa = PBXGroup;
+			children = (
+				767CF33A427B2C6C6677E1BF /* Resources */,
+			);
+			name = tamio;
+			path = ../..;
+			sourceTree = "<group>";
+		};
+		767CF33A427B2C6C6677E1BF /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				5AE055DD91FA890DB5DDB079 /* EULA */,
+				0536A2AD7F379DA9E4410736 /* LICENSE */,
+				2FB6F8223DEF8EF4B924113F /* Tamio.icon */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		7F3B6D88B6BDD4CC2EF89EC0 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				83EF894C99EF1CDFECB5DD2D /* MacBridging.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		80782A0426AD9449CC771A33 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				627EF753C015164E236752BC /* CodeMirrorUI */,
+				F5BD85D2A70187112CEC7FAB /* MachineStatus */,
+				D9EEF0A9C4110C84CABB1CFD /* MachineStatusView */,
+				8E42EF3219DBEC406B179547 /* SymbolPicker */,
+				B6CC5569F4B99AA76686C4D0 /* TamioEditor */,
+				E1C8F84215AD9EB54FE4A357 /* TamioModule */,
+				E988D91DA0615DD582AF24E9 /* TamioTerminal */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		848AE2C4DB73E298A122DE8A /* PortForward */ = {
+			isa = PBXGroup;
+			children = (
+				2AFB73E4F5A4E0275611622A /* PortForwardBackend.swift */,
+				08B70567623556C8B0B16B25 /* PortForwardView.swift */,
+			);
+			path = PortForward;
+			sourceTree = "<group>";
+		};
+		8963826341C72F4CB8E0C5C7 /* Shell */ = {
+			isa = PBXGroup;
+			children = (
+				2EAB94544BDE15E396B57A48 /* AppRouter.swift */,
+				85358DC98DB406C6FB6D164E /* MainView.swift */,
+				9DDE29F5CD9A23175CCFBCF3 /* PageScaffold.swift */,
+				42B043231E7AF65887A269C2 /* SidebarView.swift */,
+			);
+			path = Shell;
+			sourceTree = "<group>";
+		};
+		96C34961680B6B9328978AA9 /* Bridge */ = {
+			isa = PBXGroup;
+			children = (
+				85124054BC012460F503B9FB /* Bridge.swift */,
+				2FBBD7430CAA9CDB21611223 /* Bridge+Dialogs.swift */,
+				F6E4C6978A408A38D15D6861 /* Bridge+Keychain.swift */,
+				0ADB190607A2B7100D337533 /* Bridge+StatusItems.swift */,
+				445C92A373BC041DA54CDCF3 /* Bridge+Windows.swift */,
+				AD5A608D6FA4E34DC980FA8E /* StatusItem.swift */,
+			);
+			path = Bridge;
+			sourceTree = "<group>";
+		};
+		9BA9F5D69A53E9A7FD84B0E4 /* Snippets */ = {
+			isa = PBXGroup;
+			children = (
+				0139DAD3C6106A836B899900 /* BatchRunSheet.swift */,
+				615A9FAD4A0F752FBD542810 /* BatchSnippetExecContext.swift */,
+				2AD8E54833D616102BA84271 /* SnippetEditorSheet.swift */,
+				0F3921042144F0D341016173 /* SnippetsView.swift */,
+			);
+			path = Snippets;
+			sourceTree = "<group>";
+		};
+		B30B1E14DFAC3D4ED821EA85 /* FileTransfer */ = {
+			isa = PBXGroup;
+			children = (
+				E65511B75249BC895041BD82 /* FileTable.swift */,
+				00A9886FBD07731927E83976 /* FileTransferPage.swift */,
+			);
+			path = FileTransfer;
+			sourceTree = "<group>";
+		};
+		C45AC04BF9EF83A970E52F65 /* Terminal */ = {
+			isa = PBXGroup;
+			children = (
+				C465A43736C58AD6B51CEC59 /* TerminalManager.swift */,
+				F42B19215937CD8331FA07FC /* TerminalManager+Context.swift */,
+				DEAB5056B28A3AFF05957C93 /* TerminalPage.swift */,
+			);
+			path = Terminal;
+			sourceTree = "<group>";
+		};
+		D6BF2DDAAAE00E92D349385F /* Application */ = {
+			isa = PBXGroup;
+			children = (
+				5BF8E05669BAD48CA9ADC146 /* Assets.xcassets */,
+				8D6160F6465AF5B5EFF497B1 /* Bench.swift */,
+				89D30D618CFFED4A6386D0E1 /* TamioApp.swift */,
+			);
+			path = Application;
+			sourceTree = "<group>";
+		};
+		D9E386D333B8F47C465E5679 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				FB9E4DDA19C6E86B44842578 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		E3909DDDCFAAC4C7172B6790 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BCF708B6593CBB1CEF797F97 /* MacBridge.bundle */,
+				679A47FAE8BD5AB800A76194 /* Tamio.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		EA1A0B3175426CDFA1C96CCF /* Servers */ = {
+			isa = PBXGroup;
+			children = (
+				75878EF1BDD335D8738E8C39 /* ServerActions.swift */,
+				FF1015F288DAF6954EBCEA0C /* ServerEditorSheet.swift */,
+				BD5F05A6A10CA869F43251F4 /* ServersView.swift */,
+			);
+			path = Servers;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		39E45493F8A1C08CE6121F85 /* Tamio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C75AF1BEB0F72360F0F43BBF /* Build configuration list for PBXNativeTarget "Tamio" */;
+			buildPhases = (
+				9E7C6F033093088FC0979107 /* Sources */,
+				37CC1D52623A9272A6B13F7D /* Resources */,
+				A942DFA1CF4D4B4D01F9156F /* Frameworks */,
+				9E8EF4795F820A4CACA146F3 /* Embed Dependencies */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B7E9D00B3CFDBFE95881E3C5 /* PBXTargetDependency */,
+			);
+			name = Tamio;
+			packageProductDependencies = (
+				A3E56E2E2CB7C5ABCE3270FA /* TamioModule */,
+				900B91A7225C8DDE182DAFFA /* TamioTerminal */,
+				B1EF69EF2F48C5B3F05F2A7F /* TamioEditor */,
+				1987DCCA328D465E700EAF67 /* MachineStatus */,
+				E178D6448CCD527E2E86C9A7 /* MachineStatusView */,
+				494A60B5E6422F9A68176956 /* SymbolPicker */,
+				C13282051CBC5F6ED6B0BE8E /* CodeEditorUI */,
+			);
+			productName = Tamio;
+			productReference = 679A47FAE8BD5AB800A76194 /* Tamio.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C709EE1135997D26A3D577E1 /* MacBridge */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A1F3ED674D119C54DF370F80 /* Build configuration list for PBXNativeTarget "MacBridge" */;
+			buildPhases = (
+				5D9ED0B0066EF58CEF0D5E5A /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MacBridge;
+			packageProductDependencies = (
+			);
+			productName = MacBridge;
+			productReference = BCF708B6593CBB1CEF797F97 /* MacBridge.bundle */;
+			productType = "com.apple.product-type.bundle";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		9630C66B0B9FFBC28BEEAB02 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					39E45493F8A1C08CE6121F85 = {
+						DevelopmentTeam = NCFNX3LJ83;
+					};
+					C709EE1135997D26A3D577E1 = {
+						DevelopmentTeam = NCFNX3LJ83;
+					};
+				};
+			};
+			buildConfigurationList = CFADF968D9F972C77042F71A /* Build configuration list for PBXProject "Tamio" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 3B3CC432189BA6C0914DF9D8;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				274FDFD858BBD6598FBE9D59 /* XCLocalSwiftPackageReference "../../External/CodeMirrorUI" */,
+				B7E6752AF49B04322BDFC892 /* XCLocalSwiftPackageReference "../../Foundation/MachineStatus" */,
+				5C8C7D851A735441C6930CDF /* XCLocalSwiftPackageReference "../../Foundation/MachineStatusView" */,
+				6D7CA2BC107358F16F87CA66 /* XCLocalSwiftPackageReference "../../Foundation/SymbolPicker" */,
+				2A0D5334FBF5295B176B82A2 /* XCLocalSwiftPackageReference "../../Foundation/TamioEditor" */,
+				0FDF31D414DD855E679D94CA /* XCLocalSwiftPackageReference "../../Foundation/TamioModule" */,
+				76550DCECBD2080199E4F283 /* XCLocalSwiftPackageReference "../../Foundation/TamioTerminal" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E3909DDDCFAAC4C7172B6790 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C709EE1135997D26A3D577E1 /* MacBridge */,
+				39E45493F8A1C08CE6121F85 /* Tamio */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		37CC1D52623A9272A6B13F7D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2E4369F69EA9DF974DF27F6A /* Assets.xcassets in Resources */,
+				54C706C4966389E84D9903AD /* EULA in Resources */,
+				ADF9F497480AAECF8EFA2978 /* LICENSE in Resources */,
+				C78E22FC07482B9FD7C71BF3 /* Tamio.icon in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5D9ED0B0066EF58CEF0D5E5A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CE0B076D5BB2EEE12F26C6A7 /* Bridge+Dialogs.swift in Sources */,
+				268193D53F1A40646A2783EE /* Bridge+Keychain.swift in Sources */,
+				A01DA9D4ECDB677FBBFB7443 /* Bridge+StatusItems.swift in Sources */,
+				3F28E44A7D3F76069A1C963F /* Bridge+Windows.swift in Sources */,
+				2BAA1A836A2337D1A8C43CC2 /* Bridge.swift in Sources */,
+				00DF71B80014E5FE8D816DFE /* MacBridging.swift in Sources */,
+				69917E6BE1A315C777040395 /* StatusItem.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9E7C6F033093088FC0979107 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8766A75FC53E74F9069FC9A2 /* AppRouter.swift in Sources */,
+				24E5740380D9EAC687D3FC9E /* BatchRunSheet.swift in Sources */,
+				B2DEED12A1C4505ABEED8FF8 /* BatchSnippetExecContext.swift in Sources */,
+				1D739D0FC4F886FBF900BB47 /* Bench.swift in Sources */,
+				30833C8DDC18BF730D6FD3B2 /* DoubleConfirm.swift in Sources */,
+				BAE3684CDFE3B0B184ABE62A /* EditorPage.swift in Sources */,
+				54421B709F93277EDDD1A28B /* EditorWorkspace.swift in Sources */,
+				2E25F3ECB61794C861B0CF8D /* FileTable.swift in Sources */,
+				CEF40A995067F231A4D0EA2B /* FileTransferPage.swift in Sources */,
+				4E0E07201D15B47A69732148 /* Generic.swift in Sources */,
+				B7E46F6E3621804D80A5BE16 /* HomeView.swift in Sources */,
+				8A07521B9F79187B9B9B0F83 /* IdentitiesView.swift in Sources */,
+				CDB7D6F8C9F1090FEDE29866 /* MacBridge.swift in Sources */,
+				6F5544749BEC10660E0A1A3C /* MacBridging.swift in Sources */,
+				6847782BF8AA67783B857696 /* MainView.swift in Sources */,
+				6AC16DD7B59C49A3DE4CAF35 /* MenubarTool.swift in Sources */,
+				B347AFC662FEA41D342D2394 /* MonitorPage.swift in Sources */,
+				0D996008869B53B9E095749C /* PageScaffold.swift in Sources */,
+				CF37E0D0838256CCF710E5CA /* PickerSheets.swift in Sources */,
+				E6098F60C95ECE7525E88946 /* PlaceholderColor.swift in Sources */,
+				A97740C2E4CAAC7E3E21C4DB /* PortForwardBackend.swift in Sources */,
+				742B1D1D68A0C95C3886F494 /* PortForwardView.swift in Sources */,
+				B1602E1EB9701A0DAEBB7EED /* PresentError.swift in Sources */,
+				D228D67549129E4CB2A357B6 /* ServerActions.swift in Sources */,
+				C26F9310124BEFF7D59E79D3 /* ServerEditorSheet.swift in Sources */,
+				ECD3BB0A68E4995B319A09DF /* ServersView.swift in Sources */,
+				BD3114CB7B4AEB7FD75D9F78 /* SettingsView.swift in Sources */,
+				69FFECCDAACA590F05A1F963 /* SidebarView.swift in Sources */,
+				4D8520C6A941E8188A7D2F17 /* SnippetEditorSheet.swift in Sources */,
+				D3CDEBCD8F8F7C158C37684E /* SnippetsView.swift in Sources */,
+				F1711314D089AB7A5A4E9E09 /* StatusItem+Loop.swift in Sources */,
+				489AF44AD472CC65ACB57634 /* StatusItem.swift in Sources */,
+				EACDC3F0CDA599CFD2B1BE38 /* TamioApp.swift in Sources */,
+				75E3C140B9C2A211EA3C9842 /* TerminalManager+Context.swift in Sources */,
+				71658A0D61BE1808D86BAA58 /* TerminalManager.swift in Sources */,
+				70204E86A5AF22D8ED6C79E8 /* TerminalPage.swift in Sources */,
+				E3E5D29578C53B47E407435E /* UIBridge.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B7E9D00B3CFDBFE95881E3C5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = maccatalyst;
+			target = C709EE1135997D26A3D577E1 /* MacBridge */;
+			targetProxy = 65255C9F8F972AB15ABFE3B6 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		43C2A6A04291C9AA93405F84 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = Tamio;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = macOS/macOS.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = macOS/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Tamio;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 MOE AI LLC. Based on Rayon: © 2022 Lakr Aream, © 2026 mizorewww and catussh contributors.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = sb.moe.tamio;
+				PRODUCT_NAME = Tamio;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "2,6";
+			};
+			name = Release;
+		};
+		8773250ABC46DB3D68F36532 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = Tamio;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = macOS/macOS.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = macOS/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Tamio;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 MOE AI LLC. Based on Rayon: © 2022 Lakr Aream, © 2026 mizorewww and catussh contributors.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = sb.moe.tamio.debug;
+				PRODUCT_NAME = Tamio;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				TARGETED_DEVICE_FAMILY = "2,6";
+			};
+			name = Debug;
+		};
+		A0A2AF934D05BDDD33C5B5FB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSPrincipalClass = Bridge;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = sb.moe.tamio.bridge;
+				PRODUCT_NAME = MacBridge;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		CB14A30AF20BA1D3A32956C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = NCFNX3LJ83;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		F28660BEDD5EF96495B934AD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = NCFNX3LJ83;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		FE6AFB02C55C91784C17EB99 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSPrincipalClass = Bridge;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = sb.moe.tamio.bridge;
+				PRODUCT_NAME = MacBridge;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A1F3ED674D119C54DF370F80 /* Build configuration list for PBXNativeTarget "MacBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A0A2AF934D05BDDD33C5B5FB /* Debug */,
+				FE6AFB02C55C91784C17EB99 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C75AF1BEB0F72360F0F43BBF /* Build configuration list for PBXNativeTarget "Tamio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8773250ABC46DB3D68F36532 /* Debug */,
+				43C2A6A04291C9AA93405F84 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CFADF968D9F972C77042F71A /* Build configuration list for PBXProject "Tamio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CB14A30AF20BA1D3A32956C4 /* Debug */,
+				F28660BEDD5EF96495B934AD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		0FDF31D414DD855E679D94CA /* XCLocalSwiftPackageReference "../../Foundation/TamioModule" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../Foundation/TamioModule;
+		};
+		274FDFD858BBD6598FBE9D59 /* XCLocalSwiftPackageReference "../../External/CodeMirrorUI" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../External/CodeMirrorUI;
+		};
+		2A0D5334FBF5295B176B82A2 /* XCLocalSwiftPackageReference "../../Foundation/TamioEditor" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../Foundation/TamioEditor;
+		};
+		5C8C7D851A735441C6930CDF /* XCLocalSwiftPackageReference "../../Foundation/MachineStatusView" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../Foundation/MachineStatusView;
+		};
+		6D7CA2BC107358F16F87CA66 /* XCLocalSwiftPackageReference "../../Foundation/SymbolPicker" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../Foundation/SymbolPicker;
+		};
+		76550DCECBD2080199E4F283 /* XCLocalSwiftPackageReference "../../Foundation/TamioTerminal" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../Foundation/TamioTerminal;
+		};
+		B7E6752AF49B04322BDFC892 /* XCLocalSwiftPackageReference "../../Foundation/MachineStatus" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../Foundation/MachineStatus;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		1987DCCA328D465E700EAF67 /* MachineStatus */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MachineStatus;
+		};
+		494A60B5E6422F9A68176956 /* SymbolPicker */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SymbolPicker;
+		};
+		900B91A7225C8DDE182DAFFA /* TamioTerminal */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TamioTerminal;
+		};
+		A3E56E2E2CB7C5ABCE3270FA /* TamioModule */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TamioModule;
+		};
+		B1EF69EF2F48C5B3F05F2A7F /* TamioEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TamioEditor;
+		};
+		C13282051CBC5F6ED6B0BE8E /* CodeEditorUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CodeEditorUI;
+		};
+		E178D6448CCD527E2E86C9A7 /* MachineStatusView */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MachineStatusView;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 9630C66B0B9FFBC28BEEAB02 /* Project object */;
+}

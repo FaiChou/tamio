@@ -2,9 +2,9 @@
 
 # Build the Mac app (Mac Catalyst, universal arm64/x86_64).
 #
-# Signed with the first Apple Development certificate in the keychain, so the
-# signature, and the keychain's trust in it, survive rebuilds; ad hoc when
-# there is none. Override with CODE_SIGN_IDENTITY / DEVELOPMENT_TEAM.
+# Signed ad hoc, so a local build never asks for the keychain. The Release
+# workflow passes its Developer ID through CODE_SIGN_IDENTITY (and
+# DEVELOPMENT_TEAM, else read from the certificate).
 #
 # With a provisioning profile made for the app's bundle id and that
 # certificate, the app is also signed for iCloud's key-value store, which the
@@ -22,10 +22,6 @@ case "$CONFIGURATION" in
     *) printf 'Usage: bash %s [Debug|Release]\n' "$0" >&2; exit 2 ;;
 esac
 
-if [[ -z "${CODE_SIGN_IDENTITY:-}" ]]; then
-    CODE_SIGN_IDENTITY="$(security find-identity -v -p codesigning \
-        | sed -n 's/.*"\(Apple Development: [^"]*\)".*/\1/p' | head -1)"
-fi
 CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY:--}"
 if [[ "$CODE_SIGN_IDENTITY" != "-" && -z "${DEVELOPMENT_TEAM:-}" ]]; then
     DEVELOPMENT_TEAM="$(security find-certificate -c "$CODE_SIGN_IDENTITY" -p \
@@ -36,7 +32,7 @@ DEVELOPMENT_TEAM="${DEVELOPMENT_TEAM:-}"
 
 xcodebuild \
     -workspace "$ROOT_DIR/App.xcworkspace" \
-    -scheme catussh \
+    -scheme Tamio \
     -configuration "$CONFIGURATION" \
     -destination 'generic/platform=macOS,variant=Mac Catalyst' \
     -derivedDataPath "$DERIVED_DATA_PATH" \
@@ -49,7 +45,7 @@ xcodebuild \
     PROVISIONING_PROFILE_SPECIFIER= \
     build
 
-APP_PATH="$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION-maccatalyst/catussh.app"
+APP_PATH="$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION-maccatalyst/Tamio.app"
 
 # The profile goes into the app, and what it grants into the signature: the
 # app asks its own signature whether it may sync.
