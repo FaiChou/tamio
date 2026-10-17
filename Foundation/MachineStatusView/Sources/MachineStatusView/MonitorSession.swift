@@ -2,8 +2,8 @@
 //  MonitorSession.swift
 //  MachineStatusView
 //
-//  A live monitor of one server: connects over SSH, reads /proc on every refresh
-//  and keeps the samples collected while it is open for the sparklines.
+//  A live monitor of one server: connects over SSH, samples native system metrics
+//  on every refresh and keeps the history for the sparklines.
 //
 
 import Combine
@@ -45,7 +45,7 @@ public extension ServerStatus {
         network.elements.map(\.txBytesPerSec).reduce(0, &+)
     }
 
-    /// kB values from /proc/meminfo.
+    /// Memory readings are stored in kB on every platform.
     var memoryUsedKB: Double {
         Double(max(0, memory.memTotal - memory.memFree - memory.memCached - memory.memBuffers))
     }

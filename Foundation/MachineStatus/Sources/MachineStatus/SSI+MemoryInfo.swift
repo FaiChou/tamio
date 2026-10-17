@@ -66,6 +66,18 @@ public extension ServerStatus {
             )
         }
 
+        public init(darwinMemory: String) {
+            let info = ProcParsers.parseDarwinMemory(darwinMemory)
+            self.init(
+                total: info.total,
+                free: info.free,
+                buffers: 0,
+                cached: info.cached,
+                swapTotal: info.swapTotal,
+                swapFree: info.swapFree
+            )
+        }
+
         public func description() -> String {
             """
             total: \(Int(exactly: memTotal) ?? 0) kB

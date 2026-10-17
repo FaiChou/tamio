@@ -63,32 +63,35 @@ public class ServerStatus: ObservableObject, Equatable {
     static let graphicsScript = "nvidia-smi -q -x | tr -d \"[\\t\\n]\" || echo \"no nvidia gpu available\""
 
     /// One remote run that samples the CPU and network counters twice one
-    /// second apart and reads every other /proc payload behind markers, so
-    /// a refresh costs one exec channel instead of nine and one remote
-    /// second instead of two. Static payloads join only while
-    /// `includeStatic` — they cannot change while a connection stays up.
+    /// second apart and reads every other payload behind markers, so a
+    /// refresh costs one exec channel instead of nine and one remote second
+    /// instead of two. Linux reads /proc; Darwin uses its native tools.
+    /// Static payloads join only while `includeStatic` — they cannot change
+    /// while a connection stays up.
     static func monitorScript(includeStatic: Bool) -> String {
         var sections = [
-            ("cpu-a", "/bin/cat /proc/stat"),
-            ("net-a", "/bin/cat /proc/net/dev"),
-            ("wait", "/bin/sleep 1"),
-            ("cpu-b", "/bin/cat /proc/stat"),
-            ("net-b", "/bin/cat /proc/net/dev"),
-            ("mem", "/bin/cat /proc/meminfo"),
+            ("platform", "echo \"$CATUSSH_KERNEL\""),
+            ("cpu-a", "if [ \"$CATUSSH_KERNEL\" != Darwin ]; then /bin/cat /proc/stat; fi"),
+            ("net-a", "if [ \"$CATUSSH_KERNEL\" = Darwin ]; then /usr/sbin/netstat -ibn; else /bin/cat /proc/net/dev; fi"),
+            ("darwin-top", "if [ \"$CATUSSH_KERNEL\" = Darwin ]; then /usr/bin/top -l 2 -n 0 -s 1; fi"),
+            ("wait", "if [ \"$CATUSSH_KERNEL\" != Darwin ]; then /bin/sleep 1; fi"),
+            ("cpu-b", "if [ \"$CATUSSH_KERNEL\" != Darwin ]; then /bin/cat /proc/stat; fi"),
+            ("net-b", "if [ \"$CATUSSH_KERNEL\" = Darwin ]; then /usr/sbin/netstat -ibn; else /bin/cat /proc/net/dev; fi"),
+            ("mem", "if [ \"$CATUSSH_KERNEL\" = Darwin ]; then /usr/sbin/sysctl hw.memsize hw.pagesize vm.swapusage; /usr/bin/vm_stat; else /bin/cat /proc/meminfo; fi"),
             ("df", "/bin/df -Pk"),
-            ("uptime", "/bin/cat /proc/uptime"),
-            ("loadavg", "/bin/cat /proc/loadavg"),
+            ("uptime", "if [ \"$CATUSSH_KERNEL\" = Darwin ]; then /bin/date +%s; /usr/sbin/sysctl -n kern.boottime; else /bin/cat /proc/uptime; fi"),
+            ("loadavg", "if [ \"$CATUSSH_KERNEL\" != Darwin ]; then /bin/cat /proc/loadavg; fi"),
         ]
         if includeStatic {
             sections += [
-                ("hostname", "([ -f /proc/sys/kernel/hostname ] && cat /proc/sys/kernel/hostname )|| echo \"localhost\""),
-                ("os-release", "/bin/cat /etc/os-release"),
+                ("hostname", "/bin/hostname 2>/dev/null || hostname 2>/dev/null || echo \"localhost\""),
+                ("os-release", "if [ \"$CATUSSH_KERNEL\" = Darwin ]; then /usr/bin/sw_vers; else /bin/cat /etc/os-release; fi"),
             ]
         }
-        return sections
-            .map { name, command in
-                "echo '\(sectionMarkerPrefix)\(name)\(sectionMarkerSuffix)'\n\(command)"
-            }
+        let commands = sections.map { name, command in
+            "echo '\(sectionMarkerPrefix)\(name)\(sectionMarkerSuffix)'\n\(command)"
+        }
+        return (["CATUSSH_KERNEL=\"$(/usr/bin/uname -s)\""] + commands)
             .joined(separator: "\n")
     }
 
@@ -149,7 +152,7 @@ public class ServerStatus: ObservableObject, Equatable {
 
     /// Runs the merged monitor script and the GPU probe on two channels,
     /// then parses every section on its own: one section going missing
-    /// (a hung `nvidia-smi`, a server without /proc) empties only its
+    /// (a hung `nvidia-smi`, an unsupported system probe) empties only its
     /// model. `timeout` bounds each channel so a hung probe cannot freeze
     /// the monitor loop forever.
     public func requestInfoAndWait(with remote: NSRemoteShell, timeout: Double) {
@@ -179,6 +182,7 @@ public class ServerStatus: ObservableObject, Equatable {
         group.wait()
 
         let sections = ProcParsers.splitMonitorSections(mergedOutput.load())
+        let isDarwin = sections["platform"]?.trimmingCharacters(in: .whitespacesAndNewlines) == "Darwin"
         if includeStatic {
             // Only a non-empty reading is cached; a failed probe is retried
             // on the next round instead of sticking a placeholder.
@@ -186,7 +190,11 @@ public class ServerStatus: ObservableObject, Equatable {
             let releasePayload = (sections["os-release"] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             staticsLock.lock()
             if !hostname.isEmpty { sessionHostname = hostname }
-            if !releasePayload.isEmpty { sessionReleaseName = ProcParsers.parseOsReleaseName(releasePayload) }
+            if !releasePayload.isEmpty {
+                sessionReleaseName = isDarwin
+                    ? ProcParsers.parseDarwinReleaseName(releasePayload)
+                    : ProcParsers.parseOsReleaseName(releasePayload)
+            }
             staticsLock.unlock()
         }
         staticsLock.lock()
@@ -194,14 +202,28 @@ public class ServerStatus: ObservableObject, Equatable {
         let releaseName = sessionReleaseName ?? ""
         staticsLock.unlock()
 
-        let processor = ProcessorInfo(statBefore: sections["cpu-a"], statAfter: sections["cpu-b"]) ?? .init()
-        let network = NetworkInfo(netDevBefore: sections["net-a"], netDevAfter: sections["net-b"]) ?? .init()
-        let memory = MemoryInfo(meminfo: sections["mem"] ?? "")
+        let processor: ProcessorInfo
+        let network: NetworkInfo
+        let memory: MemoryInfo
+        let load: SystemLoadInternal
+        let uptime: Double
+        if isDarwin {
+            processor = ProcessorInfo(darwinTop: sections["darwin-top"]) ?? .init()
+            network = NetworkInfo(netstatBefore: sections["net-a"], netstatAfter: sections["net-b"]) ?? .init()
+            memory = MemoryInfo(darwinMemory: sections["mem"] ?? "")
+            load = ProcParsers.parseDarwinTopLoad(sections["darwin-top"] ?? "")
+            uptime = ProcParsers.parseDarwinUptime(sections["uptime"] ?? "")
+        } else {
+            processor = ProcessorInfo(statBefore: sections["cpu-a"], statAfter: sections["cpu-b"]) ?? .init()
+            network = NetworkInfo(netDevBefore: sections["net-a"], netDevAfter: sections["net-b"]) ?? .init()
+            memory = MemoryInfo(meminfo: sections["mem"] ?? "")
+            load = ProcParsers.parseLoadavg(sections["loadavg"] ?? "")
+            uptime = ProcParsers.parseUptime(sections["uptime"] ?? "")
+        }
         let fileSystem = FileSystemInfo(dfPk: sections["df"] ?? "")
-        let load = ProcParsers.parseLoadavg(sections["loadavg"] ?? "")
         let system = SystemInfo(
             release: releaseName,
-            uptimeInSec: ProcParsers.parseUptime(sections["uptime"] ?? ""),
+            uptimeInSec: uptime,
             hostname: hostname,
             runningProcs: load.runningProcess,
             totalProcs: load.totalProcess,

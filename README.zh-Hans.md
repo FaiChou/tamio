@@ -2,8 +2,8 @@
 
 [English](./README.md) · **简体中文** · [繁體中文](./README.zh-Hant.md)
 
-为管理 Linux 服务器而生的原生 macOS 应用：基于 [Ghostty](https://ghostty.org) 的 SSH
-终端、SFTP 文件传输、实时资源监控，每台服务器三者并排可用。
+为管理 Linux 和 macOS 服务器而生的原生 macOS 应用：基于 [Ghostty](https://ghostty.org)
+的 SSH 终端、SFTP 文件传输、实时资源监控，每台服务器三者并排可用。
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey)
@@ -29,7 +29,7 @@ brew install --cask mizorewww/tap/catussh
 - **原生 Ghostty 终端**：GPU 渲染，600 多套主题，半透明背景。
 - **可视化终端设置**：直接挑选已安装的字体和真实字重，按键录制快捷键，配色实时预览。
 - **快速连接**：输入 `user@host:port` 后回车。
-- **服务器监控**，读取 `/proc`：CPU、内存、磁盘、网络和 NVIDIA GPU，无需安装任何 agent。
+- **Linux 和 macOS 服务器监控**：CPU、内存、磁盘、网络和 NVIDIA GPU，使用系统自带工具，无需安装任何 agent。
 - **身份**（密码或密钥）多台服务器共用，**代码片段**可在多台服务器上同时执行，
   还有**端口转发**和**菜单栏**监控。
 - 另有 iPhone 和 iPad 版，终端和设置与 Mac 相同，需从源码构建。

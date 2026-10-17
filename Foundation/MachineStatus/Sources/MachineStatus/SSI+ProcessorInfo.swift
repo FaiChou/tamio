@@ -73,6 +73,18 @@ public extension ServerStatus {
 
             self.init(summary: sum, cores: resultPerCore)
         }
+
+        /// Builds from macOS `top -l 2`; the last sample contains the
+        /// interval CPU percentages. Darwin does not expose per-core samples
+        /// through top, so the core list stays empty.
+        public init?(darwinTop: String?) {
+            guard let darwinTop,
+                  let summary = ProcParsers.parseDarwinCPU(darwinTop)
+            else {
+                return nil
+            }
+            self.init(summary: summary, cores: [:])
+        }
     }
 
     /// 服务器 CPU 信息 这里全部是百分比

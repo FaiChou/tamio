@@ -103,5 +103,22 @@ public extension ServerStatus {
                 a.device < b.device
             }))
         }
+
+        /// Builds from two macOS `netstat -ibn` samples. Only link-level
+        /// rows are used so each interface appears once, without its IPv4 and
+        /// IPv6 aliases duplicating the same counters.
+        public init?(netstatBefore: String?, netstatAfter: String?) {
+            guard let netstatBefore, let netstatAfter else { return nil }
+            let before = ProcParsers.parseDarwinNetstat(netstatBefore)
+            let after = ProcParsers.parseDarwinNetstat(netstatAfter)
+            let result = before.compactMap { device, previous -> NetworkInfoElement? in
+                guard let current = after[device] else { return nil }
+                let rxIncrease = current.rx - previous.rx
+                let txIncrease = current.tx - previous.tx
+                guard rxIncrease >= 0, txIncrease >= 0 else { return nil }
+                return NetworkInfoElement(device: device, rxBytesPerSec: rxIncrease, txBytesPerSec: txIncrease)
+            }
+            self.init(elements: result.sorted { $0.device < $1.device })
+        }
     }
 }

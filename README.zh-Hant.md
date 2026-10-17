@@ -2,8 +2,8 @@
 
 [English](./README.md) · [简体中文](./README.zh-Hans.md) · **繁體中文**
 
-專為管理 Linux 伺服器打造的原生 macOS App：以 [Ghostty](https://ghostty.org) 為基礎的 SSH
-終端機、SFTP 檔案傳輸、即時資源監控，每台伺服器三者並排可用。
+專為管理 Linux 和 macOS 伺服器打造的原生 macOS App：以 [Ghostty](https://ghostty.org)
+為基礎的 SSH 終端機、SFTP 檔案傳輸、即時資源監控，每台伺服器三者並排可用。
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey)
@@ -29,7 +29,7 @@ brew install --cask mizorewww/tap/catussh
 - **原生 Ghostty 終端機**：GPU 繪製，600 多套主題，半透明背景。
 - **視覺化終端機設定**：直接挑選已安裝的字型與真實字重，以按鍵錄製快速鍵，配色即時預覽。
 - **快速連線**：輸入 `user@host:port` 後按 Return。
-- **伺服器監控**，讀取 `/proc`：CPU、記憶體、磁碟、網路和 NVIDIA GPU，不必安裝任何 agent。
+- **Linux 和 macOS 伺服器監控**：CPU、記憶體、磁碟、網路和 NVIDIA GPU，使用系統內建工具，不必安裝任何 agent。
 - **身分**（密碼或金鑰）多台伺服器共用，**程式碼片段**可在多台伺服器上同時執行，
   還有**連接埠轉送**和**選單列**監控。
 - 另有 iPhone 與 iPad 版，終端機和設定與 Mac 相同，需從原始碼建置。

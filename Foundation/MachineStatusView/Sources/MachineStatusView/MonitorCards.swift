@@ -3,7 +3,7 @@
 //  MachineStatusView
 //
 //  The cards of a server's monitor. Each card answers one question with one large
-//  number and shows only what catussh reads from the server (/proc, df, nvidia-smi).
+//  number and shows only what catussh reads from the server's system tools.
 //
 
 import MachineStatus

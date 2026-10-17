@@ -2,9 +2,9 @@
 
 **English** · [简体中文](./README.zh-Hans.md) · [繁體中文](./README.zh-Hant.md)
 
-A native macOS app for the Linux servers you look after: an SSH terminal built on
-[Ghostty](https://ghostty.org), SFTP file transfer and a live resource monitor, side
-by side for every server.
+A native macOS app for the Linux and macOS servers you look after: an SSH terminal
+built on [Ghostty](https://ghostty.org), SFTP file transfer and a live resource
+monitor, side by side for every server.
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 ![Platform](https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey)
@@ -32,8 +32,8 @@ download the disk image from [Releases](https://github.com/mizorewww/catussh/rel
 - **Visual terminal settings**: installed fonts with their real styles, recorded
   keyboard shortcuts, a live color preview.
 - **Quick Connect**: type `user@host:port` and press Return.
-- **Server monitor** over `/proc`: CPU, memory, disks, network and NVIDIA GPUs, with no
-  agent to install.
+- **Server monitor** for Linux and macOS: CPU, memory, disks, network and NVIDIA GPUs,
+  using native system tools with no agent to install.
 - **Identities** (passwords or keys) shared across servers, **snippets** run on many
   servers at once, **port forwarding**, and a **menu bar** monitor.
 - An iPhone and iPad app with the same terminal and settings, built from source.
