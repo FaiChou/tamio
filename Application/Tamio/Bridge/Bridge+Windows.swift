@@ -108,6 +108,49 @@ extension Bridge {
         }
     }
 
+    /// Catalyst builds the window's AppKit toolbar out of the pages'
+    /// navigation bar, and drops it, at random, when a page rebuilds early
+    /// on. Without it the sidebar keeps a navigation bar of its own: the
+    /// collapse button goes on a second row and everything moves down. The
+    /// pages are rebuilt until the toolbar is there; the window is shown
+    /// once it is (or after two seconds, whatever happens).
+    func watchToolbar(of uiWindow: AnyObject, rebuild: @escaping () -> Void) {
+        guard let window = nsWindow(for: uiWindow) else {
+            DispatchQueue.main.async { [weak self, weak uiWindow] in
+                if let uiWindow { self?.watchToolbar(of: uiWindow, rebuild: rebuild) }
+            }
+            return
+        }
+        var attempts = 0
+        var pending = false
+        func check() {
+            if window.toolbar != nil {
+                if window.alphaValue < 1 {
+                    NSAnimationContext.runAnimationGroup { $0.duration = 0.12; window.animator().alphaValue = 1 }
+                }
+                return
+            }
+            guard !pending, attempts < 20 else { return }
+            pending = true
+            attempts += 1
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                pending = false
+                guard window.toolbar == nil else { return check() }
+                rebuild()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { check() }
+            }
+        }
+        if window.toolbar == nil { window.alphaValue = 0 }
+        appearanceObservers.append(window.observe(\.toolbar) { _, _ in
+            DispatchQueue.main.async { check() }
+        })
+        // Pages also rebuild on navigation; a dropped toolbar is caught there.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            if window.alphaValue < 1 { window.alphaValue = 1 }
+        }
+        check()
+    }
+
     /// TamioDesign's `RXPalette.window`, the colour the pages are drawn on.
     static let windowColor = NSColor(name: nil) { appearance in
         appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua

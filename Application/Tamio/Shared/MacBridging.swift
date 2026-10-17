@@ -48,6 +48,11 @@ import Foundation
 
     /// Puts the translucent window material under a UIKit window's content.
     func installBackdrop(for uiWindow: AnyObject)
+    /// Keeps the main window's AppKit toolbar: whenever the window has none,
+    /// `rebuild` is called to have the pages rebuild their toolbar items,
+    /// until it has one again. The window stays transparent at first, until
+    /// it has its toolbar, so its layout without one is never seen.
+    func watchToolbar(of uiWindow: AnyObject, rebuild: @escaping () -> Void)
 
     // MARK: Dialogs
 

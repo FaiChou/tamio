@@ -370,8 +370,7 @@ struct IdentityForm: View {
             if draft.method == .key {
                 RXField(
                     "Private key",
-                    help: algorithm.map { "\($0.uppercased()) key. Ed25519, RSA and ECDSA keys work, in OpenSSH or PEM format." }
-                        ?? "Ed25519, RSA and ECDSA keys work, in OpenSSH or PEM format."
+                    help: draft.privateKey.isEmpty ? "Ed25519, RSA and ECDSA keys work, in OpenSSH or PEM format." : nil
                 ) {
                     if draft.privateKey.isEmpty {
                         KeyEditor(
@@ -493,12 +492,15 @@ private struct SealedKeyRow: View {
             Image(systemName: "lock.fill")
                 .font(.system(size: 12))
                 .foregroundStyle(.rxInkSecondary)
-            Text("••••••••••••")
+            Text("••••••")
                 .font(.rxCode)
                 .foregroundStyle(.rxInkSecondary)
-            Text(algorithm.map { "\($0.uppercased()) private key" } ?? "Private key")
+                .fixedSize()
+            Text(algorithm.map(Self.title) ?? "Private key")
                 .font(.rxBody)
                 .foregroundStyle(.rxInk)
+                .lineLimit(1)
+                .fixedSize()
             Spacer(minLength: 0)
             Button("Replace…", action: replace)
                 .buttonStyle(.rx(size: .small))
@@ -509,6 +511,11 @@ private struct SealedKeyRow: View {
         .rxFieldBackground()
         .accessibilityElement(children: .combine)
         .accessibilityLabel(algorithm.map { "\($0) private key, hidden" } ?? "Private key, hidden")
+    }
+
+    /// "Ed25519", "RSA", "ECDSA".
+    static func title(_ algorithm: String) -> String {
+        algorithm == "ed25519" ? "Ed25519" : algorithm.uppercased()
     }
 }
 

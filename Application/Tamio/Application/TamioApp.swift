@@ -94,13 +94,22 @@ enum MainWindow {
 
     @MainActor static func prepare(_ window: UIWindow) {
         if let scene = window.windowScene, !(scene.delegate is TraySceneDelegate) {
-            // The toolbar holds page controls only; the page title is in the content.
-            scene.titlebar?.titleVisibility = .hidden
-            scene.titlebar?.toolbarStyle = .unified
-            scene.titlebar?.separatorStyle = .none
-            scene.sizeRestrictions?.minimumSize = minimumSize
+            // The toolbar holds page controls only; the page title is in the
+            // content. Set only what differs: setting the title bar again
+            // after SwiftUI built the toolbar makes Catalyst drop it, and the
+            // window comes up with its toolbar as a second row.
+            if let titlebar = scene.titlebar {
+                if titlebar.titleVisibility != .hidden { titlebar.titleVisibility = .hidden }
+                if titlebar.toolbarStyle != .unified { titlebar.toolbarStyle = .unified }
+            }
+            if scene.sizeRestrictions?.minimumSize != minimumSize { scene.sizeRestrictions?.minimumSize = minimumSize }
         }
         Mac.bridge?.installBackdrop(for: window)
+        if let scene = window.windowScene, !(scene.delegate is TraySceneDelegate) {
+            Mac.bridge?.watchToolbar(of: window) {
+                NotificationCenter.default.post(name: .rebuildPageToolbar, object: nil)
+            }
+        }
     }
 
     /// Brings the main window forward, reopening it if it was closed.
