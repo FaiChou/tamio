@@ -13,6 +13,7 @@ import SwiftUI
 import TamioDesign
 import TamioModule
 import UniformTypeIdentifiers
+import UserNotifications
 
 struct FileTransferPage: View {
     @ObservedObject var context: FileTransferContext
@@ -620,6 +621,21 @@ private struct BrowserPane: View {
         } else {
             provider = NSItemProvider()
         }
+        // From a server, Finder is offered the file (the first, for several):
+        // it is downloaded once dropped, into a folder of its own that Finder
+        // copies from.
+        if let machine = browser.machine, let path = paths.first {
+            let entry = browser.entries.first { $0.path == path }
+            let type: UTType = entry?.isDirectory == true ? .folder : (UTType(filenameExtension: (path as NSString).pathExtension) ?? .data)
+            provider.suggestedName = (path as NSString).lastPathComponent
+            provider.registerFileRepresentation(forTypeIdentifier: type.identifier, fileOptions: [], visibility: .all) { completion in
+                let folder = FileManager.default.temporaryDirectory.appendingPathComponent("tamio-drag-\(UUID().uuidString)")
+                try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                return RemoteFetch.download(path, from: machine, into: folder) { url in
+                    completion(url, false, url == nil ? CocoaError(.fileReadUnknown) : nil)
+                }
+            }
+        }
         if let data = try? JSONEncoder().encode(payload) {
             provider.registerDataRepresentation(forTypeIdentifier: FileDragPayload.type.identifier, visibility: .ownProcess) { completion in
                 completion(data, nil)
@@ -828,6 +844,7 @@ private struct TransferBar: View {
     func hookReloads() {
         queue.onFinish = { job in
             NotificationCenter.default.post(name: .transferFinished, object: job)
+            TransferNotifier.finished(job)
         }
     }
 }
@@ -948,6 +965,37 @@ enum FileTransferSessionActions {
             }
         } else {
             FileTransferManager.shared.end(for: context.id)
+        }
+    }
+}
+
+/// A transfer that ends while Tamio is in the background says so in a
+/// notification; one in front of the user shows in the transfer bar.
+@MainActor
+enum TransferNotifier {
+    private static var asked = false
+
+    static func finished(_ job: TransferJob) {
+        guard UIApplication.shared.applicationState != .active, job.state != .cancelled else { return }
+        let center = UNUserNotificationCenter.current()
+        let content = UNMutableNotificationContent()
+        switch job.state {
+        case .done:
+            content.title = job.direction == .download ? "Download finished" : "Upload finished"
+            content.body = job.title
+        default:
+            content.title = "Transfer failed"
+            content.body = [job.title, job.error].compactMap { $0 }.joined(separator: "\n")
+        }
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: job.id.uuidString, content: content, trigger: nil)
+        if asked {
+            center.add(request)
+        } else {
+            asked = true
+            center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+                if granted { center.add(request) }
+            }
         }
     }
 }

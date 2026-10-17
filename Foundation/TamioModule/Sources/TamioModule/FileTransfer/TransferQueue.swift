@@ -263,3 +263,38 @@ public final class TransferJob: ObservableObject, Identifiable {
         }
     }
 }
+
+/// One file or folder from a server, fetched on its own connection: what a
+/// drag out to Finder asks for once it is dropped.
+public enum RemoteFetch {
+    /// Downloads `path` from `machine` into `folder`, on a background queue,
+    /// and calls back with the local copy, or nil.
+    public static func download(
+        _ path: String, from machine: RDMachine, into folder: URL,
+        completion: @escaping @Sendable (URL?) -> Void
+    ) -> Progress {
+        let progress = Progress(totalUnitCount: 100)
+        let identity = TamioStore.shared.associatedIdentity(for: machine)
+        let timeout = TamioStore.shared.timeoutNumber
+        let autoIdentities = TamioStore.shared.workerIdentitiesForAutoAuth
+        nonisolated(unsafe) let report = progress
+        DispatchQueue.global(qos: .userInitiated).async {
+            let shell = NSRemoteShell.configured(for: machine, timeout: timeout)
+            defer {
+                shell.requestDisconnectAndWait()
+                shell.destroyPermanently()
+            }
+            guard shell.connectAndAuthenticate(identity: identity, autoIdentities: autoIdentities, for: machine) == .success else {
+                return completion(nil)
+            }
+            shell.requestConnectFileTransferAndWait()
+            guard shell.isConnectedFileTransfer else { return completion(nil) }
+            let target = folder.appendingPathComponent((path as NSString).lastPathComponent)
+            let done = shell.requestDownload(fromFileAndWait: path, toLocalPath: target.path, onProgress: { _, step, _ in
+                if step.totalUnitCount > 0 { report.completedUnitCount = Int64(Double(step.completedUnitCount) / Double(step.totalUnitCount) * 100) }
+            }, withContinuationHandler: { !report.isCancelled })
+            completion(done ? target : nil)
+        }
+        return progress
+    }
+}
