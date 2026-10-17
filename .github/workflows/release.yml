@@ -1,10 +1,10 @@
 # Pushing a tag "v<version>" builds the Mac disk image (Developer ID signed and
 # notarized), signs it for Sparkle and writes the appcast, and leaves both in a
-# DRAFT release. Nothing reaches anyone until the maintainer publishes the
-# draft (Releases → Edit → Publish release, or `gh release edit v<version>
-# --draft=false`): drafts are invisible, and the app's feed, the latest
-# release's appcast.xml, only ever points at a published release. Signing
-# happens only here.
+# DRAFT release whose notes are the version's section of CHANGELOG.md. Nothing
+# reaches anyone until the maintainer publishes the draft (Releases → Edit →
+# Publish release, or `gh release edit v<version> --draft=false`): drafts are
+# invisible, and the app's feed, the latest release's appcast.xml, only ever
+# points at a published release. Signing happens only here.
 #
 # Run by hand (Actions → Release → Run workflow) it only builds, and keeps the
 # products as artifacts of the run; without the secrets the Mac app is then
@@ -51,6 +51,9 @@ jobs:
             echo "::error::The tag is $GITHUB_REF_NAME but the app's version is $version. Set MARKETING_VERSION, or tag v$version."
             exit 1
           fi
+          # Its notes, before half an hour of building: a release without them
+          # is not built.
+          bash Workflow/Scripts/release-notes.sh "$version" > /dev/null
 
       - name: Set up signing
         env:
@@ -139,6 +142,7 @@ jobs:
         if: env.IS_TAG == 'true'
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           if [[ -z "$SPARKLE_PRIVATE_KEY" ]]; then
@@ -156,9 +160,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          bash Workflow/Scripts/release-notes.sh "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
           gh release create "$GITHUB_REF_NAME" \
             DerivedData/Release/Tamio-*.dmg DerivedData/Release/appcast.xml \
-            --draft --title "Tamio ${GITHUB_REF_NAME#v}" --generate-notes --verify-tag
+            --draft --title "Tamio ${GITHUB_REF_NAME#v}" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag
           {
             echo "### Waiting for approval"
             echo "Tamio ${GITHUB_REF_NAME#v} is built, notarized and signed, in a draft release."

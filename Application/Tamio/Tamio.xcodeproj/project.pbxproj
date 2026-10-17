@@ -52,6 +52,7 @@
 		B347AFC662FEA41D342D2394 /* MonitorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9ACCCD82006879E4BFB703 /* MonitorPage.swift */; };
 		B407B4973269B8D2FF62A6CF /* AgentBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9D95A164114CD21CB58BAC1 /* AgentBridge.swift */; };
 		B7E46F6E3621804D80A5BE16 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB9E4DDA19C6E86B44842578 /* HomeView.swift */; };
+		B8C36D29C18A11ADC5DBE748 /* ReleaseNotes.swift in Sources */ = {isa = PBXBuildFile; fileRef = D12B21CEE241E5FC080D08E8 /* ReleaseNotes.swift */; };
 		BAE3684CDFE3B0B184ABE62A /* EditorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 924CB398B52DC9CBB1633708 /* EditorPage.swift */; };
 		BD3114CB7B4AEB7FD75D9F78 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F41A429DA891AEEB06DA914 /* SettingsView.swift */; };
 		C5B61FEFE6D29C674F851CDE /* tamio-mcp in Resources */ = {isa = PBXBuildFile; fileRef = 2C0346AB3930E486C971F3E1 /* tamio-mcp */; };
@@ -71,6 +72,7 @@
 		EACDC3F0CDA599CFD2B1BE38 /* TamioApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89D30D618CFFED4A6386D0E1 /* TamioApp.swift */; };
 		EB87D94F557DAFC57811CD08 /* ServerEditorDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478253D7DC3B55196BDD73C9 /* ServerEditorDialog.swift */; };
 		ECD3BB0A68E4995B319A09DF /* ServersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD5F05A6A10CA869F43251F4 /* ServersView.swift */; };
+		F015EEA1379F235470282D2D /* CHANGELOG.md in Resources */ = {isa = PBXBuildFile; fileRef = 19340EF002A664E3FA4628D8 /* CHANGELOG.md */; };
 		F1711314D089AB7A5A4E9E09 /* StatusItem+Loop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73A13CE60279936C7F4C1052 /* StatusItem+Loop.swift */; };
 		F1CD9381398E9A71678A3A7E /* StatusCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61330E5384D161665EEA7851 /* StatusCard.swift */; };
 /* End PBXBuildFile section */
@@ -117,6 +119,7 @@
 		08B70567623556C8B0B16B25 /* PortForwardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortForwardView.swift; sourceTree = "<group>"; };
 		0ADB190607A2B7100D337533 /* Bridge+StatusItems.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+StatusItems.swift"; sourceTree = "<group>"; };
 		0F3921042144F0D341016173 /* SnippetsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetsView.swift; sourceTree = "<group>"; };
+		19340EF002A664E3FA4628D8 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
 		196B098389C5AA99A0C9A7F9 /* MacBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacBridge.swift; sourceTree = "<group>"; };
 		29183565D571B1DD9EFBC65E /* UpdateCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateCenter.swift; sourceTree = "<group>"; };
 		2AD8E54833D616102BA84271 /* SnippetEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEditorSheet.swift; sourceTree = "<group>"; };
@@ -165,6 +168,7 @@
 		C465A43736C58AD6B51CEC59 /* TerminalManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalManager.swift; sourceTree = "<group>"; };
 		C937FCFD7CB1469ED24343D6 /* Bridge+Updates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bridge+Updates.swift"; sourceTree = "<group>"; };
 		CDF144CC0C26AC04600899D4 /* PlaceholderColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderColor.swift; sourceTree = "<group>"; };
+		D12B21CEE241E5FC080D08E8 /* ReleaseNotes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReleaseNotes.swift; sourceTree = "<group>"; };
 		D9D95A164114CD21CB58BAC1 /* AgentBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentBridge.swift; sourceTree = "<group>"; };
 		D9EEF0A9C4110C84CABB1CFD /* MachineStatusView */ = {isa = PBXFileReference; lastKnownFileType = folder; name = MachineStatusView; path = ../../Foundation/MachineStatusView; sourceTree = SOURCE_ROOT; };
 		DEAB5056B28A3AFF05957C93 /* TerminalPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalPage.swift; sourceTree = "<group>"; };
@@ -216,6 +220,7 @@
 		03313B71E1EA79D99A263A0F /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				D12B21CEE241E5FC080D08E8 /* ReleaseNotes.swift */,
 				2F41A429DA891AEEB06DA914 /* SettingsView.swift */,
 			);
 			path = Settings;
@@ -342,6 +347,7 @@
 			isa = PBXGroup;
 			children = (
 				767CF33A427B2C6C6677E1BF /* Resources */,
+				19340EF002A664E3FA4628D8 /* CHANGELOG.md */,
 				95B1005E04E501D384F8AEED /* skills */,
 			);
 			name = tamio;
@@ -595,6 +601,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2E4369F69EA9DF974DF27F6A /* Assets.xcassets in Resources */,
+				F015EEA1379F235470282D2D /* CHANGELOG.md in Resources */,
 				54C706C4966389E84D9903AD /* EULA in Resources */,
 				ADF9F497480AAECF8EFA2978 /* LICENSE in Resources */,
 				C78E22FC07482B9FD7C71BF3 /* Tamio.icon in Resources */,
@@ -672,6 +679,7 @@
 				A97740C2E4CAAC7E3E21C4DB /* PortForwardBackend.swift in Sources */,
 				742B1D1D68A0C95C3886F494 /* PortForwardView.swift in Sources */,
 				B1602E1EB9701A0DAEBB7EED /* PresentError.swift in Sources */,
+				B8C36D29C18A11ADC5DBE748 /* ReleaseNotes.swift in Sources */,
 				D228D67549129E4CB2A357B6 /* ServerActions.swift in Sources */,
 				EB87D94F557DAFC57811CD08 /* ServerEditorDialog.swift in Sources */,
 				16E0D2F6EA1736735F60C2E7 /* ServerInspector.swift in Sources */,
