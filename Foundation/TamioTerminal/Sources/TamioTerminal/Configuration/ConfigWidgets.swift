@@ -401,23 +401,44 @@ struct ConfigPairInput: View {
     private var names: [String] { scroll ? ["Trackpad", "Wheel"] : labels }
 
     var body: some View {
-        HStack(spacing: RX.Space.s2) {
-            caption(names[0])
-            TextField(names[0], text: Binding(get: { parts[0] }, set: { write($0, linked ? $0 : parts[1], linked) }))
-                .multilineTextAlignment(.trailing)
-                .textFieldStyle(.rx)
-                .frame(width: 56)
-            if !scroll {
-                RXIconButton(linked ? "Unlink: set \(names[0]) and \(names[1]) separately" : "Link: use one value for both",
-                             systemImage: linked ? "link" : "link.badge.plus", kind: .plain) {
-                    write(parts[0], parts[1], !linked)
-                }
+        // Side by side when there is room; in a narrow window each caption
+        // goes above its field instead of being squeezed a letter per line.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: RX.Space.s2) {
+                caption(names[0])
+                firstField
+                linkButton
+                caption(names[1])
+                secondField
             }
-            caption(names[1])
-            TextField(names[1], text: Binding(get: { parts[1] }, set: { write(linked ? $0 : parts[0], $0, linked) }))
-                .multilineTextAlignment(.trailing)
-                .textFieldStyle(.rx)
-                .frame(width: 56)
+            HStack(alignment: .bottom, spacing: RX.Space.s2) {
+                VStack(alignment: .leading, spacing: 3) { caption(names[0]); firstField }
+                linkButton
+                VStack(alignment: .leading, spacing: 3) { caption(names[1]); secondField }
+            }
+        }
+    }
+
+    private var firstField: some View {
+        TextField(names[0], text: Binding(get: { parts[0] }, set: { write($0, linked ? $0 : parts[1], linked) }))
+            .multilineTextAlignment(.trailing)
+            .textFieldStyle(.rx)
+            .frame(width: 56)
+    }
+
+    private var secondField: some View {
+        TextField(names[1], text: Binding(get: { parts[1] }, set: { write(linked ? $0 : parts[0], $0, linked) }))
+            .multilineTextAlignment(.trailing)
+            .textFieldStyle(.rx)
+            .frame(width: 56)
+    }
+
+    @ViewBuilder private var linkButton: some View {
+        if !scroll {
+            RXIconButton(linked ? "Unlink: set \(names[0]) and \(names[1]) separately" : "Link: use one value for both",
+                         systemImage: linked ? "link" : "link.badge.plus", kind: .plain) {
+                write(parts[0], parts[1], !linked)
+            }
         }
     }
 
@@ -425,6 +446,8 @@ struct ConfigPairInput: View {
         Text(text)
             .font(.rxHelp)
             .foregroundStyle(.rxInkSecondary)
+            .lineLimit(1)
+            .fixedSize()
     }
     private func write(_ a: String, _ b: String, _ linked: Bool) { value = linked ? a : scroll ? "precision:\(a),discrete:\(b)" : "\(a),\(b)" }
 }

@@ -12,6 +12,10 @@ import ObjectiveC
 
 @objc(Bridge) final class Bridge: NSObject, MacBridging {
     var statusItems: [String: StatusItem] = [:]
+    /// Keeps the toolbar strips of the main windows in step with the appearance.
+    var appearanceObservers: [NSKeyValueObservation] = []
+    /// Resize notifications of the main windows, for the same purpose.
+    var windowObservers: [NSObjectProtocol] = []
     var mayTerminate: (() -> Bool)?
     var openApp: (() -> Void)?
     /// Windows that existed before a popover's window was asked for.
