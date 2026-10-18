@@ -191,8 +191,52 @@ private final class TerminalPresentation: NSObject, TerminalSurfaceTitleDelegate
     func terminalDidRingBell() { callbacks.receiveBell() }
 
     func terminalDidRequestClipboardConfirmation(_ request: TerminalClipboardConfirmationRequest) {
-        // Preserve user-initiated paste, without granting a remote program
-        // implicit permission to read or replace the system clipboard.
-        request.respond(allow: request.kind == .paste)
+        // A remote program never gets to read or replace the clipboard (OSC 52).
+        guard request.kind == .paste else {
+            request.respond(allow: false)
+            return
+        }
+        #if os(macOS)
+            // Paste protection (Settings › Mouse & Clipboard) found line breaks
+            // or control characters the shell would act on at once: ask first.
+            let alert = NSAlert()
+            alert.messageText = "Paste text that could run commands?"
+            alert.informativeText = "It has line breaks or control characters, which a shell runs as soon as they are pasted. This warning is Paste protection under Settings › Mouse & Clipboard."
+            alert.addButton(withTitle: "Paste")
+            alert.addButton(withTitle: "Cancel")
+            alert.accessoryView = Self.pastePreview(request.contents)
+            let finish: (NSApplication.ModalResponse) -> Void = { response in
+                request.respond(allow: response == .alertFirstButtonReturn)
+            }
+            if let window = view.window {
+                alert.beginSheetModal(for: window, completionHandler: finish)
+            } else {
+                finish(alert.runModal())
+            }
+        #else
+            request.respond(allow: true)
+        #endif
     }
+
+    #if os(macOS)
+        /// The text about to be pasted, in a scrolling box, so what would run
+        /// can be read before deciding.
+        private static func pastePreview(_ contents: String) -> NSView {
+            let frame = NSRect(x: 0, y: 0, width: 440, height: 110)
+            let text = NSTextView(frame: frame)
+            text.string = String(contents.prefix(4000))
+            text.isEditable = false
+            text.isSelectable = true
+            text.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+            text.textContainerInset = NSSize(width: 4, height: 6)
+            text.autoresizingMask = [.width]
+            text.isVerticallyResizable = true
+            text.textContainer?.widthTracksTextView = true
+            let scroll = NSScrollView(frame: frame)
+            scroll.documentView = text
+            scroll.hasVerticalScroller = true
+            scroll.borderType = .bezelBorder
+            return scroll
+        }
+    #endif
 }

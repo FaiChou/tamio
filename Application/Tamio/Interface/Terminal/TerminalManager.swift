@@ -37,7 +37,6 @@ class TerminalManager: ObservableObject {
         }
         let context = Context(machine: machine)
         sessionContexts.append(context)
-        TamioStore.shared.storeRecentIfNeeded(from: machine.id)
         completion(context)
     }
 
@@ -54,7 +53,6 @@ class TerminalManager: ObservableObject {
     func createSession(withCommand command: SSHCommandReader) -> Context {
         let context = Context(command: command)
         sessionContexts.append(context)
-        TamioStore.shared.storeRecentIfNeeded(from: command)
         return context
     }
 

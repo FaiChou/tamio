@@ -10,7 +10,9 @@ import Combine
 import NSRemoteShell
 import TamioModule
 
-class BatchSnippetExecContext: ObservableObject {
+/// Every field is read and written under `accessLock`, from the run's queues
+/// and the sheet's.
+final class BatchSnippetExecContext: ObservableObject, @unchecked Sendable {
     let snippet: RDSnippet
     let machines: [RDMachine.ID]
     let names: [RDMachine.ID: String]
@@ -175,12 +177,16 @@ class BatchSnippetExecContext: ObservableObject {
 
     func beginExec(on machine: RDMachine.ID) {
         safeAccess { self.startedAt[machine] = Date() }
+        // Done the moment the command has returned: the hang-up that follows
+        // can take seconds, and is no part of the user's wait.
         defer {
             debugPrint("execution subroutine completed for machine: \(machine)")
             safeAccess {
                 self.completedMachines.append(machine)
                 self.finishedAt[machine] = Date()
             }
+            // The sheet draws the server as done at once, not on its next tick.
+            DispatchQueue.main.async { self.objectWillChange.send() }
         }
         guard let shell = safeAccessShellObjects[machine] else {
             // our error not user's
@@ -188,7 +194,7 @@ class BatchSnippetExecContext: ObservableObject {
             safeAccess { self.failedMachines.insert(machine) }
             return
         }
-        defer { shell.requestDisconnectAndWait() }
+        defer { DispatchQueue.global().async { shell.requestDisconnectAndWait() } }
         let remote = TamioStore.shared.workerMachine(for: machine)
         guard remote.isNotPlaceholder() else {
             // the server was removed after the run started

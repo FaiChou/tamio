@@ -106,7 +106,7 @@ struct ConfigLayout {
                 "copy-on-select", "clipboard-trim-trailing-spaces", "selection-clear-on-copy",
                 "selection-clear-on-typing", "clipboard-paste-protection", "clipboard-paste-bracketed-safe",
             ]),
-            Group("mouse", "Mouse", keys: ["mouse-scroll-multiplier", "mouse-hide-while-typing", "mouse-shift-capture", "cursor-click-to-move", "link-url"]),
+            Group("mouse", "Mouse", keys: ["mouse-scroll-multiplier", "mouse-shift-capture", "cursor-click-to-move", "link-url"]),
         ]),
         Category(id: "keyboard", title: "Keyboard", icon: "keyboard", section: .terminal, groups: [
             Group("keybinds", "Shortcuts", keys: ["keybind"]),
@@ -124,8 +124,10 @@ struct ConfigLayout {
 
     /// Supported keys Settings deliberately leaves out: `background-blur` blurs a
     /// standalone Ghostty window and has no effect inside Tamio, whose window
-    /// material already blurs; `freetype-load-flags` is Linux-only.
-    static let hiddenKeys: Set<String> = ["background-blur", "freetype-load-flags"]
+    /// material already blurs; `freetype-load-flags` is Linux-only;
+    /// `mouse-hide-while-typing` asks the host to hide the pointer, which the
+    /// embedded surface does not do.
+    static let hiddenKeys: Set<String> = ["background-blur", "freetype-load-flags", "mouse-hide-while-typing"]
 
     static let categoryOfKey: [String: Category] = {
         var result: [String: Category] = [:]
@@ -178,7 +180,7 @@ struct ConfigLayout {
         "image-storage-limit": ("Images", "Memory kept for images shown in the terminal."),
         "title": ("Fixed session title", "Use this instead of the title the remote shell sets."),
         "mouse-scroll-multiplier": ("Scroll speed", "Multiplies trackpad (precise) and mouse wheel (line) scrolling."),
-        "cursor-click-to-move": ("Option-click moves the cursor", "Option-click at a prompt to move the cursor there."),
+        "cursor-click-to-move": ("Option-click moves the cursor", "Option-click at a prompt to move the cursor there. Needs shell integration (OSC 133) on the server."),
         "link-url": ("Detect links", "⌘-click URLs in terminal output to open them."),
         "cursor-style": ("Style", nil),
         "cursor-style-blink": ("Blinking", "Whether the cursor blinks; programs can still ask for either."),

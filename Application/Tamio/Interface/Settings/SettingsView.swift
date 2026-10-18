@@ -34,9 +34,6 @@ struct SettingsView: View {
                 ConfigHostSettingsSection(id: "general.files", keywords: "files sftp hidden dot files show") {
                     FilesSettings()
                 },
-                ConfigHostSettingsSection(id: "general.recent", keywords: "recent servers history quick connect commands record remember") {
-                    RecentSettings().environmentObject(store)
-                },
                 ConfigHostSettingsSection(id: "general.sync", keywords: "icloud sync cloud encrypted passphrase servers identities credentials devices") {
                     CloudSyncSettings()
                 },
@@ -178,35 +175,6 @@ private struct FilesSettings: View {
                 description: "Files whose names start with a dot, on this Mac and on servers. Each pane's Actions menu turns them on and off too.",
                 isOn: $showsHidden
             )
-        }
-    }
-}
-
-private struct RecentSettings: View {
-    @EnvironmentObject var store: TamioStore
-    @AppStorage("sb.moe.tamio.maxRecentRecordCount") private var recentLimit = 8
-
-    var body: some View {
-        RXDividedStack {
-            SwitchRow(
-                "Remember recent servers",
-                description: "Listed under Quick Connect on Home.",
-                isOn: $store.storeRecent
-            )
-            NumberFieldRow("Number to keep", value: $recentLimit, in: 1 ... 50)
-                .disabled(!store.storeRecent)
-            SwitchRow(
-                "Include Quick Connect commands",
-                description: "Also remember user@host commands typed on Home.",
-                isOn: $store.saveTemporarySession
-            )
-            .disabled(!store.storeRecent)
-        }
-        .onChange(of: recentLimit) { limit in
-            store.maxRecentRecordCount = limit
-            if store.recentRecord.count > limit {
-                store.recentRecord = Array(store.recentRecord.prefix(limit))
-            }
         }
     }
 }

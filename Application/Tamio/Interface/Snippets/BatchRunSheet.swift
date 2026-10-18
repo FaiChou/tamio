@@ -20,6 +20,8 @@ struct BatchRunSheet: View {
     @StateObject private var context: BatchSnippetExecContext
     @State private var selection: RDMachine.ID?
     @State private var tick = Date()
+    /// Set once the sheet has drawn every server as finished.
+    @State private var settled = false
 
     private let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
 
@@ -75,9 +77,12 @@ struct BatchRunSheet: View {
         .frame(width: 820)
         .onAppear { context.start() }
         .onReceive(timer) { date in
-            // Nothing changes once every server is done; ticking then would
-            // redraw the whole sheet twice a second until it is closed.
-            if !finished { tick = date }
+            // The running times, and one last pass that draws every server as
+            // done; after that nothing changes, and ticking would only redraw
+            // the whole sheet twice a second until it is closed.
+            guard !settled else { return }
+            tick = date
+            if finished { settled = true }
         }
     }
 
@@ -146,10 +151,12 @@ struct BatchRunSheet: View {
                     .allowsHitTesting(selection == machine)
             }
         }
-        .padding(RX.Space.s2)
-        .background(
-            RoundedRectangle(cornerRadius: RX.Radius.md, style: .continuous)
-                .fill(Color.rxTerminalBackground)
+        // The terminal paints its own background, light or dark with the
+        // theme; only the corners and the hairline are ours.
+        .clipShape(RoundedRectangle(cornerRadius: RX.Radius.lg, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: RX.Radius.lg, style: .continuous)
+                .strokeBorder(Color.rxHairline, lineWidth: 1)
         )
         .environmentObject(context)
     }
