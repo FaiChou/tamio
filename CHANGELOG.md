@@ -9,8 +9,11 @@ and tag `v0.2.0`. A tag with no section here is not built.
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-18
+
 - Agent activity shows a short command whole, and a longer one or a task's
   steps behind a click, never cut off.
+- Tamio installs with Homebrew: `brew install --cask owo-network/brew/tamio`.
 
 ## [0.1.2] - 2026-10-18
 
