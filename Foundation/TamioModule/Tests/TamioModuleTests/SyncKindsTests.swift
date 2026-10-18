@@ -36,7 +36,8 @@ final class SyncKindsTests: XCTestCase {
             apply(done.snippets, to: &snippets)
             apply(done.portForwards, to: &forwards)
             apply(done.knownHosts, to: &hosts)
-            activity = (activity + done.activity).sorted { $0.date < $1.date }
+            let arrived = Set(done.activity.map(\.id))
+            activity = (activity.filter { !arrived.contains($0.id) } + done.activity).sorted { $0.date < $1.date }
             state = done.state
             key = done.key
             if let upload = done.upload { cloud = upload }
@@ -136,6 +137,28 @@ final class SyncKindsTests: XCTestCase {
         theirs.sync(&cloud, at: start.addingTimeInterval(7))
         mine.sync(&cloud, at: start.addingTimeInterval(8))
         XCTAssertEqual(mine.activity.map(\.summary), ["new"])
+    }
+
+    func testAStepAddedToATaskReachesTheOtherDevice() {
+        var cloud: Data?
+        var mine = Device()
+        var theirs = Device()
+        var task = entry("Install nginx", at: start)
+        task.task = "Install nginx"
+        task.steps = [task.asStep]
+        mine.activity = [task]
+        mine.sync(&cloud, at: start.addingTimeInterval(1))
+        theirs.sync(&cloud, at: start.addingTimeInterval(2))
+        XCTAssertEqual(theirs.activity.first?.steps?.count, 1)
+
+        let step = task.asStep
+        task.steps?.append(step)
+        task.updated = start.addingTimeInterval(3)
+        mine.activity = [task]
+        mine.sync(&cloud, at: start.addingTimeInterval(4))
+        theirs.sync(&cloud, at: start.addingTimeInterval(5))
+        XCTAssertEqual(theirs.activity.count, 1)
+        XCTAssertEqual(theirs.activity.first?.steps?.count, 2)
     }
 
     func testStoredActivityIsTheLatestAndItsOutputIsShortened() {

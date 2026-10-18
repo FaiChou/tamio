@@ -27,6 +27,12 @@ iOS version is planned, but work on it has not started yet.
   each change it makes is recorded on that server's Activity: which agent, on
   which Mac, what it ran, and what came back. Agents also log what they did
   outside Tamio (their own `ssh`, `scp`, a deploy).
+- **One entry per task, not per command.** An agent names the goal of each
+  step, such as "Install nginx", and every step toward it (the repository,
+  `apt update`, the install, its config) is kept as one entry, with each step
+  and its result under it. The next agent sees what was done at a glance.
+- **Filter by server.** Settings › MCP shows the activity of every server, or of
+  the one you pick.
 - **The history outlives the session.** An agent's session may be lost when you
   switch agents, swap devices or change computers. The record stays with the
   server, and syncs across your Macs, so the next agent knows what the last one
@@ -38,7 +44,9 @@ iOS version is planned, but work on it has not started yet.
   passphrase. An agent can add a key, or have Tamio generate one, and gets back
   only the public half.
 - **You approve first.** Every command, change and port forward an agent asks
-  for waits for you, showing exactly what will run and where.
+  for waits for you, showing exactly what will run and where. Allow it once,
+  for an hour, or always, for an agent left to work on its own; Settings › MCP
+  lists the agents always allowed, and revokes them.
 - **Only you can reach it.** The MCP server listens on a Unix socket that only
   your own user account can open. It doesn't use a network port.
 - **Encrypted on disk.** Servers and identities are stored encrypted, under a key
@@ -72,10 +80,12 @@ iOS version is planned, but work on it has not started yet.
 
 ### iCloud sync
 
+- On unless you turn it off, so your servers and what agents did on them are
+  never lost with a Mac.
 - Servers, identities, snippets, port forwards, known host keys and agent
   activity stay the same on all your Macs, each kind with its own switch.
-- iCloud Keychain carries the passphrase, so your other Macs turn sync on by
-  themselves.
+- Tamio makes the passphrase and iCloud Keychain carries it, so your other Macs
+  sync by themselves. Settings shows it, for a device without iCloud Keychain.
 
 ### App
 

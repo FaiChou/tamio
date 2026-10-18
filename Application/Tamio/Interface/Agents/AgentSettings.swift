@@ -30,8 +30,14 @@ struct AgentServerSettings: View {
                         .foregroundStyle(.rxInkSecondary)
                 }
             }
-            RXFormRow("Approvals", description: "Every command and change asks you first. “Allow for 1 Hour” lets that agent go on without asking until then.") {
+            RXFormRow("Approvals", description: "Every command and change asks you first. “Allow for 1 Hour” lets that agent go on without asking until then; “Always Allow” lets it work on its own, while you are away, until you revoke it here.") {
                 EmptyView()
+            }
+            ForEach(bridge.alwaysAllowed, id: \.self) { client in
+                RXFormRow(client, description: "Always allowed: runs commands and makes changes without asking.") {
+                    Button("Revoke") { bridge.revokeAlways(client) }
+                        .buttonStyle(.rx(size: .small))
+                }
             }
         }
     }
@@ -80,14 +86,49 @@ struct AgentSetupSettings: View {
 
 struct AgentActivitySettings: View {
     @ObservedObject private var log = AgentServer.shared.log
+    /// The server shown, by id; nil for every server.
+    @State private var server: String?
+
+    /// Every server with activity, by id, under its current name or the last
+    /// one recorded.
+    private var servers: [(id: String, name: String)] {
+        var names: [String: String] = [:]
+        for entry in log.entries {
+            for (id, name) in zip(entry.hosts, entry.hostNames) { names[id] = name }
+        }
+        for machine in TamioStore.shared.machineGroup.machines where names[machine.id.uuidString] != nil {
+            names[machine.id.uuidString] = machine.name
+        }
+        return names.map { (id: $0.key, name: $0.value) }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    private var shown: [AgentActivity] {
+        guard let server else { return log.entries }
+        return log.entries.filter { $0.hosts.contains(server) }
+    }
 
     var body: some View {
         RXDividedStack {
             if log.entries.isEmpty {
                 RXFormRow("No activity yet", description: "What agents run and change, and what they report, shows here and on each server.") { EmptyView() }
             } else {
-                ForEach(log.entries.suffix(30).reversed()) { entry in
-                    AgentActivityRow(entry: entry, showsHosts: true)
+                RXFormRow("Server", description: "Show what agents did on one server, or on all of them.") {
+                    Picker("Server", selection: $server) {
+                        Text("All Servers").tag(String?.none)
+                        ForEach(servers, id: \.id) { server in
+                            Text(server.name).tag(Optional(server.id))
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .fixedSize()
+                }
+                if shown.isEmpty {
+                    RXFormRow("No activity on this server", description: "Agents have not run or changed anything here yet.") { EmptyView() }
+                }
+                ForEach(shown.suffix(50).reversed()) { entry in
+                    AgentActivityRow(entry: entry, showsHosts: server == nil)
                         .padding(.vertical, RX.Space.s2)
                 }
                 HStack {
@@ -117,13 +158,13 @@ struct AgentActivityRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: RX.Space.s2) {
-                Image(systemName: entry.tool == "report" ? "text.bubble" : entry.tool.hasPrefix("run_") ? "terminal" : "pencil")
+                Image(systemName: (entry.steps?.count ?? 0) > 1 ? "list.bullet" : entry.tool == "report" ? "text.bubble" : entry.tool.hasPrefix("run_") ? "terminal" : "pencil")
                     .font(.system(size: 11))
                     .foregroundStyle(.rxAccent)
                     .frame(width: 14)
                 Text(entry.summary)
                     .font(.rxBodyStrong)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: RX.Space.s2)
                 Text(RXFormat.relative(entry.date))
                     .font(.rxHelp)
@@ -135,7 +176,8 @@ struct AgentActivityRow: View {
                 .font(.rxHelp)
                 .foregroundStyle(entry.outcome.hasPrefix("declined") ? Color.rxWarning : Color.rxInkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            if !entry.detail.isEmpty {
+            // Expanded, a task lists its steps instead.
+            if !entry.detail.isEmpty, !(expanded && (entry.steps?.count ?? 0) > 1) {
                 Text(entry.detail)
                     .font(.rxCode)
                     .foregroundStyle(.rxInk)
@@ -143,7 +185,22 @@ struct AgentActivityRow: View {
                     .textSelection(.enabled)
                     .onTapGesture { expanded.toggle() }
             }
-            if expanded {
+            if expanded, let steps = entry.steps, steps.count > 1 {
+                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(index + 1). \(step.summary) · \(step.outcome)")
+                            .font(.rxHelp)
+                            .foregroundStyle(step.outcome.hasPrefix("declined") || step.results.contains { $0.exitCode != 0 }
+                                ? Color.rxWarning : Color.rxInkSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(AgentActivity.line(step))
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(.rxInk)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            } else if expanded {
                 ForEach(entry.results, id: \.host) { result in
                     VStack(alignment: .leading, spacing: 2) {
                         Text("\(result.host) · \(result.exitCode.map { "exit \($0)" } ?? "no exit code")")

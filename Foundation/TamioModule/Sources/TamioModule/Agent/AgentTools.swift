@@ -109,7 +109,24 @@ enum AgentTools {
         "password": describe(string, "Password to sign in with, kept with this server. Write-only: never returned"),
     ]
 
-    static let definitions: [JSONValue] = [
+    /// The goal a call serves: every step with the same task is one entry
+    /// in the server's history.
+    static let task: JSONValue = describe(string, "Short name of the goal this step serves, e.g. \"Install nginx\". Use the same task for every step toward one goal (adding a repository, apt update, the install, its config): they are kept as one entry in the servers' history, so the next agent sees what was done")
+
+    /// Tools that change something take a task.
+    static func withTask(_ definition: JSONValue) -> JSONValue {
+        guard case var .object(tool) = definition, tool["annotations"]?["readOnlyHint"] == .bool(false),
+              case var .object(input) = tool["inputSchema"] ?? .null, case var .object(properties) = input["properties"] ?? .null
+        else { return definition }
+        properties["task"] = task
+        input["properties"] = .object(properties)
+        tool["inputSchema"] = .object(input)
+        return .object(tool)
+    }
+
+    static let definitions: [JSONValue] = toolList.map(withTask)
+
+    static let toolList: [JSONValue] = [
         tool("list_hosts", "Servers Tamio knows: address, port, user, group, tags, how they sign in. No secrets.",
              schema(["query": string, "group": string, "tag": string]), readOnly: true),
         tool("get_host", "One server, with its live status when Tamio has it.", schema(["host": describe(string, "Id, name or address")], required: ["host"]), readOnly: true),
@@ -375,7 +392,7 @@ enum AgentTools {
                 hosts: machines.map(\.id.uuidString), hostNames: machines.map(\.name),
                 summary: summary, detail: detail, outcome: "reported", results: []
             )
-            server.log.add(entry)
+            server.log.add(entry, task: a["task"]?.string)
             return ["recorded": .string(entry.id.uuidString)]
 
         default:

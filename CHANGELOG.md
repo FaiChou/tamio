@@ -46,14 +46,23 @@ The first release of Tamio, an SSH client for the Mac.
   and port forwards.
 - Agents never see passwords or private keys.
 - What agents do is recorded per server, under the server's Activity.
+- An agent names the task each step serves ("Install nginx"), and all the steps
+  of a task are one entry, with each step and its result under it.
+- Settings › MCP filters agent activity by server.
+- Approvals can be given once, for an hour, or always, for agents that work
+  alone while you are away. Always-allowed agents are listed in Settings › MCP,
+  where they can be revoked.
 - **Settings › MCP** turns the server on or off and sets up Claude Code, Codex
   and the Tamio skill.
 
 ### iCloud sync
 
+- On unless you turn it off, so what agents did on your servers is not lost
+  with a Mac.
 - Servers, identities, snippets, port forwards and known host keys stay the
   same on all your Macs, end-to-end encrypted under a passphrase only your
-  devices know.
+  devices know. Tamio makes it and keeps it in iCloud Keychain; Settings shows
+  it for a device without iCloud Keychain.
 - Agent activity from every Mac is kept together, so agents on one Mac know
   what was done from another.
 

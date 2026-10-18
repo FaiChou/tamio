@@ -26,6 +26,13 @@ final class AgentBridge: ObservableObject, AgentEnvironment {
     }
 
     @Published private(set) var isRunning = false
+    /// Agents allowed to act without asking until revoked.
+    @Published private(set) var alwaysAllowed = AgentServer.shared.alwaysAllowed
+
+    func revokeAlways(_ client: String) {
+        AgentServer.shared.revokeAlways(client)
+        alwaysAllowed = AgentServer.shared.alwaysAllowed
+    }
 
     /// Where agents launch the server from.
     static var helperPath: String {
@@ -62,8 +69,8 @@ final class AgentBridge: ObservableObject, AgentEnvironment {
             guard let bridge = Mac.bridge else { return continuation.resume(returning: false) }
             bridge.alert(
                 message: "\(request.client) wants to: \(request.title)",
-                informative: detail + hosts,
-                buttons: ["Allow", "Allow for 1 Hour", "Deny"],
+                informative: (request.task.map { "For: \($0)\n\n" } ?? "") + detail + hosts,
+                buttons: ["Allow", "Allow for 1 Hour", "Always Allow", "Deny"],
                 destructiveFirstButton: false,
                 textField: nil
             ) { index, _ in
@@ -71,6 +78,10 @@ final class AgentBridge: ObservableObject, AgentEnvironment {
                 case 0: continuation.resume(returning: true)
                 case 1:
                     AgentServer.shared.allowForAnHour(request.client)
+                    continuation.resume(returning: true)
+                case 2:
+                    AgentServer.shared.allowAlways(request.client)
+                    self.alwaysAllowed = AgentServer.shared.alwaysAllowed
                     continuation.resume(returning: true)
                 default: continuation.resume(returning: false)
                 }
@@ -142,8 +153,8 @@ final class AgentBridge: ObservableObject, AgentEnvironment {
         with the command "\(Self.helperPath)" (Claude Code: \(claudeCommand)). \
         Read the Tamio skill at "\(Self.skillFolder?.appendingPathComponent("SKILL.md").path ?? "Tamio.app/Contents/Resources/skills/tamio/SKILL.md")" \
         (also at https://github.com/missuo/tamio/tree/main/skills/tamio) and follow it: call get_activity before \
-        working on a server, run commands with run_command, and call log_activity for anything you change by \
-        other means. Tamio never gives out passwords or private keys; ask me to approve changes.
+        working on a server, run commands with run_command, give each change a task naming its goal ("Install \
+        nginx") so its steps are kept together, and call log_activity for anything you change by other means. Tamio never gives out passwords or private keys; ask me to approve changes.
         """
     }
 

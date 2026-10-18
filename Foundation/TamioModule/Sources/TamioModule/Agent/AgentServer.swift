@@ -35,6 +35,8 @@ public struct AgentRequest: Sendable {
     public let hosts: [String]
     /// The servers' ids, for their activity.
     public var hostIDs: [String] = []
+    /// The task the action serves, as the agent named it ("Install nginx").
+    public var task: String?
 }
 
 @MainActor
@@ -50,12 +52,32 @@ public final class AgentServer {
     /// The action the tool being called asked approval for; recorded when
     /// the call ends.
     private var pendingActivity: AgentRequest?
+    /// The task the tool being called serves, as the agent named it.
+    private var pendingTask: String?
 
     public init() {}
 
     /// Lets a client act without asking for an hour.
     public func allowForAnHour(_ client: String) {
         allowedUntil[client] = Date().addingTimeInterval(3600)
+    }
+
+    static let alwaysAllowedKey = "sb.moe.tamio.mcp.alwaysAllowed"
+
+    /// Clients the user lets act without asking until they revoke it, kept
+    /// across launches: for agents left to work alone.
+    public var alwaysAllowed: [String] {
+        (UserDefaults.standard.stringArray(forKey: Self.alwaysAllowedKey) ?? []).sorted()
+    }
+
+    public func allowAlways(_ client: String) {
+        guard !alwaysAllowed.contains(client) else { return }
+        UserDefaults.standard.set(alwaysAllowed + [client], forKey: Self.alwaysAllowedKey)
+    }
+
+    public func revokeAlways(_ client: String) {
+        UserDefaults.standard.set(alwaysAllowed.filter { $0 != client }, forKey: Self.alwaysAllowedKey)
+        allowedUntil[client] = nil
     }
 
     // MARK: - JSON-RPC
@@ -90,9 +112,11 @@ public final class AgentServer {
                 identities (SSH keys), snippets and port forwards. Passwords and private keys can be set but \
                 are never returned. Prefer generate: true in add_identity and give the user the public key.
                 Before working on a server, call get_activity for it to see what earlier agents did, on any \
-                of the user's Macs. Whenever you change a server by any other means (your own ssh, scp, a \
-                deploy tool), call log_activity for it with what you did and the commands you ran, so the \
-                next agent knows.
+                of the user's Macs. Give every call that changes something a task: a short name for the \
+                goal it serves ("Install nginx"), the same for every step toward that goal, so the steps \
+                are kept as one entry in the server's history. Whenever you change a server by any other \
+                means (your own ssh, scp, a deploy tool), call log_activity for it with what you did and \
+                the commands you ran, and the same task, so the next agent knows.
                 """,
             ])
         case "notifications/initialized", "notifications/cancelled":
@@ -149,6 +173,7 @@ public final class AgentServer {
     /// A tool's reply: its JSON as text, or an error the agent reads.
     func callTool(_ name: String, arguments: JSONValue, client: String) async -> JSONValue {
         pendingActivity = nil
+        pendingTask = arguments["task"]?.string
         do {
             let output = try await AgentTools.call(name, arguments: arguments, server: self, client: client)
             recordPending(outcome: "ok", output: output)
@@ -178,7 +203,7 @@ public final class AgentServer {
             device: AgentActivityLog.deviceName, client: request.client, tool: request.tool,
             hosts: request.hostIDs, hostNames: request.hosts,
             summary: request.title, detail: request.detail, outcome: summaryOutcome, results: results
-        ))
+        ), task: pendingTask)
     }
 
     /// Asks the user unless the client may act for now; throws when refused.
@@ -189,7 +214,9 @@ public final class AgentServer {
                 TamioStore.shared.machineGroup.machines.first { $0.name == name }?.id.uuidString
             }
         }
+        request.task = pendingTask
         pendingActivity = request
+        if alwaysAllowed.contains(request.client) { return }
         if let until = allowedUntil[request.client], until > Date() { return }
         guard let environment else { throw AgentToolError("Tamio is not ready to ask the user.") }
         guard await environment.approve(request) else {

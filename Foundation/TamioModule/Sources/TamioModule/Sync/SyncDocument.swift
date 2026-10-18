@@ -137,11 +137,19 @@ enum SyncActivity {
     static let tailLimit = 600
 
     static func trimmed(_ entry: AgentActivity) -> AgentActivity {
+        func shorten(_ results: [AgentActivity.Result]) -> [AgentActivity.Result] {
+            results.map { result in
+                var result = result
+                if result.tail.count > tailLimit { result.tail = String(result.tail.suffix(tailLimit)) }
+                return result
+            }
+        }
         var copy = entry
-        copy.results = copy.results.map { result in
-            var result = result
-            if result.tail.count > tailLimit { result.tail = String(result.tail.suffix(tailLimit)) }
-            return result
+        copy.results = shorten(copy.results)
+        copy.steps = copy.steps?.map { step in
+            var step = step
+            step.results = shorten(step.results)
+            return step
         }
         return copy
     }
@@ -152,13 +160,20 @@ enum SyncActivity {
     static func combine(
         local: [AgentActivity], remote: [AgentActivity], clearedAt: Date?
     ) -> (entries: [AgentActivity], arrived: [AgentActivity], dirty: Bool) {
+        // A task's entry grows a step at a time: the copy changed last wins.
         var byID: [UUID: AgentActivity] = [:]
         for entry in remote { byID[entry.id] = entry }
-        for entry in local.suffix(limit) where byID[entry.id] == nil { byID[entry.id] = trimmed(entry) }
+        for entry in local.suffix(limit) where byID[entry.id].map({ entry.lastChange > $0.lastChange }) ?? true {
+            byID[entry.id] = trimmed(entry)
+        }
         let entries = Array(byID.values.sorted { ($0.date, $0.id.uuidString) < ($1.date, $1.id.uuidString) }.suffix(limit))
-        let localIDs = Set(local.map(\.id))
-        let arrived = entries.filter { !localIDs.contains($0.id) && $0.date > (clearedAt ?? .distantPast) }
-        let dirty = entries.map(\.id) != remote.map(\.id)
+        let localChanges = Dictionary(local.map { ($0.id, $0.lastChange) }, uniquingKeysWith: { a, _ in a })
+        let arrived = entries.filter { entry in
+            guard entry.date > (clearedAt ?? .distantPast) else { return false }
+            return localChanges[entry.id].map { entry.lastChange > $0 } ?? true
+        }
+        let dirty = entries.map { "\($0.id)\($0.lastChange.timeIntervalSince1970)" }
+            != remote.map { "\($0.id)\($0.lastChange.timeIntervalSince1970)" }
         return (entries, arrived, dirty)
     }
 }
