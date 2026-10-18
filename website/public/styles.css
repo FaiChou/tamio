@@ -108,6 +108,14 @@ h1 {
 .cta { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 32px; }
 .fine { margin: 16px 0 0; font: 400 12.5px/1.4 var(--mono); color: var(--ink-3); letter-spacing: 0.02em; }
 
+/* Homebrew, under the download buttons */
+.brew {
+  display: inline-flex; align-items: center; gap: 10px; margin-top: 18px; max-width: 100%;
+  padding: 6px 6px 6px 14px; border-radius: 10px; background: var(--bg-raised); border: 1px solid var(--line);
+}
+.brew code { font-size: 13px; color: var(--ink); overflow-wrap: anywhere; text-align: left; }
+.brew code::before { content: "$ "; color: var(--ink-3); }
+
 /* Sections */
 .section { position: relative; padding: 96px 0; border-bottom: 1px solid var(--line); }
 .eyebrow { margin: 0; font: 500 12.5px var(--mono); letter-spacing: 0.08em; color: var(--accent-ink); text-transform: uppercase; }

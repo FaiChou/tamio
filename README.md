@@ -11,6 +11,17 @@ iOS version is planned, but work on it has not started yet.
 ![Swift](https://img.shields.io/badge/Swift-6.2-orange)
 [![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 
+## Install
+
+With [Homebrew](https://brew.sh):
+
+```sh
+brew install --cask owo-network/brew/tamio
+```
+
+Or download the disk image from [Releases](https://github.com/missuo/tamio/releases/latest).
+Tamio needs macOS 14 or later, and updates itself.
+
 ## Features
 
 ### Agents (MCP)
