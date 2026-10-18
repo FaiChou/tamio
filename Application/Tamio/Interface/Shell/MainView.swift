@@ -139,13 +139,13 @@ struct MainView: View {
             SnippetsView()
         case .portForward:
             PortForwardView()
-        case .settings, .terminal, .monitor, .transfer, .editor:
+        case .settings, .terminal, .monitor, .transfer:
             EmptyView()
         }
     }
 }
 
-/// Every open terminal, file browser, editor and monitor stays mounted; the route only
+/// Every open terminal, file browser and monitor stays mounted; the route only
 /// decides which one is visible. Switching between a server's Terminal, Files
 /// and Monitor (or between servers) is then a change of visibility, with no
 /// page or terminal surface rebuilt and scroll positions kept.
@@ -153,7 +153,6 @@ private struct SessionPages: View {
     let route: Route
     @ObservedObject var terminals = TerminalManager.shared
     @ObservedObject var transfers = FileTransferManager.shared
-    @ObservedObject var editors = EditorCenter.shared
     @ObservedObject var monitors = MonitorCenter.shared
 
     var body: some View {
@@ -165,10 +164,6 @@ private struct SessionPages: View {
             ForEach(transfers.transfers) { context in
                 FileTransferPage(context: context)
                     .sessionPage(active: route == .transfer(context.id))
-            }
-            ForEach(editors.workspaces) { workspace in
-                EditorPage(workspace: workspace)
-                    .sessionPage(active: route == .editor(workspace.id))
             }
             ForEach(monitors.sessions) { session in
                 MonitorPage(session: session)

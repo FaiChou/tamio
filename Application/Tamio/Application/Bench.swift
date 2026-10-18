@@ -109,29 +109,6 @@ import SwiftUI
             }
             try? await Task.sleep(nanoseconds: 500_000_000)
             NotificationCenter.default.post(name: .benchFiles, object: nil, userInfo: ["select": 6])
-            if ProcessInfo.processInfo.environment["TAMIO_PREVIEW_TOUR"] != nil { await tour(context) }
-        }
-
-        /// Goes back and forth between Files and the Editor, and from folder to
-        /// folder, so the motion between them can be watched or captured.
-        static func tour(_ context: FileTransferContext) async {
-            _ = EditorCenter.shared.workspace(for: context)
-            let list = context.currentFileList
-            for step in 0 ..< 8 {
-                try? await Task.sleep(nanoseconds: 1_500_000_000)
-                NSLog("TOUR step %d", step)
-                switch step % 4 {
-                case 0: AppRouter.shared.route = .editor(context.id)
-                case 1: AppRouter.shared.route = .transfer(context.id)
-                case 2:
-                    context.currentDir = "/var/log/nginx"
-                    context.currentFileList = Array(list.prefix(7))
-                default:
-                    context.currentDir = "/var/log"
-                    context.currentFileList = list
-                }
-            }
-            NSLog("TOUR done")
         }
 
         static func files(_ count: Int) async {

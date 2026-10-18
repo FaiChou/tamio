@@ -2,9 +2,10 @@
 //  TerminalPage.swift
 //  Tamio (macOS)
 //
-//  A terminal inside the main window: tabs for this server's terminals (closing
-//  is the tab's button), the Terminal · Files · Monitor switcher, text size and
-//  Reconnect. Status bar: the endpoint, then live figures while monitored.
+//  A terminal inside the main window: the Terminal · Files · Monitor switcher,
+//  text size and Reconnect. The sidebar lists a server's terminals, and its
+//  menu duplicates and closes them. Status bar: the endpoint, then live
+//  figures while monitored.
 //
 
 import MachineStatusView
@@ -38,14 +39,14 @@ struct TerminalPage: View {
         }
         .padding(.top, RX.Space.s3)
         .pageChrome()
-        // Closing is the tab's close button; no second one here.
+        // Closing and duplicating are in the sidebar's menu.
         .pageToolbar(
             primary: context.closed
                 ? ToolbarAction("Reconnect", systemImage: "arrow.clockwise", primary: true) { context.reconnect() }
                 : nil,
             trailingMetrics: .controlGroup
         ) {
-            SessionTabs(current: context)
+            EmptyView()
         } trailing: {
             Group {
                 Button {
@@ -113,111 +114,6 @@ struct TerminalPage: View {
     }
 }
 
-/// Tabs for this server's terminals (a Quick Connect terminal has only its own).
-/// The sidebar lists servers; these tabs pick among one server's terminals.
-struct SessionTabs: View {
-    @ObservedObject var current: TerminalManager.Context
-    @ObservedObject var terminals = TerminalManager.shared
-
-    private var siblings: [TerminalManager.Context] {
-        guard current.remoteType == .machine else { return [current] }
-        return terminals.sessionContexts.filter { $0.remoteType == .machine && $0.machine.id == current.machine.id }
-    }
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: RX.Space.s1) {
-                let siblings = siblings
-                ForEach(Array(siblings.enumerated()), id: \.element.id) { index, context in
-                    SessionTab(context: context, selected: context.id == current.id, number: siblings.count > 1 ? index + 1 : nil)
-                }
-                Button {
-                    if current.remoteType == .machine {
-                        AppRouter.shared.openTerminal(machine: current.machine.id)
-                    } else if let command = current.command {
-                        AppRouter.shared.openTerminal(command: command)
-                    }
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 13))
-                        .frame(width: 24, height: 24)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.rxInkSecondary)
-                .help("New Terminal")
-                .accessibilityLabel("New Terminal")
-            }
-            // With the toolbar capsule's own inset, 4pt from its ends.
-            .padding(.horizontal, 2.25)
-        }
-        .frame(maxWidth: 520)
-        .fixedSize(horizontal: false, vertical: true)
-    }
-}
-
-private struct SessionTab: View {
-    /// UIKit draws a bold xmark larger than AppKit does at the same size.
-    #if targetEnvironment(macCatalyst)
-        private static let closeGlyphSize: CGFloat = 7
-    #else
-        private static let closeGlyphSize: CGFloat = 9
-    #endif
-
-    @ObservedObject var context: TerminalManager.Context
-    let selected: Bool
-    /// Position among the server's terminals, when there is more than one.
-    let number: Int?
-
-    /// The server is already named in the sidebar and title; the tab names the
-    /// shell (its title, usually user@host: path), else its number.
-    private var title: String {
-        if !context.navigationSubtitle.isEmpty { return context.navigationSubtitle }
-        if let number { return "Terminal \(number)" }
-        return context.remoteType == .machine ? "Terminal" : context.displayName
-    }
-    @State private var hovered = false
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Text(title)
-                .font(.system(size: 12, weight: selected ? .medium : .regular))
-                .foregroundStyle(selected ? Color.rxInk : Color.rxInkSecondary)
-                .lineLimit(1)
-                .frame(maxWidth: 160)
-            Button {
-                TerminalSessionActions.close(context)
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: Self.closeGlyphSize, weight: .bold))
-                    .foregroundStyle(.rxInkSecondary)
-                    .frame(width: 16, height: 16)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .opacity(selected || hovered ? 1 : 0)
-            .accessibilityLabel("Close \(context.navigationTitle)")
-        }
-        .padding(.leading, 12)
-        .padding(.trailing, 6)
-        .frame(height: RX.controlHeight)
-        .background {
-            if selected {
-                Capsule().fill(Color.primary.opacity(0.1))
-            } else if hovered {
-                Capsule().fill(Color.primary.opacity(0.05))
-            }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture { AppRouter.shared.route = .terminal(context.id) }
-        .onHover { hovered = $0 }
-        .contextMenu {
-            if context.closed { Button("Reconnect") { context.reconnect() } }
-            Button("Close Session") { TerminalSessionActions.close(context) }
-        }
-    }
-}
-
 /// State, user@host:port, live CPU and memory while a monitor is open, font size.
 private struct TerminalStatusBar: View {
     @ObservedObject var context: TerminalManager.Context
@@ -280,6 +176,26 @@ extension TerminalManager.Context {
         if remoteType == .machine { return machine.name }
         if let command { return "\(command.username)@\(command.remoteAddress)" }
         return navigationTitle
+    }
+
+    /// A new terminal on the same server, or with the same Quick Connect command.
+    @MainActor
+    func duplicate() {
+        if remoteType == .machine {
+            AppRouter.shared.openTerminal(machine: machine.id, force: true)
+        } else if let command {
+            AppRouter.shared.openTerminal(command: command)
+        }
+    }
+
+    /// "Terminal" and its place among the server's terminals; the shell's
+    /// own title (user@host: path) is too long for a row, so it is the
+    /// row's tooltip.
+    @MainActor
+    var sidebarTitle: String {
+        let siblings = TerminalManager.shared.sessionContexts.filter { $0.remoteType == .machine && $0.machine.id == machine.id }
+        if let index = siblings.firstIndex(where: { $0.id == id }), siblings.count > 1 { return "Terminal \(index + 1)" }
+        return "Terminal"
     }
 
     /// Reconnects with the details from when this session started.

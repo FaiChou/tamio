@@ -43,7 +43,7 @@ public struct FileEntry: Identifiable, Equatable, Sendable {
 public class FileBrowser: ObservableObject, Identifiable {
     public let id = UUID()
 
-    @Published public private(set) var path: String
+    @Published public fileprivate(set) var path: String
     @Published public private(set) var entries: [FileEntry] = []
     @Published public private(set) var isLoading = false
     @Published public private(set) var error: String?
@@ -87,7 +87,21 @@ public class FileBrowser: ObservableObject, Identifiable {
         open((path as NSString).deletingLastPathComponent)
     }
 
+    /// Where the browser begins, when it is only known once connected (a
+    /// server's home folder); nil to stay where it is.
+    func startingPath() async -> String? { nil }
+    private var started = false
+
     public func reload() {
+        if !started {
+            started = true
+            isLoading = true
+            Task {
+                if let start = await startingPath(), start != path { path = start }
+                reload()
+            }
+            return
+        }
         let requested = path
         isLoading = true
         Task {
@@ -149,7 +163,8 @@ public final class LocalBrowser: FileBrowser {
             let url = URL(fileURLWithPath: path, isDirectory: true)
             let keys: [URLResourceKey] = [.isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey, .contentModificationDateKey]
             do {
-                let urls = try manager.contentsOfDirectory(at: url, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles])
+                // Hidden files are listed; the pane shows them when asked.
+                let urls = try manager.contentsOfDirectory(at: url, includingPropertiesForKeys: keys, options: [])
                 return .success(urls.map { item in
                     let values = try? item.resourceValues(forKeys: Set(keys))
                     let attributes = try? manager.attributesOfItem(atPath: item.path)
@@ -230,7 +245,34 @@ public final class RemoteBrowser: FileBrowser {
         server = machine
         identity = TamioStore.shared.associatedIdentity(for: machine)
         shell = NSRemoteShell.configured(for: machine, timeout: TamioStore.shared.timeoutNumber)
-        super.init(path: machine.fileTransferLoginPath.isEmpty ? "/" : machine.fileTransferLoginPath)
+        super.init(path: machine.startsInHomeFolder ? "/" : machine.fileTransferLoginPath)
+    }
+
+    /// The home folder of the user Tamio signs in as, unless the server
+    /// names another start folder.
+    override func startingPath() async -> String? {
+        guard server.startsInHomeFolder else { return nil }
+        let result = await onShell { shell -> String in
+            var output = ""
+            let lock = NSLock()
+            shell.beginExecute(
+                withCommand: "printf '%s' \"$HOME\"",
+                withTimeout: NSNumber(value: 10),
+                withOnCreate: {},
+                withOutput: { chunk in
+                    lock.lock()
+                    output += chunk
+                    lock.unlock()
+                },
+                withContinuationHandler: nil
+            )
+            lock.lock()
+            defer { lock.unlock() }
+            return output
+        }
+        guard case let .success(output) = result else { return nil }
+        let home = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        return home.hasPrefix("/") ? home : nil
     }
 
     override public var title: String { server.name }

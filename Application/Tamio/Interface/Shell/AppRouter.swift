@@ -21,8 +21,6 @@ enum Route: Hashable {
     case terminal(UUID)
     case monitor(UUID)
     case transfer(UUID)
-    /// A server's editor, by the id of the SFTP session it works over.
-    case editor(UUID)
 }
 
 /// The router and everything it publishes are main-thread state, like the
@@ -37,12 +35,21 @@ final class AppRouter: ObservableObject {
                 lastPlace = route
             } else if let owner = owner(of: route) {
                 lastRoute[owner] = route
+                if case let .terminal(id) = route { lastTerminal[owner] = id }
             }
         }
     }
     /// The page each server (or Quick Connect terminal) showed last, so its
     /// sidebar row returns to the same tool.
     private var lastRoute: [SessionOwner: Route] = [:]
+    /// The terminal each server showed last, for the switcher's Terminal.
+    private var lastTerminal: [SessionOwner: UUID] = [:]
+
+    /// The server's terminal used last, else its first.
+    func preferredTerminal(of owner: SessionOwner) -> TerminalManager.Context? {
+        let open = terminals(of: owner)
+        return open.first { $0.id == lastTerminal[owner] } ?? open.first
+    }
     /// The last page that is not a session; closing a session returns here.
     private(set) var lastPlace: Route = .home
     @Published var columnVisibility: NavigationSplitViewVisibility = .all
@@ -79,10 +86,6 @@ final class AppRouter: ObservableObject {
             if case let .transfer(id) = $0 { return id }
             return nil
         }
-        leaveWhenSessionEnds(EditorCenter.shared.$workspaces) {
-            if case let .editor(id) = $0 { return id }
-            return nil
-        }
     }
 
     /// Returns to the last non-session place once the open session page's id
@@ -105,9 +108,16 @@ final class AppRouter: ObservableObject {
 
     // MARK: - Session actions
 
-    func openTerminal(machine: RDMachine.ID) {
-        TerminalManager.shared.createSession(withMachineID: machine) { [weak self] context in
-            guard let self, self.opensAutomatically else { return }
+    /// A terminal on the server; `force` opens another without asking when
+    /// one is open (Duplicate Terminal).
+    func openTerminal(machine: RDMachine.ID, force: Bool = false) {
+        let machineObject = TamioStore.shared.machineGroup[machine]
+        guard machineObject.isNotPlaceholder() else {
+            UIBridge.presentError(with: "This server's details could not be read.")
+            return
+        }
+        TerminalManager.shared.createSession(withMachineObject: machineObject, force: force) { [weak self] context in
+            guard let self, force || self.opensAutomatically else { return }
             self.route = .terminal(context.id)
         }
     }
@@ -150,26 +160,6 @@ final class AppRouter: ObservableObject {
         }
     }
 
-    /// Shows the server's editor, connecting over SFTP if Files isn't open yet.
-    @MainActor
-    func openEditor(machine: RDMachine.ID) {
-        let manager = FileTransferManager.shared
-        if !manager.transfers.contains(where: { $0.machine.id == machine }) {
-            manager.begin(for: machine)
-        }
-        if let context = manager.transfers.first(where: { $0.machine.id == machine }) {
-            openEditor(context: context)
-        }
-    }
-
-    /// Shows the editor of an SFTP session, with the file at `path` in front.
-    @MainActor
-    func openEditor(context: FileTransferContext, path: String? = nil) {
-        let workspace = EditorCenter.shared.workspace(for: context)
-        if let path { workspace.open(path: path) }
-        route = .editor(context.id)
-    }
-
     @MainActor
     func showInMenuBar(machine: RDMachine.ID) {
         MenubarTool.shared.createRuncat(for: machine)
@@ -202,7 +192,7 @@ final class AppRouter: ObservableObject {
         case let .terminal(id):
             guard let context = TerminalManager.shared.sessionContexts.first(where: { $0.id == id }) else { return nil }
             return context.remoteType == .machine ? .server(context.machine.id) : .command(context.id)
-        case let .transfer(id), let .editor(id):
+        case let .transfer(id):
             return FileTransferManager.shared.transfers.first { $0.id == id }.map { .server($0.machine.id) }
         case let .monitor(id):
             return MonitorCenter.shared.session(withID: id).map { .server($0.machine.id) }
@@ -211,11 +201,10 @@ final class AppRouter: ObservableObject {
         }
     }
 
-    /// Every open session page, terminals first, then files, editors and monitors.
+    /// Every open session page, terminals first, then files and monitors.
     var sessionRoutes: [Route] {
         TerminalManager.shared.sessionContexts.map { .terminal($0.id) }
             + FileTransferManager.shared.transfers.map { .transfer($0.id) }
-            + EditorCenter.shared.workspaces.map { .editor($0.id) }
             + MonitorCenter.shared.sessions.map { .monitor($0.id) }
     }
 
@@ -224,6 +213,16 @@ final class AppRouter: ObservableObject {
     var openOwners: [SessionOwner] {
         var seen = Set<SessionOwner>()
         return sessionRoutes.compactMap(owner(of:)).filter { seen.insert($0).inserted }
+    }
+
+    /// The terminals of a server or Quick Connect command, in the order they opened.
+    func terminals(of owner: SessionOwner) -> [TerminalManager.Context] {
+        TerminalManager.shared.sessionContexts.filter { context in
+            switch owner {
+            case let .server(id): return context.remoteType == .machine && context.machine.id == id
+            case let .command(id): return context.id == id
+            }
+        }
     }
 
     func routes(of owner: SessionOwner) -> [Route] {
@@ -251,8 +250,6 @@ final class AppRouter: ObservableObject {
                 }
             case let .transfer(id):
                 FileTransferManager.shared.end(for: id)
-            case let .editor(id):
-                EditorCenter.shared.end(id)
             case let .monitor(id):
                 MonitorCenter.shared.end(id)
             default:
@@ -287,7 +284,7 @@ enum SessionOwner: Hashable {
 extension Route {
     var isSession: Bool {
         switch self {
-        case .terminal, .monitor, .transfer, .editor: return true
+        case .terminal, .monitor, .transfer: return true
         default: return false
         }
     }

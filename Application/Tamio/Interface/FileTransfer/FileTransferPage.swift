@@ -6,7 +6,7 @@
 //  the right to begin with, each able to show this Mac or any server. Drag
 //  files from one pane to the other (or from Finder) to copy them; the
 //  transfers run in a queue at the bottom with their progress, and browsing
-//  goes on meanwhile. Double-click a text file on a server to edit it.
+//  goes on meanwhile.
 //
 
 import SwiftUI
@@ -37,6 +37,8 @@ struct FileTransferPage: View {
         }
         .background(Color.rxSurface.opacity(0.4))
         .pageChrome()
+        // The toolbar carries the Terminal · Files · Monitor switcher.
+        .pageToolbar(leading: { EmptyView() }, trailing: { EmptyView() })
         .serverToolSwitcher(machine: context.machine.id, current: .files)
     }
 }
@@ -69,9 +71,10 @@ final class PaneModel: ObservableObject {
         browser?.reload()
     }
 
-    func entries(_ all: [FileEntry]) -> [FileEntry] {
+    func entries(_ all: [FileEntry], showsHidden: Bool) -> [FileEntry] {
         let needle = filter.trimmingCharacters(in: .whitespaces).lowercased()
-        let shown = needle.isEmpty ? all : all.filter { $0.name.lowercased().contains(needle) }
+        let visible = showsHidden ? all : all.filter { !$0.name.hasPrefix(".") }
+        let shown = needle.isEmpty ? visible : visible.filter { $0.name.lowercased().contains(needle) }
         return shown.sorted { lhs, rhs in
             if lhs.isDirectory != rhs.isDirectory { return lhs.isDirectory }
             let ordered: Bool
@@ -84,6 +87,12 @@ final class PaneModel: ObservableObject {
             return ascending ? ordered : !ordered
         }
     }
+}
+
+/// Whether Files lists files whose names start with a dot: off unless the
+/// user turns it on, in Settings or a pane's Actions menu.
+enum FilesPreference {
+    static let showsHiddenKey = "sb.moe.tamio.files.showsHidden"
 }
 
 /// What a drag between panes carries: where the files are, and which.
@@ -208,6 +217,7 @@ private struct BrowserPane: View {
 
     @State private var prompt: Prompt?
     @State private var hoveredFolder: String?
+    @AppStorage(FilesPreference.showsHiddenKey) private var showsHidden = false
     @State private var problem: String?
 
     enum Prompt: Identifiable {
@@ -224,7 +234,7 @@ private struct BrowserPane: View {
     }
 
     var isLocal: Bool { browser.machine == nil }
-    var shown: [FileEntry] { model.entries(browser.entries) }
+    var shown: [FileEntry] { model.entries(browser.entries, showsHidden: showsHidden) }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -288,6 +298,7 @@ private struct BrowserPane: View {
             Divider()
             Button("Go to Folder…") { ask("Go to folder", value: browser.path) { browser.open($0) } }
             Button("Refresh") { browser.reload() }
+            Toggle("Show Hidden Files", isOn: $showsHidden)
             Button("Copy Path") { UIBridge.sendPasteboard(str: browser.path) }
             if isLocal {
                 Button("Show in Finder") { UIApplication.shared.open(URL(fileURLWithPath: browser.path)) }
@@ -510,9 +521,7 @@ private struct BrowserPane: View {
         let targets = model.selection.contains(entry.path) ? selected : [entry]
         if entry.isDirectory {
             Button("Open") { browser.open(entry.path) }
-        } else if !isLocal {
-            Button("Edit") { edit(entry) }
-        } else {
+        } else if isLocal {
             Button("Open") { UIApplication.shared.open(URL(fileURLWithPath: entry.path)) }
         }
         if let target = peer.browser {
@@ -567,18 +576,7 @@ private struct BrowserPane: View {
         guard let entry else { return }
         if isLocal {
             UIApplication.shared.open(URL(fileURLWithPath: entry.path))
-        } else {
-            edit(entry)
         }
-    }
-
-    /// Text files on the page's own server open in its editor.
-    func edit(_ entry: FileEntry) {
-        guard browser.machine?.id == context.machine.id else {
-            problem = "Open \(browser.title)'s Files to edit its files."
-            return
-        }
-        AppRouter.shared.openEditor(context: context, path: entry.path)
     }
 
     func report(_ error: FileBrowserError?) {
@@ -947,19 +945,15 @@ private struct TransferRow: View {
 }
 
 enum FileTransferSessionActions {
-    /// Closes a server's SFTP session, and with it the editor that works over it.
+    /// Closes a server's SFTP session.
     @MainActor
     static func close(_ context: FileTransferContext) {
-        let unsaved = EditorCenter.shared.workspaces.first { $0.id == context.id }?.hasUnsavedChanges == true
-        if context.isProgressRunning || !TransferQueue.shared.active.isEmpty || unsaved {
+        if context.isProgressRunning || !TransferQueue.shared.active.isEmpty {
             UIBridge.requiresConfirmation(
                 message: "Close the file transfer on \(context.machine.name)?",
-                informative: unsaved
-                    ? "Files open in the editor have changes that are not saved. They are lost if you close."
-                    : "A transfer is still running and will be interrupted.",
-                confirmTitle: unsaved ? "Discard Changes" : "Close",
-                destructive: true,
-                always: unsaved
+                informative: "A transfer is still running and will be interrupted.",
+                confirmTitle: "Close",
+                destructive: true
             ) { confirmed in
                 if confirmed { FileTransferManager.shared.end(for: context.id) }
             }

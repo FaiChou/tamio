@@ -13,11 +13,9 @@ options:
 packages:
   TamioModule: { path: ../../Foundation/TamioModule }
   TamioTerminal: { path: ../../Foundation/TamioTerminal }
-  TamioEditor: { path: ../../Foundation/TamioEditor }
   MachineStatus: { path: ../../Foundation/MachineStatus }
   MachineStatusView: { path: ../../Foundation/MachineStatusView }
   SymbolPicker: { path: ../../Foundation/SymbolPicker }
-  CodeMirrorUI: { path: ../../External/CodeMirrorUI }
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -104,12 +102,9 @@ targets:
     dependencies:
       - package: TamioModule
       - package: TamioTerminal
-      - package: TamioEditor
       - package: MachineStatus
       - package: MachineStatusView
       - package: SymbolPicker
-      - package: CodeMirrorUI
-        product: CodeEditorUI
       - target: MacBridge
         embed: true
         copy:

@@ -110,7 +110,7 @@ public class FileTransferContext: ObservableObject, Identifiable, Equatable {
     public init(machine: RDMachine, identity: RDIdentity? = nil) {
         self.machine = machine
         self.identity = identity
-        currentDir = machine.fileTransferLoginPath
+        currentDir = machine.startsInHomeFolder ? "/" : machine.fileTransferLoginPath
         DispatchQueue.global().async {
             self.processBootstrap()
         }

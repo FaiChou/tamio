@@ -31,6 +31,9 @@ struct SettingsView: View {
                 ConfigHostSettingsSection(id: "general.sessions", keywords: "open sessions automatically ask before closing confirmation quit") {
                     SessionSettings().environmentObject(store)
                 },
+                ConfigHostSettingsSection(id: "general.files", keywords: "files sftp hidden dot files show") {
+                    FilesSettings()
+                },
                 ConfigHostSettingsSection(id: "general.recent", keywords: "recent servers history quick connect commands record remember") {
                     RecentSettings().environmentObject(store)
                 },
@@ -154,6 +157,20 @@ private struct SessionSettings: View {
                 "Ask before closing a session",
                 description: "Confirm before closing a connected terminal or quitting.",
                 isOn: Binding(get: { !store.disableConformation }, set: { store.disableConformation = !$0 })
+            )
+        }
+    }
+}
+
+private struct FilesSettings: View {
+    @AppStorage(FilesPreference.showsHiddenKey) private var showsHidden = false
+
+    var body: some View {
+        RXDividedStack {
+            SwitchRow(
+                "Show hidden files",
+                description: "Files whose names start with a dot, on this Mac and on servers. Each pane's Actions menu turns them on and off too.",
+                isOn: $showsHidden
             )
         }
     }
@@ -366,7 +383,7 @@ private struct AcknowledgementSettings: View {
             RXFormRow("Terminal", description: "Ghostty, its configuration catalog and app icon presets (MIT, Ghostty contributors).") {
                 EmptyView()
             }
-            RXFormRow("Libraries", description: "libssh2 · NSRemoteShell · CodeMirror · XMLCoder · SymbolPicker · Keychain") {
+            RXFormRow("Libraries", description: "libssh2 · NSRemoteShell · XMLCoder · SymbolPicker · Keychain") {
                 EmptyView()
             }
         }

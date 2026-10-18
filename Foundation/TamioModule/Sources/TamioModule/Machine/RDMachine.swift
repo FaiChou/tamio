@@ -48,13 +48,22 @@ public struct RDMachine: Codable, Identifiable, Equatable, Sendable {
     // reserved for future use
     public var attachment: [String: String]
 
+    /// Where Files opens on this server; empty for the user's home folder.
     public var fileTransferLoginPath: String {
         get {
-            attachment["sftp.login.path", default: "/"]
+            attachment["sftp.login.path", default: ""]
         }
         set {
             attachment["sftp.login.path"] = newValue
         }
+    }
+
+    /// Files opens in the home folder of the user it signs in as. "/" was
+    /// the default once and was saved with servers nobody chose it for, so
+    /// it means the home folder too.
+    public var startsInHomeFolder: Bool {
+        let path = fileTransferLoginPath.trimmingCharacters(in: .whitespaces)
+        return path.isEmpty || path == "/"
     }
 
     /// The user to sign in as. The identity only says how (password or key).

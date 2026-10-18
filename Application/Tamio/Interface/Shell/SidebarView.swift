@@ -2,8 +2,9 @@
 //  SidebarView.swift
 //  Tamio (macOS)
 //
-//  Home · Manage · Sessions (one row per server with open sessions; the page's
-//  toolbar switches between its Terminal, Files and Monitor), with Settings
+//  Home · Manage · Sessions (one row per server with open sessions, and under
+//  it a row per terminal when it has several; the page's toolbar switches
+//  between its Terminal, Files and Monitor), with Settings
 //  pinned to the bottom-left corner. Drawn to the measurements of an AppKit
 //  source list, which UIKit's sidebar list does not share.
 //
@@ -25,10 +26,17 @@ struct SidebarView: View {
     enum Item: Hashable {
         case place(Route)
         case owner(SessionOwner)
+        /// One of a server's terminals, when it has several.
+        case terminal(UUID)
     }
 
     var selection: Binding<Item?> {
         Binding(get: {
+            if case let .terminal(id) = router.route, let owner = router.owner(of: router.route),
+               router.terminals(of: owner).count > 1
+            {
+                return .terminal(id)
+            }
             if router.route.isSession {
                 return router.owner(of: router.route).map(Item.owner)
             }
@@ -37,6 +45,7 @@ struct SidebarView: View {
             switch item {
             case let .place(route): router.route = route
             case let .owner(owner): router.show(owner)
+            case let .terminal(id): router.route = .terminal(id)
             case nil: break
             }
         })
@@ -68,6 +77,18 @@ struct SidebarView: View {
                             OwnerSidebarRow(owner: owner)
                         }
                         .transition(.opacity)
+                        // Several terminals: one row each, under the server.
+                        let terminals = router.terminals(of: owner)
+                        if terminals.count > 1 {
+                            ForEach(terminals) { context in
+                                SidebarRow(isSelected: selection.wrappedValue == .terminal(context.id)) {
+                                    selection.wrappedValue = .terminal(context.id)
+                                } label: {
+                                    TerminalSidebarRow(context: context)
+                                }
+                                .transition(.opacity)
+                            }
+                        }
                     }
                 }
             }
@@ -243,7 +264,6 @@ private struct OwnerSidebarRow: View {
     @EnvironmentObject var store: TamioStore
     @ObservedObject var terminals = TerminalManager.shared
     @ObservedObject var transfers = FileTransferManager.shared
-    @ObservedObject var editors = EditorCenter.shared
     @ObservedObject var monitors = MonitorCenter.shared
 
     private var routes: [Route] { AppRouter.shared.routes(of: owner) }
@@ -262,7 +282,7 @@ private struct OwnerSidebarRow: View {
         ServerTool.allCases.filter { tool in
             routes.contains { route in
                 switch (tool, route) {
-                case (.terminal, .terminal), (.files, .transfer), (.editor, .editor), (.monitor, .monitor): return true
+                case (.terminal, .terminal), (.files, .transfer), (.monitor, .monitor): return true
                 default: return false
                 }
             }
@@ -292,20 +312,20 @@ private struct OwnerSidebarRow: View {
     }
 
     @ViewBuilder var menu: some View {
+        if let terminal = AppRouter.shared.terminals(of: owner).first {
+            Button("Duplicate Terminal") { terminal.duplicate() }
+            Divider()
+        }
         ForEach(routes, id: \.self) { route in
             switch route {
             case let .terminal(id):
                 if let context = terminals.sessionContexts.first(where: { $0.id == id }) {
-                    if context.closed { Button("Reconnect Terminal") { context.reconnect() } }
-                    Button("Close Terminal") { TerminalSessionActions.close(context) }
+                    if context.closed { Button("Reconnect \(context.sidebarTitle)") { context.reconnect() } }
+                    Button("Close \(context.sidebarTitle)") { TerminalSessionActions.close(context) }
                 }
             case let .transfer(id):
                 if let context = transfers.transfers.first(where: { $0.id == id }) {
                     Button("Close Files") { FileTransferSessionActions.close(context) }
-                }
-            case let .editor(id):
-                if let workspace = editors.workspaces.first(where: { $0.id == id }) {
-                    Button("Close Editor") { EditorSessionActions.close(workspace) }
                 }
             case let .monitor(id):
                 Button("Close Monitor") { MonitorCenter.shared.end(id) }
@@ -316,20 +336,42 @@ private struct OwnerSidebarRow: View {
         if routes.count > 1 {
             Divider()
             Button("Close All") {
-                let unsaved = routes.contains { route in
-                    guard case let .editor(id) = route else { return false }
-                    return editors.workspaces.first { $0.id == id }?.hasUnsavedChanges ?? false
-                }
                 UIBridge.requiresConfirmation(
                     message: "Close everything open on \(title)?",
-                    informative: unsaved ? "Unsaved changes in the editor will be lost." : nil,
-                    confirmTitle: unsaved ? "Discard Changes and Close" : "Close All",
-                    destructive: true,
-                    always: unsaved
+                    confirmTitle: "Close All",
+                    destructive: true
                 ) { confirmed in
                     if confirmed { AppRouter.shared.closeAll(owner) }
                 }
             }
+        }
+    }
+}
+
+/// One of a server's terminals, under the server's row: the shell's title.
+private struct TerminalSidebarRow: View {
+    @ObservedObject var context: TerminalManager.Context
+    @Environment(\.sidebarMetrics) private var metrics
+    @Environment(\.isSidebarRowSelected) private var isSelected
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(context.closed ? Color.rxInkTertiary : Color.rxSuccess)
+                .frame(width: 6, height: 6)
+            Text(context.sidebarTitle)
+                .font(.system(size: metrics.fontSize - 1, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(.primary)
+                .fixedSize()
+                .help(context.navigationSubtitle.isEmpty ? context.sidebarTitle : context.navigationSubtitle)
+            Spacer(minLength: 4)
+        }
+        .padding(.leading, metrics.titleLeading)
+        .contextMenu {
+            Button("Duplicate Terminal") { context.duplicate() }
+            if context.closed { Button("Reconnect") { context.reconnect() } }
+            Divider()
+            Button("Close Terminal") { TerminalSessionActions.close(context) }
         }
     }
 }

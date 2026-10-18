@@ -5,7 +5,6 @@
 //  Created by Lakr Aream on 2022/2/8.
 //
 
-import CodeEditorUI
 import TamioModule
 import TamioTerminal
 import MachineStatusView
@@ -200,9 +199,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                 MenubarTool.shared.showPreview()
             }
             Bench.runIfRequested()
-            if ProcessInfo.processInfo.environment["TAMIO_PREVIEW_EDITOR"] != nil {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { AppRouter.shared.showEditorPreview() }
-            }
         #endif
         return true
     }
@@ -227,24 +223,16 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     @MainActor func mayTerminate() -> Bool {
         // The question was answered; this is the quit that follows it.
         if quitConfirmed { return true }
-        let terminals = !TerminalManager.shared.sessionContexts.isEmpty
-        // Unsaved text is always asked about, whatever the setting.
-        let unsaved = EditorCenter.shared.workspaces.contains(where: \.hasUnsavedChanges)
-        guard terminals || unsaved else { return true }
-        if TamioStore.shared.disableConformation, !unsaved {
+        guard !TerminalManager.shared.sessionContexts.isEmpty else { return true }
+        if TamioStore.shared.disableConformation {
             TerminalManager.shared.closeAll()
             return true
         }
-        let consequences = [
-            unsaved ? "Unsaved changes in the editor will be lost." : nil,
-            terminals ? "Open terminal sessions will be closed." : nil,
-        ]
         UIBridge.requiresConfirmation(
             message: "Quit Tamio?",
-            informative: consequences.compactMap { $0 }.joined(separator: " "),
-            confirmTitle: unsaved ? "Discard Changes and Quit" : "Quit",
-            destructive: true,
-            always: unsaved
+            informative: "Open terminal sessions will be closed.",
+            confirmTitle: "Quit",
+            destructive: true
         ) { confirmed in
             guard confirmed else { return }
             MainActor.assumeIsolated { self.quitConfirmed = true }

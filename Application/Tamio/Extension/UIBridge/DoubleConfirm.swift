@@ -60,8 +60,6 @@ final class MacFileTransferUIHandler: FileTransferUIHandler {
         // not MainActor because it witnesses a nonisolated protocol.
         let id = context.id
         MainActor.assumeIsolated {
-            // Opened for the editor, the session stays on the editor.
-            if AppRouter.shared.route == .editor(id) { return }
             AppRouter.shared.route = .transfer(id)
         }
     }

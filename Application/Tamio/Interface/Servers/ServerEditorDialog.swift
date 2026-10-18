@@ -32,7 +32,7 @@ struct ServerDraft: Equatable {
     var password = ""
     /// The SSH key, an identity from Identities.
     var key: RDIdentity.ID?
-    var startFolder = "/"
+    var startFolder = ""
     var startupSnippet: RDSnippet.ID?
     var comment = ""
 }
@@ -279,7 +279,7 @@ struct ServerEditorDialog: View {
             if showsAdvanced {
                 VStack(alignment: .leading, spacing: RX.Space.s3) {
                     row("SFTP start folder") {
-                        TextField("/", text: $draft.startFolder)
+                        TextField("Home folder", text: $draft.startFolder)
                             .textFieldStyle(.rxMono)
                             .disableAutocorrection(true)
                     }
@@ -381,10 +381,10 @@ struct ServerEditorDialog: View {
         draft.group = read.group
         draft.tags = read.tags.joined(separator: ", ")
         draft.comment = read.comment
-        draft.startFolder = read.fileTransferLoginPath
+        draft.startFolder = read.startsInHomeFolder ? "" : read.fileTransferLoginPath
         draft.startupSnippet = read.startupSnippet
         banner = read.lastBanner
-        showsAdvanced = read.startupSnippet != nil || !read.comment.isEmpty || read.fileTransferLoginPath != "/"
+        showsAdvanced = read.startupSnippet != nil || !read.comment.isEmpty || !read.startsInHomeFolder
         let identity = read.associatedIdentity.flatMap(UUID.init(uuidString:)).map { store.identityGroup[$0] }
         let user = read.loginUsername(with: identity)
         draft.username = user == RDMachine.defaultUsername && read.username.isEmpty ? "" : user
@@ -452,7 +452,7 @@ struct ServerEditorDialog: View {
         target.group = draft.group.trimmingCharacters(in: .whitespaces)
         target.tags = draft.tags.split(separator: ",").map(String.init)
         target.comment = draft.comment
-        target.fileTransferLoginPath = draft.startFolder.isEmpty ? "/" : draft.startFolder
+        target.fileTransferLoginPath = draft.startFolder.trimmingCharacters(in: .whitespaces)
         target.startupSnippet = draft.startupSnippet
 
         let previousPrivate = existingPrivateIdentity
