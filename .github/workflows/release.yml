@@ -1,10 +1,8 @@
 # Pushing a tag "v<version>" builds the Mac disk image (Developer ID signed and
-# notarized), signs it for Sparkle and writes the appcast, and leaves both in a
-# DRAFT release whose notes are the version's section of CHANGELOG.md. Nothing
-# reaches anyone until the maintainer publishes the draft (Releases → Edit →
-# Publish release, or `gh release edit v<version> --draft=false`): drafts are
-# invisible, and the app's feed, the latest release's appcast.xml, only ever
-# points at a published release. Signing happens only here.
+# notarized), signs it for Sparkle and writes the appcast, and publishes both as
+# the latest release, with the version's section of CHANGELOG.md for its notes.
+# The app's feed is the latest release's appcast.xml, so installed copies see
+# the new version as soon as the run ends. Signing happens only here.
 #
 # Run by hand (Actions → Release → Run workflow) it only builds, and keeps the
 # products as artifacts of the run; without the secrets the Mac app is then
@@ -170,7 +168,7 @@ jobs:
             > DerivedData/Release/appcast.xml
           cat DerivedData/Release/appcast.xml
 
-      - name: Draft the release
+      - name: Publish the release
         if: env.IS_TAG == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -178,11 +176,10 @@ jobs:
           bash Workflow/Scripts/release-notes.sh "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
           gh release create "$GITHUB_REF_NAME" \
             DerivedData/Release/Tamio-*.dmg DerivedData/Release/appcast.xml \
-            --draft --title "Tamio ${GITHUB_REF_NAME#v}" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag
+            --latest --title "Tamio ${GITHUB_REF_NAME#v}" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag
           {
-            echo "### Waiting for approval"
-            echo "Tamio ${GITHUB_REF_NAME#v} is built, notarized and signed, in a draft release."
-            echo "Publish it to ship: \`gh release edit $GITHUB_REF_NAME --draft=false\`"
+            echo "### Released"
+            echo "Tamio ${GITHUB_REF_NAME#v} is built, notarized, signed and published as the latest release."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remove the signing keychain
