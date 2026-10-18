@@ -1,0 +1,12 @@
+{
+  "name": "tamio-website",
+  "private": true,
+  "description": "tamio.sh, served by Cloudflare Workers",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.70.0"
+  }
+}

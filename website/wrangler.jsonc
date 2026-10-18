@@ -1,0 +1,20 @@
+{
+  // tamio.sh: the static site in public/, behind a small Worker (src/index.js).
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tamio-website",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "404-page",
+    // The Worker answers first: it redirects www and /download.
+    "run_worker_first": true
+  },
+  "routes": [
+    { "pattern": "tamio.sh", "custom_domain": true },
+    { "pattern": "www.tamio.sh", "custom_domain": true }
+  ],
+  "workers_dev": false,
+  "observability": { "enabled": true }
+}
