@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- The link preview image (og.png): render with og/render.sh. It uses the
+       site's own drawn window (demo.css, demo.js), in dark. -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800&family=JetBrains+Mono:wght@500&family=Noto+Sans+JP:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/demo.css">
+  <style>
+    html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+    body {
+      position: relative; background: #07090e; color: #eef1f7;
+      font-family: Inter, -apple-system, sans-serif; -webkit-font-smoothing: antialiased;
+    }
+    .bg { position: absolute; inset: 0; background:
+      radial-gradient(38% 55% at 18% 30%, rgba(43, 137, 253, 0.42), transparent 70%),
+      radial-gradient(45% 60% at 82% 85%, rgba(133, 131, 255, 0.30), transparent 70%),
+      radial-gradient(30% 40% at 70% 10%, rgba(94, 166, 255, 0.16), transparent 70%); }
+    .grid { position: absolute; inset: 0; background-image:
+      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      background-size: 40px 40px;
+      -webkit-mask-image: radial-gradient(80% 90% at 40% 50%, #000 20%, transparent 80%); }
+    .left { position: absolute; left: 72px; top: 0; bottom: 0; width: 500px; display: flex; flex-direction: column; justify-content: center; }
+    .brand { display: flex; align-items: center; gap: 18px; }
+    .brand img { width: 84px; height: 84px; filter: drop-shadow(0 12px 30px rgba(43, 137, 253, 0.55)); }
+    .brand b { display: block; font-size: 34px; font-weight: 700; letter-spacing: -0.02em; }
+    .brand span { font: 500 15px/1 'JetBrains Mono', monospace; letter-spacing: 0.1em; color: #8f9ab0; }
+    .brand span i { font-style: normal; font-family: 'Noto Sans JP', sans-serif; letter-spacing: 0.18em; }
+    h1 { margin: 34px 0 0; font-size: 58px; line-height: 1.02; font-weight: 800; letter-spacing: -0.045em;
+      background: linear-gradient(180deg, #ffffff 30%, #b7c9ff); -webkit-background-clip: text; color: transparent; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+    .chips span { font: 500 15px/1 'JetBrains Mono', monospace; padding: 9px 12px; border-radius: 9px;
+      color: #cfd8ea; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); }
+    .chips span.hot { color: #fff; background: rgba(43, 137, 253, 0.25); border-color: rgba(94, 166, 255, 0.55); }
+    .url { margin-top: 30px; font: 500 20px 'JetBrains Mono', monospace; color: #5ea6ff; }
+
+    .stage { position: absolute; left: 600px; top: 70px; perspective: 1600px; }
+    .tilt { transform: rotateY(-16deg) rotateX(7deg) rotateZ(-1deg); transform-style: preserve-3d; transform-origin: left center; }
+    .win { width: 1180px; height: 720px; transform: scale(0.62); transform-origin: top left; }
+    .win .tw { box-shadow: 0 50px 120px -20px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.10); }
+    .prompt { position: absolute; left: 540px; top: 318px; transform: scale(0.8); transform-origin: top left;
+      filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.6)); }
+    .prompt .tw-alert-stage { all: unset; display: block; }
+    .prompt .tw-alert-result { display: none; }
+  </style>
+</head>
+<body>
+  <div class="bg"></div><div class="grid"></div>
+  <section class="left">
+    <div class="brand"><img src="/icon.png" alt=""><div><b>Tamio</b><span><i>ターミオ</i> · Tāmio</span></div></div>
+    <h1>The SSH client<br>your agents<br>can use.</h1>
+    <div class="chips"><span>SSH</span><span>SFTP</span><span>Live status</span><span class="hot">MCP for agents</span></div>
+    <div class="url">tamio.sh</div>
+  </section>
+  <div class="stage"><div class="tilt"><div class="win"><div data-demo="window"><div class="demo-scale"></div></div></div></div></div>
+  <div class="prompt"><div class="tw-alert-stage" data-demo="alert"></div></div>
+  <script src="/demo.js"></script>
+</body>
+</html>
