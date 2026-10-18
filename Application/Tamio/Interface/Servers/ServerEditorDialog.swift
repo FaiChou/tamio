@@ -371,7 +371,15 @@ struct ServerEditorDialog: View {
             loaded = draft
             if isNew { addressFocused = true }
         }
-        guard let machine else { return }
+        guard let machine else {
+            // A new server signs in with a key when there is one to choose:
+            // the first the picker lists.
+            if let first = keys.first {
+                draft.credential = .key
+                draft.key = first.id
+            }
+            return
+        }
         let read = store.machineGroup[machine]
         draft.address = read.remoteAddress
         draft.label = read.name == read.remoteAddress ? "" : read.name

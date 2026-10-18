@@ -11,6 +11,18 @@ the user. To release, rename that heading to the version and date
 (`## [0.2.0] - 2026-11-02`), set `MARKETING_VERSION` to match, and tag
 `v0.2.0`.
 
+## [Unreleased]
+
+### Changed
+- **New Server starts on the first SSH key.** With a key in Identities, the
+  dialog opens with SSH key chosen and the first key picked; a password is a
+  click away. With no key yet it starts on Password, as before.
+
+### Fixed
+- **A right-click anywhere on a session row opens its menu.** The menu
+  answered only a click on the row's text or symbols; the space between
+  them, and above and below, did nothing.
+
 ## [0.2.1] - 2026-10-18
 
 ### Added

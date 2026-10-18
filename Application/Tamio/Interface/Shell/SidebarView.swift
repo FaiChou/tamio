@@ -212,6 +212,16 @@ private struct SidebarRow<Label: View>: View {
     }
 }
 
+extension View {
+    /// The whole row as the hit area, so a context menu attached after this
+    /// opens from a right-click anywhere on the row, not only on its text.
+    fileprivate func sidebarRowShape(_ metrics: SidebarMetrics) -> some View {
+        frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: metrics.rowHeight)
+            .contentShape(Rectangle())
+    }
+}
+
 /// Icon in the accent colour, title, and a count at the trailing edge.
 struct SidebarLabel<Title: View>: View {
     let systemImage: String
@@ -360,6 +370,7 @@ private struct OwnerSidebarRow: View {
                 .accessibilityHidden(true)
             }
         }
+        .sidebarRowShape(metrics)
         // The whole name, for one too long for the row.
         .help("\(title) · " + openTools.map(\.title).joined(separator: ", ") + " open")
         .contextMenu { menu }
@@ -422,6 +433,7 @@ private struct TerminalSidebarRow: View {
         }
         // Under the server's name, a step in.
         .padding(.leading, metrics.nameLeading + RX.Space.s3)
+        .sidebarRowShape(metrics)
         .contextMenu {
             Button("Duplicate Terminal") { context.duplicate() }
             if context.closed { Button("Reconnect") { context.reconnect() } }
