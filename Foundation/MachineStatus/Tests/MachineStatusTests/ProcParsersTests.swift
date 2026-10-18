@@ -257,7 +257,43 @@ final class ProcParsersTests: XCTestCase {
         // keeps one filesystem per line.
         let elements = ProcParsers.parseDfPk(dfPkFixture)
         XCTAssertTrue(elements.contains { $0.mountPoint == "/" })
-        XCTAssertEqual(elements.count, 7)
+        XCTAssertEqual(elements.map(\.mountPoint), ["/", "/boot", "/media/My Passport"])
+    }
+
+    func testDfPkLeavesOutContainerSnapAndSystemMounts() {
+        let raw = """
+        Filesystem     1024-blocks     Used Available Capacity Mounted on
+        /dev/vda1         82045336 41022668  37661772      53% /
+        overlay           82045336 41022668  37661772      53% /var/lib/docker/overlay2/4f1c2b0e9d/merged
+        overlay           82045336 41022668  37661772      53% /var/lib/docker/overlay2/a77e01c3f2/merged
+        shm                  65536        0     65536       0% /var/lib/docker/containers/4f1c2b0e9d/mounts/shm
+        tmpfs              1007500     1240   1006260       1% /run
+        tmpfs              5037496        0   5037496       0% /dev/shm
+        tmpfs                 5120        0      5120       0% /run/lock
+        /dev/loop0           65536    65536         1     100% /snap/core20/2318
+        /dev/vda15          106858     6186    100672       6% /boot/efi
+        /dev/vda1         82045336 41022668  37661772      53% /var/lib/kubelet/pods/9c1e/volumes/x
+        /dev/vdb1        515928320 12345678 477298176       3% /data
+        tmpfs              1007496        4   1007492       1% /run/user/1000
+        """
+        XCTAssertEqual(ProcParsers.parseDfPk(raw).map(\.mountPoint), ["/", "/boot/efi", "/data"])
+    }
+
+    func testDfPkKeepsTheMacsDataVolumeOnly() {
+        let raw = """
+        Filesystem     1024-blocks      Used Available Capacity Mounted on
+        /dev/disk3s1s1  971350180  10520936 430132872       3% /
+        devfs                 213       213         0     100% /dev
+        /dev/disk3s6    971350180   2097172 430132872       1% /System/Volumes/VM
+        /dev/disk3s2    971350180   6851420 430132872       2% /System/Volumes/Preboot
+        /dev/disk3s4    971350180      5576 430132872       1% /System/Volumes/Update
+        /dev/disk3s5    971350180 520073712 430132872      55% /System/Volumes/Data
+        map auto_home           0         0         0     100% /System/Volumes/Data/home
+        /dev/disk7s1   1953513984 1789235200  97436672      95% /Volumes/.timemachine/2BD27D3E/2026-10-08-081719.backup
+        /dev/disk8s1   1953513984 1789235200  97436672      95% /Volumes/Samsung SSD 990 EVO 2TB
+        /dev/disk5s1      2097152   2023424     73728      97% /private/var/run/com.apple.security.cryptexd/mnt/x
+        """
+        XCTAssertEqual(ProcParsers.parseDfPk(raw).map(\.mountPoint), ["/", "/System/Volumes/Data", "/Volumes/Samsung SSD 990 EVO 2TB"])
     }
 
     func testDfPkKeepsSpacesInMountPointAndSkipsEmptyFilesystems() {

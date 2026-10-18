@@ -214,12 +214,42 @@ enum ProcParsers {
         return String(format: "%.1f%@", value, units[index])
     }
 
+    /// Filesystems that are not disks a person thinks of: memory-backed
+    /// ones, container layers, snap images, and the system's own mounts.
+    static let pseudoDevices: Set<String> = [
+        "tmpfs", "devtmpfs", "udev", "shm", "overlay", "none", "nsfs", "cgroup", "cgroup2",
+        "efivarfs", "squashfs", "devfs", "map auto_home", "proc", "sysfs", "fusectl",
+    ]
+
+    /// Mount points under which only containers, snaps and the system mount
+    /// things: Docker's overlays, Kubernetes' volumes, /run, /sys, /proc, /dev.
+    static let systemMountPrefixes = [
+        "/var/lib/docker/", "/var/lib/containerd/", "/var/lib/containers/", "/var/lib/kubelet/",
+        "/run/", "/var/run/", "/snap/", "/var/snap/", "/sys/", "/proc/", "/dev/",
+        "/System/Volumes/", "/private/var/", "/Library/Developer/CoreSimulator/",
+    ]
+
+    /// Whether a df line is clutter rather than a disk: what `systemMountPrefixes`
+    /// and `pseudoDevices` name, and loop devices (snaps). The Mac's data volume
+    /// is the one /System/Volumes mount that is kept.
+    static func isSystemMount(device: String, mount: String) -> Bool {
+        if mount == "/System/Volumes/Data" { return false }
+        if ["/run", "/var/run", "/sys", "/proc", "/dev"].contains(mount) { return true }
+        if pseudoDevices.contains(device) || device.hasPrefix("/dev/loop") { return true }
+        // Under a hidden folder: Time Machine's snapshots, and the like.
+        if mount.split(separator: "/").contains(where: { $0.hasPrefix(".") }) { return true }
+        return systemMountPrefixes.contains { mount.hasPrefix($0) }
+    }
+
     /// Parses `df -Pk` output (POSIX: one line per filesystem, sizes in
     /// 1024-blocks) into display-ready elements. Unlike `df -h`, -P never
     /// wraps a long device name onto its own line, and the mount point is
     /// the trailing columns, so spaces in it survive.
     static func parseDfPk(_ raw: String) -> [ServerStatus.FileSystemInfo.FileSystemInfoElement] {
         var result = [ServerStatus.FileSystemInfo.FileSystemInfoElement]()
+        /// Disks already listed, by device: a disk mounted again elsewhere
+        /// (a bind mount) shows once, at its first mount point.
+        var devices = Set<String>()
         for line in raw.components(separatedBy: "\n").dropFirst() where line.count > 0 {
             let cut = splitWhitespaceRuns(line)
             guard cut.count >= 6,
@@ -236,6 +266,9 @@ enum ProcParsers {
             guard mount.hasPrefix("/"), free > 0 else {
                 continue
             }
+            let device = String(cut[0])
+            guard !isSystemMount(device: device, mount: mount) else { continue }
+            if device.hasPrefix("/dev/"), !devices.insert(device).inserted { continue }
             result.append(.init(
                 mountPoint: mount,
                 size: formatKilobytes(size),

@@ -5,7 +5,8 @@
 //  The panel beside the cards for the selected server: Overview (CPU, memory,
 //  network with TCP counters and interfaces, one box per disk with its I/O),
 //  Processes (a top-style list) and Containers (Docker). Processes and
-//  containers are read only while their tab is shown.
+//  containers are read only while their tab is shown, and kept per server,
+//  so coming back shows the last reading at once while a new one is read.
 //
 
 import MachineStatus
@@ -29,26 +30,28 @@ struct ServerInspector: View {
     var body: some View {
         let read = store.machineGroup[machine]
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: RX.Space.s2) {
+            // The server's name on a row of its own, whole; the tabs under it.
+            HStack(alignment: .firstTextBaseline, spacing: RX.Space.s2) {
                 if let flag = read.countryFlag { Text(flag) }
                 RedactableText(read.name.uppercased(), redacted: store.machineRedacted == .all)
                     .font(.system(size: 13, weight: .bold))
-                    .lineLimit(1)
-                Spacer()
-                RXSegmented(selection: $tab, options: [
-                    .init(.overview, "Overview"),
-                    .init(.processes, "Processes"),
-                    .init(.containers, "Containers"),
-                    .init(.activity, "Activity"),
-                ], caps: false)
-                .fixedSize()
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: RX.Space.s2)
                 Button(action: close) {
                     Label("Close", systemImage: "xmark")
                 }
                 .buttonStyle(.rx(.plain, size: .small, iconOnly: true))
                 .help("Close (Esc)")
             }
-            .frame(height: 30)
+            .padding(.horizontal, RX.Space.s4)
+            .padding(.top, RX.Space.s3)
+            RXSegmented(selection: $tab, options: [
+                .init(.overview, "Overview"),
+                .init(.processes, "Processes"),
+                .init(.containers, "Containers"),
+                .init(.activity, "Activity"),
+            ], caps: false)
+            .fixedSize()
             .padding(.horizontal, RX.Space.s4)
             .padding(.top, RX.Space.s2)
             .padding(.bottom, RX.Space.s3)
@@ -59,7 +62,7 @@ struct ServerInspector: View {
                 case .overview:
                     ScrollView { InspectorOverview(session: session).padding(.horizontal, RX.Space.s4).padding(.bottom, RX.Space.s4) }
                 case .processes:
-                    ProcessList(session: session)
+                    ProcessList(session: session, machine: machine)
                 case .containers:
                     ContainerList(session: session, machine: machine)
                 case .activity:
@@ -326,8 +329,7 @@ private struct InspectorOverview: View {
             HStack(alignment: .center, spacing: RX.Space.s3) {
                 Text(disk.mountPoint)
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer()
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("\(disk.used) / \(disk.size)")
@@ -426,8 +428,16 @@ private struct FillPill: View {
 
 // MARK: - Processes
 
-private struct ProcessList: View {
-    @ObservedObject var session: MonitorSession
+/// A server's processes, as last read: kept while the inspector is closed.
+@MainActor
+private final class ProcessModel: ObservableObject {
+    private static var models: [RDMachine.ID: ProcessModel] = [:]
+    static func of(_ machine: RDMachine.ID) -> ProcessModel {
+        if let model = models[machine] { return model }
+        let model = ProcessModel()
+        models[machine] = model
+        return model
+    }
 
     struct Row: Identifiable, Equatable {
         let pid: Int
@@ -437,11 +447,45 @@ private struct ProcessList: View {
         var id: Int { pid }
     }
 
+    @Published private(set) var rows: [Row] = []
+    @Published private(set) var loaded = false
+    private var reading = false
+
+    func refresh(_ session: MonitorSession) async {
+        guard !reading else { return }
+        reading = true
+        defer { reading = false }
+        let command = """
+        if [ "$(uname -s)" = Darwin ]; then ps -Ao pid=,%cpu=,rss=,command= -r | head -100; \
+        else ps -eo pid=,pcpu=,rss=,args= --sort=-pcpu | head -100; fi
+        """
+        guard let output = await session.run(command) else { return }
+        let parsed = output.split(separator: "\n").compactMap { line -> Row? in
+            let fields = line.split(separator: " ", maxSplits: 3, omittingEmptySubsequences: true)
+            guard fields.count == 4, let pid = Int(fields[0]) else { return nil }
+            return Row(pid: pid, cpu: Double(fields[1]) ?? 0, rssKB: Double(fields[2]) ?? 0, command: String(fields[3]))
+        }
+        if parsed != rows { rows = parsed }
+        loaded = true
+    }
+}
+
+private struct ProcessList: View {
+    @ObservedObject var session: MonitorSession
+    @ObservedObject private var model: ProcessModel
+
+    init(session: MonitorSession, machine: RDMachine.ID) {
+        self.session = session
+        model = ProcessModel.of(machine)
+    }
+
+    typealias Row = ProcessModel.Row
     enum Sort { case cpu, memory, name }
 
-    @State private var rows: [Row] = []
     @State private var sort: Sort = .cpu
-    @State private var loaded = false
+
+    private var rows: [Row] { model.rows }
+    private var loaded: Bool { model.loaded }
 
     var sorted: [Row] {
         switch sort {
@@ -510,18 +554,7 @@ private struct ProcessList: View {
     }
 
     func refresh() async {
-        let command = """
-        if [ "$(uname -s)" = Darwin ]; then ps -Ao pid=,%cpu=,rss=,command= -r | head -100; \
-        else ps -eo pid=,pcpu=,rss=,args= --sort=-pcpu | head -100; fi
-        """
-        guard let output = await session.run(command) else { return }
-        let parsed = output.split(separator: "\n").compactMap { line -> Row? in
-            let fields = line.split(separator: " ", maxSplits: 3, omittingEmptySubsequences: true)
-            guard fields.count == 4, let pid = Int(fields[0]) else { return nil }
-            return Row(pid: pid, cpu: Double(fields[1]) ?? 0, rssKB: Double(fields[2]) ?? 0, command: String(fields[3]))
-        }
-        rows = parsed
-        loaded = true
+        await model.refresh(session)
     }
 
     func kill(_ row: Row, signal: String) {
@@ -542,9 +575,109 @@ private struct ProcessList: View {
 
 // MARK: - Containers
 
+/// A server's containers, as last read: kept while the inspector is closed.
+/// `docker ps` comes back at once and is shown; `docker stats`, which takes
+/// a few seconds, fills in the figures after.
+@MainActor
+private final class ContainerModel: ObservableObject {
+    private static var models: [RDMachine.ID: ContainerModel] = [:]
+    static func of(_ machine: RDMachine.ID) -> ContainerModel {
+        if let model = models[machine] { return model }
+        let model = ContainerModel(machine: machine)
+        models[machine] = model
+        return model
+    }
+
+    typealias Container = ContainerList.Container
+
+    let machine: RDMachine.ID
+    @Published private(set) var containers: [Container] = []
+    @Published private(set) var problem: String?
+    @Published private(set) var loaded = false
+    private var reading = false
+
+    init(machine: RDMachine.ID) {
+        self.machine = machine
+    }
+
+    func refresh(_ session: MonitorSession) async {
+        guard !reading else { return }
+        reading = true
+        defer { reading = false }
+        let listing = """
+        if ! command -v docker >/dev/null 2>&1; then echo 'TAMIO:NODOCKER'; \
+        else docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.State}}\t{{.Status}}' 2>&1; fi
+        """
+        guard let output = await session.run(listing, timeout: 20) else { return }
+        if output.contains("TAMIO:NODOCKER") {
+            problem = "Docker isn't installed on this server."
+            loaded = true
+            return
+        }
+        if output.contains("permission denied") || output.contains("Got permission denied") {
+            let server = TamioStore.shared.machineGroup[machine]
+            let user = server.loginUsername(with: TamioStore.shared.associatedIdentity(for: server))
+            problem = "\(user) can't reach the Docker socket. Add the user to the docker group."
+            loaded = true
+            return
+        }
+        // The figures last read stay with their containers until new ones come.
+        let previous = Dictionary(containers.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        var list = output.split(separator: "\n").compactMap { line -> Container? in
+            let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+            guard fields.count >= 4 else { return nil }
+            var container = Container(id: fields[0], name: fields[1], state: fields[2], status: fields[3])
+            if let old = previous[container.id], container.running {
+                container.cpu = old.cpu
+                container.memory = old.memory
+                container.blockIO = old.blockIO
+                container.netIO = old.netIO
+            }
+            return container
+        }
+        publish(list)
+        guard list.contains(where: \.running) else { return }
+
+        let stats = "docker stats --no-stream --format '{{.ID}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.BlockIO}}\t{{.NetIO}}' 2>/dev/null"
+        guard let figures = await session.run(stats, timeout: 30) else { return }
+        for line in figures.split(separator: "\n") {
+            let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+            guard fields.count >= 5, let index = list.firstIndex(where: { fields[0].hasPrefix($0.id) || $0.id.hasPrefix(fields[0]) }) else { continue }
+            list[index].cpu = fields[1]
+            list[index].memory = fields[2]
+            list[index].blockIO = fields[3]
+            list[index].netIO = fields[4]
+        }
+        publish(list)
+    }
+
+    private func publish(_ list: [Container]) {
+        problem = list.isEmpty ? "No containers on this server." : nil
+        let sorted = list.sorted { lhs, rhs in
+            if lhs.running != rhs.running { return lhs.running }
+            let left = Double(lhs.cpu.dropLast()) ?? 0, right = Double(rhs.cpu.dropLast()) ?? 0
+            if left != right { return left > right }
+            return lhs.name.localizedStandardCompare(rhs.name) == .orderedAscending
+        }
+        if sorted != containers { containers = sorted }
+        loaded = true
+    }
+}
+
 private struct ContainerList: View {
     @ObservedObject var session: MonitorSession
     let machine: RDMachine.ID
+    @ObservedObject private var model: ContainerModel
+
+    init(session: MonitorSession, machine: RDMachine.ID) {
+        self.session = session
+        self.machine = machine
+        model = ContainerModel.of(machine)
+    }
+
+    private var containers: [Container] { model.containers }
+    private var problem: String? { model.problem }
+    private var loaded: Bool { model.loaded }
 
     struct Container: Identifiable, Equatable {
         let id: String
@@ -558,10 +691,6 @@ private struct ContainerList: View {
         var running: Bool { state == "running" }
         var unhealthy: Bool { status.contains("unhealthy") }
     }
-
-    @State private var containers: [Container] = []
-    @State private var problem: String?
-    @State private var loaded = false
 
     var body: some View {
         Group {
@@ -641,42 +770,7 @@ private struct ContainerList: View {
     }
 
     func refresh() async {
-        let command = """
-        if ! command -v docker >/dev/null 2>&1; then echo 'TAMIO:NODOCKER'; \
-        else docker ps -a --format '{{.ID}}\t{{.Names}}\t{{.State}}\t{{.Status}}' 2>&1; echo 'TAMIO:STATS'; \
-        docker stats --no-stream --format '{{.ID}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.BlockIO}}\t{{.NetIO}}' 2>/dev/null; fi
-        """
-        guard let output = await session.run(command, timeout: 20) else { return }
-        defer { loaded = true }
-        if output.contains("TAMIO:NODOCKER") {
-            problem = "Docker isn't installed on this server."
-            return
-        }
-        let parts = output.components(separatedBy: "TAMIO:STATS")
-        let listing = parts.first ?? ""
-        if listing.contains("permission denied") || listing.contains("Got permission denied") {
-            let user = TamioStore.shared.machineGroup[machine].loginUsername(with: TamioStore.shared.associatedIdentity(for: TamioStore.shared.machineGroup[machine]))
-            problem = "\(user) can't reach the Docker socket. Add the user to the docker group."
-            return
-        }
-        var list = listing.split(separator: "\n").compactMap { line -> Container? in
-            let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
-            guard fields.count >= 4 else { return nil }
-            return Container(id: fields[0], name: fields[1], state: fields[2], status: fields[3])
-        }
-        for line in (parts.count > 1 ? parts[1] : "").split(separator: "\n") {
-            let fields = line.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
-            guard fields.count >= 5, let index = list.firstIndex(where: { fields[0].hasPrefix($0.id) || $0.id.hasPrefix(fields[0]) }) else { continue }
-            list[index].cpu = fields[1]
-            list[index].memory = fields[2]
-            list[index].blockIO = fields[3]
-            list[index].netIO = fields[4]
-        }
-        problem = list.isEmpty ? "No containers on this server." : nil
-        containers = list.sorted { lhs, rhs in
-            if lhs.running != rhs.running { return lhs.running }
-            return (Double(lhs.cpu.dropLast()) ?? 0) > (Double(rhs.cpu.dropLast()) ?? 0)
-        }
+        await model.refresh(session)
     }
 
     func act(_ verb: String, _ container: Container) {

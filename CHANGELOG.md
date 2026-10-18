@@ -9,6 +9,31 @@ and tag `v0.2.0`. A tag with no section here is not built.
 
 ## [Unreleased]
 
+### Sessions
+
+- The Terminal · Files · Monitor switcher is on the Files page too, so Files
+  no longer leaves you there.
+- The tab bar above the terminal is gone. A server with several terminals lists
+  each one under it in the sidebar; right-click a session to duplicate a
+  terminal, reconnect or close it. The switcher goes back to the terminal used
+  last.
+- The built-in editor is removed.
+
+### Files
+
+- A server's pane opens in the home folder of the user Tamio signs in as.
+- Hidden files are not listed unless you turn them on, in Settings › General ›
+  Files or a pane's Actions menu.
+
+### Home
+
+- A click on a card shows its server at once; the cards no longer stutter as
+  the panel opens. The panel names its server on a row of its own.
+- Containers and processes show their last reading at once and refresh behind
+  it; containers list before their figures arrive.
+- Disks leave out container layers, snaps, memory filesystems, Time Machine
+  snapshots and the system's own mounts, and show each disk once.
+
 ## [0.1.1] - 2026-10-18
 
 The first release of Tamio, an SSH client for the Mac.

@@ -67,12 +67,14 @@ private struct HomeContent: View {
             if let selection, store.machineGroup.machines.contains(where: { $0.id == selection }) {
                 ServerInspector(machine: selection) { self.selection = nil }
                     .frame(width: inspectorWidth)
-                    .transition(.move(edge: .trailing).combined(with: .opacity))
+                    // Only the panel moves: the cards take their new width at
+                    // once, not frame by frame, so they never stutter.
+                    .transition(.move(edge: .trailing).combined(with: .opacity)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.9)))
             }
         }
         .frame(minWidth: 0, maxWidth: .infinity)
         .onGeometryChange(for: CGFloat.self) { $0.size.width.rounded() } action: { pageWidth = $0 }
-        .animation(.spring(response: 0.3, dampingFraction: 0.9), value: selection)
         .background {
             // Esc closes the inspector.
             if selection != nil {
@@ -105,8 +107,10 @@ private struct HomeContent: View {
                 spacing: RX.Space.s3
             ) {
                 ForEach(Array(machines.enumerated()), id: \.element.id) { index, machine in
+                    // A click shows the card's server in the panel; the panel's
+                    // close button and Esc put it away.
                     StatusCard(machine: machine.id, selected: selection == machine.id) {
-                        selection = selection == machine.id ? nil : machine.id
+                        if selection != machine.id { selection = machine.id }
                     }
                     .rxRise(index)
                     .transition(.scale(scale: 0.97).combined(with: .opacity))

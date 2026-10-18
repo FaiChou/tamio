@@ -48,8 +48,11 @@ struct StatusCard: View {
         )
         .contentShape(RoundedRectangle(cornerRadius: RX.Radius.card, style: .continuous))
         .onHover { hovered = $0 }
-        .onTapGesture(count: 2) { ServerTool.terminal.show(machine) }
+        // The click selects at once; a double click also opens a terminal.
+        // (A count-2 gesture in front of a count-1 one holds every click
+        // back until the double-click time has passed.)
         .onTapGesture(perform: select)
+        .simultaneousGesture(TapGesture(count: 2).onEnded { ServerTool.terminal.show(machine) })
         .animation(.easeOut(duration: 0.15), value: hovered)
         .animation(.easeOut(duration: 0.15), value: selected)
         .contextMenu { ServerContextMenu(machine: machine) }
