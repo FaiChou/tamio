@@ -107,7 +107,7 @@ public extension TamioStore {
 
     /// Whether changes are being saved. False when the master key could not be
     /// read: the data on disk is left as it is until the key is available again.
-    static var savesChanges: Bool { !crypto.isEphemeral }
+    public static var savesChanges: Bool { !crypto.isEphemeral }
 
     /// Writes of what the store keeps land on the main thread: the debounce
     /// table is main-thread state, and CloudSync's generation counting and

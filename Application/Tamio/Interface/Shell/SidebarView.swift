@@ -101,6 +101,7 @@ struct SidebarView: View {
             // Settings stays pinned to the bottom-left corner, drawn exactly like
             // the rows above; a new version's notice sits just over it.
             VStack(alignment: .leading, spacing: RX.Space.s2) {
+                KeyNotice()
                 UpdateNotice()
                 place(.settings, "Settings", systemImage: "gearshape")
                     .help("Settings (⌘,)")
@@ -250,6 +251,37 @@ struct SidebarLabel<Title: View>: View {
 extension SidebarLabel where Title == Text {
     init(_ title: String, systemImage: String, badge: Int = 0) {
         self.init(systemImage: systemImage, badge: badge) { Text(title) }
+    }
+}
+
+/// Above Settings when the keychain refused the master key: the store is
+/// there but cannot be read or written until the key is handed over, which
+/// otherwise looks like an app with nothing in it.
+private struct KeyNotice: View {
+    var body: some View {
+        if !TamioStore.savesChanges {
+            HStack(alignment: .top, spacing: RX.Space.s2) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.rxDanger)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Servers can't be shown")
+                        .font(.rxBodyStrong)
+                        .foregroundStyle(.rxInk)
+                    Text("Tamio couldn't read its key from your keychain. Quit Tamio, open it again, and click Allow when asked.")
+                        .font(.rxHelp)
+                        .foregroundStyle(.rxInkSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal, RX.Space.s3)
+            .padding(.vertical, RX.Space.s2)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.rxDanger.opacity(0.12))
+            )
+            .accessibilityElement(children: .combine)
+        }
     }
 }
 

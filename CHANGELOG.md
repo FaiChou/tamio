@@ -13,6 +13,13 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Added
+- **A notice when the keychain keeps the key back.** If macOS does not hand
+  Tamio its master key (the "wants to use your confidential information"
+  prompt denied, or a differently signed copy of Tamio), the sidebar says so
+  and what to do, instead of the app looking empty; nothing is written until
+  the key is back.
+
 ### Changed
 - **Session rows in the sidebar start with the server's name.** The server
   symbol before it is gone, so a long name has the room; the whole name is in
