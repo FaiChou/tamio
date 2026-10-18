@@ -237,10 +237,16 @@ struct StatusSlots: View {
                 HStack(spacing: RX.Space.s2) {
                     Image(systemName: "exclamationmark.triangle")
                         .foregroundStyle(.rxDanger)
-                    Text("Offline · \(message)")
-                        .font(.rxBody)
-                        .foregroundStyle(.rxInkSecondary)
-                        .lineLimit(2)
+                    // The card's height is fixed: the whole message when
+                    // it fits, else the word, with the message on hover.
+                    ViewThatFits(in: .vertical) {
+                        Text("Offline · \(message)")
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("Offline")
+                    }
+                    .font(.rxBody)
+                    .foregroundStyle(.rxInkSecondary)
+                    .help(message)
                     Spacer()
                 }
             default:

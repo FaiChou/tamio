@@ -25,13 +25,12 @@ public struct PageTitle: View {
                 .font(.rxPageTitle)
                 .tracking(-0.26)
                 .foregroundStyle(.rxInk)
-                .lineLimit(1)
-                .truncationMode(.middle)
+                .fixedSize(horizontal: false, vertical: true)
             if let subtitle, !subtitle.isEmpty {
                 Text(subtitle)
                     .font(.rxBody)
                     .foregroundStyle(.rxInkSecondary)
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

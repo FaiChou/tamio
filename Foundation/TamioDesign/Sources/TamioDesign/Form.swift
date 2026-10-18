@@ -57,7 +57,7 @@ public struct RXFormRow<Control: View>: View {
     }
 
     public var body: some View {
-        HStack(alignment: alignTop ? .top : .center, spacing: RX.Space.s6) {
+        RXRowLayout(alignTop: alignTop) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.rxBody)
@@ -71,6 +71,89 @@ public struct RXFormRow<Control: View>: View {
         }
         .padding(.vertical, 10)
         .frame(minHeight: RX.formRowMinHeight)
+    }
+}
+
+/// A row's label and its control: side by side while the label keeps at least
+/// `minLabelWidth` and wraps to at most one line more than it would across the
+/// whole row, else the control goes under the label. A wide control never
+/// squeezes the title and description into a narrow column. The first subview
+/// is the label, the second the control.
+public struct RXRowLayout: Layout {
+    public var alignTop: Bool
+    public var spacing: CGFloat
+    public var minLabelWidth: CGFloat
+
+    public init(alignTop: Bool = false, spacing: CGFloat = RX.Space.s6, minLabelWidth: CGFloat = RX.rowMinLabelWidth) {
+        self.alignTop = alignTop
+        self.spacing = spacing
+        self.minLabelWidth = minLabelWidth
+    }
+
+    /// A line of a description, with a little to spare.
+    static let oneLine: CGFloat = 20
+
+    public struct Cache {
+        var control: CGSize?
+    }
+
+    public func makeCache(subviews: Subviews) -> Cache {
+        Cache(control: subviews.count > 1 ? subviews[1].sizeThatFits(.unspecified) : nil)
+    }
+
+    public func updateCache(_ cache: inout Cache, subviews: Subviews) {
+        cache = makeCache(subviews: subviews)
+    }
+
+    /// Where each part goes in `width`: the label's and the control's frames.
+    private func arrange(_ width: CGFloat, subviews: Subviews, cache: Cache) -> (label: CGRect, control: CGRect?) {
+        guard let label = subviews.first else { return (.zero, nil) }
+        guard let ideal = cache.control, ideal.width > 0 || ideal.height > 0 else {
+            let size = label.sizeThatFits(ProposedViewSize(width: width, height: nil))
+            return (CGRect(x: 0, y: 0, width: width, height: size.height), nil)
+        }
+        let room = width - ideal.width - spacing
+        let whole = label.sizeThatFits(ProposedViewSize(width: width, height: nil))
+        let size = room >= minLabelWidth ? label.sizeThatFits(ProposedViewSize(width: room, height: nil)) : nil
+        if let size, size.height <= whole.height + Self.oneLine {
+            let height = max(size.height, ideal.height)
+            let labelY = alignTop ? 0 : (height - size.height) / 2
+            let controlY = alignTop ? 0 : (height - ideal.height) / 2
+            return (
+                CGRect(x: 0, y: labelY, width: room, height: size.height),
+                CGRect(x: width - ideal.width, y: controlY, width: ideal.width, height: ideal.height)
+            )
+        }
+        let control = subviews[1].sizeThatFits(ProposedViewSize(width: min(ideal.width, width), height: nil))
+        return (
+            CGRect(x: 0, y: 0, width: width, height: whole.height),
+            CGRect(x: 0, y: whole.height + RX.Space.s3, width: min(control.width, width), height: control.height)
+        )
+    }
+
+    public func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Cache) -> CGSize {
+        guard let width = proposal.width, width.isFinite else {
+            let label = subviews.first?.sizeThatFits(.unspecified) ?? .zero
+            let control = cache.control ?? .zero
+            return CGSize(width: label.width + (control.width > 0 ? spacing + control.width : 0), height: max(label.height, control.height))
+        }
+        let frames = arrange(width, subviews: subviews, cache: cache)
+        return CGSize(width: width, height: max(frames.label.maxY, frames.control?.maxY ?? 0))
+    }
+
+    public func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache: inout Cache) {
+        let frames = arrange(bounds.width, subviews: subviews, cache: cache)
+        subviews.first?.place(
+            at: CGPoint(x: bounds.minX + frames.label.minX, y: bounds.minY + frames.label.minY),
+            proposal: ProposedViewSize(frames.label.size)
+        )
+        if subviews.count > 1 {
+            let control = frames.control ?? .zero
+            subviews[1].place(
+                at: CGPoint(x: bounds.minX + control.minX, y: bounds.minY + control.minY),
+                proposal: ProposedViewSize(control.size)
+            )
+        }
     }
 }
 

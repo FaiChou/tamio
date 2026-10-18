@@ -140,10 +140,8 @@ public struct FactsRow: View {
                         .font(fact.monospaced ? .system(size: 14, weight: .medium, design: .monospaced) : .rxMetricMD)
                         .foregroundStyle(.rxInk)
                         // Long values ("Debian GNU/Linux 12 (bookworm)") wrap
-                        // to a second line rather than lose their middle.
-                        .lineLimit(2)
+                        // rather than lose a part.
                         .fixedSize(horizontal: false, vertical: true)
-                        .truncationMode(.tail)
                         .textSelection(.enabled)
                         .help(fact.redacted ? "" : fact.value)
                 }

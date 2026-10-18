@@ -249,7 +249,7 @@ private struct BrowserPane: View {
             if let problem {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.rxWarning)
-                    Text(problem).font(.rxBody).lineLimit(2)
+                    Text(problem).font(.rxBody).fixedSize(horizontal: false, vertical: true)
                     Spacer()
                     Button("OK") { self.problem = nil }.buttonStyle(.rx(size: .small))
                 }
@@ -904,7 +904,7 @@ private struct TransferRow: View {
                 Text(job.error ?? subtitle)
                     .font(.rxHelp)
                     .foregroundStyle(job.error == nil ? Color.rxInkSecondary : Color.rxDanger)
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
             if job.state == .running || job.state == .queued {

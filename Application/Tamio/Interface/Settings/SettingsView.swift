@@ -290,7 +290,7 @@ private struct AboutSettings: View {
             }
             RXFormRow("Source code", description: "missuo/tamio on GitHub") {
                 Link(destination: URL(string: "https://github.com/missuo/tamio")!) {
-                    Label("GitHub", systemImage: "arrow.up.right.square")
+                    Label { Text("GitHub") } icon: { Image("github") }
                 }
                 .buttonStyle(.rx)
             }
@@ -357,7 +357,7 @@ private struct AcknowledgementSettings: View {
             RXFormRow("Maintained by", description: "MOE AI LLC") {
                 EmptyView()
             }
-            RXFormRow("Based on", description: "catussh by mizorewww, a fork of Rayon. This version is not affiliated with or endorsed by them.") {
+            RXFormRow("Based on", description: "mizorewww/catussh · Lakr233/Rayon") {
                 EmptyView()
             }
             RXFormRow("Originally created by", description: "Lakr Aream (@Lakr233) with @__oquery, @zlind0, @unixzii, @82flex and @xnth97. This version is not affiliated with or endorsed by them.") {

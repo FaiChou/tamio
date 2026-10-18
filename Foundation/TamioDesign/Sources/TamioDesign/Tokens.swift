@@ -41,6 +41,9 @@ public enum RX {
     public static let denseRowHeight: CGFloat = 32
     public static let tableHeaderHeight: CGFloat = 28
     public static let formRowMinHeight: CGFloat = 56
+    /// The narrowest a settings row's title and description get beside the
+    /// control; with less room the control goes under them.
+    public static let rowMinLabelWidth: CGFloat = 160
 }
 
 // MARK: - Colors

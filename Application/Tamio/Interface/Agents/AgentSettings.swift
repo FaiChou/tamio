@@ -134,7 +134,7 @@ struct AgentActivityRow: View {
                 .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
                 .font(.rxHelp)
                 .foregroundStyle(entry.outcome.hasPrefix("declined") ? Color.rxWarning : Color.rxInkSecondary)
-                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
             if !entry.detail.isEmpty {
                 Text(entry.detail)
                     .font(.rxCode)

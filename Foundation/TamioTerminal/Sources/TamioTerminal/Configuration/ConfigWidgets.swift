@@ -72,7 +72,7 @@ struct ConfigSettingRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: RX.Space.s3) {
-            HStack(alignment: stacked ? .top : .center, spacing: RX.Space.s6) {
+            RXRowLayout(alignTop: stacked) {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(highlightedName)
@@ -84,7 +84,6 @@ struct ConfigSettingRow: View {
                     }
                     if !summary.isEmpty {
                         HelpText(summary)
-                            .lineLimit(2)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
