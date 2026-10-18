@@ -7,20 +7,26 @@
 
 import TamioDesign
 import SwiftUI
+#if canImport(UIKit)
+    import UIKit
+#endif
 
 public struct CloudSyncSettings: View {
     @ObservedObject private var sync = CloudSync.shared
     @State private var asking: PassphraseSheet.Purpose?
     @State private var confirmsDelete = false
+    /// The passphrase, while the user has it showing.
+    @State private var shown: String?
 
     public init() {}
 
     public var body: some View {
         RXDividedStack {
             RXFormRow("Sync with iCloud", description: (sync.isOn ? nil : sync.problem) ?? """
-            Everything is encrypted on this device, with a passphrase you choose, before it goes \
-            to iCloud. Apple cannot read it. Your iCloud Keychain keeps the passphrase, so your \
-            other Macs turn sync on by themselves.
+            On unless you turn it off, so your servers and what agents did on them are never lost \
+            with a Mac. Everything is encrypted on this device before it goes to iCloud, under a \
+            passphrase kept in your iCloud Keychain, so your other Macs sync by themselves. Apple \
+            cannot read it.
             """) {
                 Toggle("Sync with iCloud", isOn: Binding(
                     get: { sync.isOn },
@@ -79,9 +85,23 @@ public struct CloudSyncSettings: View {
                     description: "What agents did on each server, so agents on other devices know.",
                     isOn: $sync.syncsActivity
                 )
-                RXFormRow("Passphrase", description: "After a change, your other devices take the new one from iCloud Keychain, or ask for it.") {
-                    Button("Change…") { asking = .change }
-                        .buttonStyle(.rx(size: .small))
+                RXFormRow("Passphrase", description: shown.map { "\($0) — type it on a device without iCloud Keychain." }
+                    ?? "Your other devices take it from iCloud Keychain, or ask for it.")
+                {
+                    HStack(spacing: RX.Space.s2) {
+                        if let passphrase = sync.currentPassphrase {
+                            Button(shown == nil ? "Show" : "Hide") { shown = shown == nil ? passphrase : nil }
+                                .buttonStyle(.rx(size: .small))
+                            #if canImport(UIKit)
+                                if shown != nil {
+                                    Button("Copy") { UIPasteboard.general.string = passphrase }
+                                        .buttonStyle(.rx(size: .small))
+                                }
+                            #endif
+                        }
+                        Button("Change…") { asking = .change }
+                            .buttonStyle(.rx(size: .small))
+                    }
                 }
                 RXFormRow("Data in iCloud", description: "Remove it and stop syncing on this device.") {
                     Button("Delete…") { confirmsDelete = true }

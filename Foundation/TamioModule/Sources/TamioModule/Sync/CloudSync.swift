@@ -5,7 +5,9 @@
 //  Keeps the servers, identities, snippets, port forwards and known hosts of
 //  this device and of the user's other devices the same, and their agent
 //  activity together, through iCloud, sealed under a passphrase only the
-//  devices know. It is off until turned on in Settings.
+//  devices know. It is on unless the user turns it off, so what agents did on
+//  each server is not lost with a Mac: the passphrase is the one another
+//  device shared in iCloud Keychain, or one Tamio makes and shares there.
 //
 
 import Combine
@@ -152,7 +154,10 @@ public final class CloudSync: ObservableObject {
         started = true
         transport.changed = { [weak self] in
             guard let self else { return }
-            if !adoptSharedPassphrase() { sync() }
+            if !adoptSharedPassphrase() {
+                turnOnByDefault()
+                sync()
+            }
         }
         // Asks iCloud for what it has, well before Settings asks whether
         // there is anything.
@@ -201,8 +206,58 @@ public final class CloudSync: ObservableObject {
             }
         #endif
         if adoptSharedPassphrase() { return }
+        turnOnByDefault()
         sync()
     }
+
+    /// How long a first launch waits for iCloud to deliver what another
+    /// device stored, before making a passphrase of its own.
+    static let firstSyncWait: UInt64 = 15_000_000_000
+
+    /// Sync is on unless the user turned it off here. With a passphrase shared
+    /// in iCloud Keychain it uses that one; when iCloud holds data under one
+    /// that has not arrived, it waits for it; else it makes one, after giving
+    /// iCloud time to deliver another device's.
+    private func turnOnByDefault() {
+        guard !isOn, problem == nil, !defaults.bool(forKey: Key.optedOut) else { return }
+        if let shared = SyncKeychain.read(), !shared.isEmpty {
+            turnOn(passphrase: shared)
+            return
+        }
+        if hasStoredData {
+            // On, and locked until the passphrase arrives or is entered.
+            isOn = true
+            defaults.set(true, forKey: Key.on)
+            status = .locked
+            return
+        }
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: Self.firstSyncWait)
+            guard let self, !isOn, problem == nil, !defaults.bool(forKey: Key.optedOut) else { return }
+            if adoptSharedPassphrase() { return }
+            if let shared = SyncKeychain.read(), !shared.isEmpty {
+                turnOn(passphrase: shared)
+            } else if hasStoredData {
+                turnOnByDefault()
+            } else {
+                turnOn(passphrase: Self.makePassphrase())
+            }
+        }
+    }
+
+    /// Six groups of four letters and digits, none easily mistaken for
+    /// another: about 150 bits.
+    static func makePassphrase() -> String {
+        let alphabet = Array("abcdefghjkmnpqrstuvwxyz23456789")
+        var generator = SystemRandomNumberGenerator()
+        return (0 ..< 6).map { _ in
+            String((0 ..< 4).map { _ in alphabet[Int.random(in: 0 ..< alphabet.count, using: &generator)] })
+        }.joined(separator: "-")
+    }
+
+    /// The passphrase in use here, for the user to type on a device without
+    /// iCloud Keychain.
+    public var currentPassphrase: String? { passphrase }
 
     /// Turns sync on with the passphrase another device shared in iCloud
     /// Keychain, when iCloud holds data and the user has not turned sync off
@@ -306,6 +361,9 @@ public final class CloudSync: ObservableObject {
         if let problem {
             status = .unavailable(problem)
             return
+        }
+        if passphrase?.isEmpty ?? true, let shared = SyncKeychain.read(), !shared.isEmpty {
+            set(passphrase: shared)
         }
         guard let passphrase, !passphrase.isEmpty else {
             status = .locked
