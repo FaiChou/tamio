@@ -87,7 +87,13 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
     let recordsConnection: Bool
 
     public let status = ServerStatus()
-    @Published public private(set) var phase: Phase = .connecting
+    @Published public private(set) var phase: Phase = .connecting {
+        didSet {
+            #if DEBUG
+                if phase != oldValue { Self.trace("\(machine.name) phase \(phase)") }
+            #endif
+        }
+    }
     @Published public private(set) var history = MonitorHistory()
     @Published public private(set) var lastUpdate: Date?
     @Published public private(set) var isRefreshing = false
@@ -168,6 +174,9 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
 
     private func updateLoop() async {
         var failures = 0
+        /// Rounds in a row that read nothing; a server that never answers
+        /// is not reconnected every second.
+        var emptyRounds = 0
         while !Task.isCancelled {
             if !(shell.isConnected && shell.isAuthenticated) {
                 // Statics belong to the connection; a reconnect may land on
@@ -191,7 +200,23 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
                     }
                 }
                 let timeout = max(10, Double(refreshInterval * 2))
-                await blocking { self.status.requestInfoAndWait(with: self.shell, timeout: timeout) }
+                let round = RoundResult()
+                await blocking { round.read = self.status.requestInfoAndWait(with: self.shell, timeout: timeout) }
+                #if DEBUG
+                    Self.trace("\(machine.name) round \(round.read ? "read" : "empty") hasData \(status.hasData)")
+                #endif
+                if !round.read {
+                    // Nothing came back: the connection is gone (the Mac slept,
+                    // the network changed). The last readings stay on screen;
+                    // the connection is dropped and made again in a second.
+                    onMainThread { self.isRefreshing = false }
+                    await blocking { self.shell.requestDisconnectAndWait() }
+                    emptyRounds += 1
+                    let pause = emptyRounds == 1 ? 1 : min(30, 5 * (emptyRounds - 1))
+                    try? await Task.sleep(nanoseconds: UInt64(pause) * NSEC_PER_SEC)
+                    continue
+                }
+                emptyRounds = 0
                 // The status updates were queued on main; record after them.
                 onMainThread {
                     self.history.record(self.status)
@@ -209,6 +234,22 @@ public final class MonitorSession: ObservableObject, Identifiable, Equatable {
             try? await Task.sleep(nanoseconds: UInt64(wait) * NSEC_PER_SEC)
         }
         onMainThread { self.phase = .closed }
+    }
+
+    #if DEBUG
+        /// Debug builds started with TAMIO_TRACE=<file> append the loop's
+        /// steps to that file.
+        static func trace(_ message: String) {
+            guard let path = ProcessInfo.processInfo.environment["TAMIO_TRACE"], let handle = FileHandle(forWritingAtPath: path) else { return }
+            handle.seekToEndOfFile()
+            handle.write(Data("\(Date().timeIntervalSince1970) \(message)\n".utf8))
+            handle.closeFile()
+        }
+    #endif
+
+    /// Whether a refresh round read anything, set on the monitor queue.
+    private final class RoundResult: @unchecked Sendable {
+        var read = false
     }
 
     /// The SSH API blocks; run it on the monitor queue so the loop's task

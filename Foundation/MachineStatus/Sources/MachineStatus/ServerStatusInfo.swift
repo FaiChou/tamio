@@ -173,7 +173,12 @@ public class ServerStatus: ObservableObject, Equatable {
     /// (a hung `nvidia-smi`, an unsupported system probe) empties only its
     /// model. `timeout` bounds each channel so a hung probe cannot freeze
     /// the monitor loop forever.
-    public func requestInfoAndWait(with remote: NSRemoteShell, timeout: Double) {
+    ///
+    /// False when the round brought nothing back (a connection that died
+    /// while the Mac slept, say): the last readings are then kept, not
+    /// replaced by empty ones, which would blank every view showing them.
+    @discardableResult
+    public func requestInfoAndWait(with remote: NSRemoteShell, timeout: Double) -> Bool {
         // The shell multiplexes channels internally; claiming it Sendable
         // is for the compiler, like the legacy model callbacks.
         nonisolated(unsafe) let remote = remote
@@ -200,6 +205,7 @@ public class ServerStatus: ObservableObject, Equatable {
         group.wait()
 
         let sections = ProcParsers.splitMonitorSections(mergedOutput.load())
+        guard sections["mem"] != nil || sections["uptime"] != nil else { return false }
         let isDarwin = sections["platform"]?.trimmingCharacters(in: .whitespacesAndNewlines) == "Darwin"
         if includeStatic {
             // Only a non-empty reading is cached; a failed probe is retried
@@ -271,5 +277,6 @@ public class ServerStatus: ObservableObject, Equatable {
             self.addresses = addresses
             self.graphics = graphics
         }
+        return true
     }
 }
