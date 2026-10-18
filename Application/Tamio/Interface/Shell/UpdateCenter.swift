@@ -20,7 +20,17 @@ final class UpdateCenter: ObservableObject {
     @Published private(set) var available: String?
     /// Whether this copy updates itself: the release build only, so a debug
     /// or test copy is never replaced by a release.
-    let isSupported = Bundle.main.bundleIdentifier == "sb.moe.tamio"
+    let isSupported = Bundle.main.bundleIdentifier == "sb.moe.tamio" || UpdateCenter.debugFeed != nil
+
+    /// Debug builds started with TAMIO_UPDATE_FEED=<url> update from that
+    /// feed, whatever their bundle id: how the update window is looked at.
+    static var debugFeed: String? {
+        #if DEBUG
+            return ProcessInfo.processInfo.environment["TAMIO_UPDATE_FEED"]
+        #else
+            return nil
+        #endif
+    }
 
     func start() {
         #if DEBUG

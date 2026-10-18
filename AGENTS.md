@@ -47,7 +47,10 @@ bash Workflow/Scripts/fmt.sh                              # swiftformat, Swift 6
 
 ## Releasing
 
-1. Put the changes under `## [Unreleased]` in `CHANGELOG.md` as you make them.
+1. Put the changes under `## [Unreleased]` in `CHANGELOG.md` as you make them,
+   in the Keep a Changelog shape: `### Added`, `### Changed`, `### Fixed`,
+   `### Removed`, each item a bullet that opens with a bold phrase saying what
+   changed for the user, then the detail. Never group by area of the app.
 2. To release, add `## [x.y.z] - YYYY-MM-DD` under Unreleased, set
    `MARKETING_VERSION` in `Application/Tamio/project.yml`, run `xcodegen
    generate`, commit, and push the tag `vx.y.z`.

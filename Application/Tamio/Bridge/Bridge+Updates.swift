@@ -25,7 +25,7 @@ extension Bridge {
         guard updaterController == nil else { return }
         let reminders = UpdateReminders()
         updateReminders = reminders
-        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: reminders)
+        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: reminders, userDriverDelegate: reminders)
     }
 
     func checkForUpdates() {
@@ -78,5 +78,17 @@ final class UpdateReminders: NSObject, SPUStandardUserDriverDelegate {
 
     func standardUserDriverWillFinishUpdateSession() {
         notice?(nil)
+    }
+}
+
+extension UpdateReminders: SPUUpdaterDelegate {
+    /// Debug builds started with TAMIO_UPDATE_FEED=<url> read that feed
+    /// instead of the release's, to look at the update window.
+    func feedURLString(for _: SPUUpdater) -> String? {
+        #if DEBUG
+            return ProcessInfo.processInfo.environment["TAMIO_UPDATE_FEED"]
+        #else
+            return nil
+        #endif
     }
 }

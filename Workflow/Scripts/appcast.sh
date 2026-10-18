@@ -11,8 +11,9 @@
 # the SPARKLE_PRIVATE_KEY secret does).
 #
 # The update window shows the version's notes: its section of CHANGELOG.md
-# (release-notes.sh) as plain text (plain-notes.py). Sparkle prints HTML notes
-# as raw markup in a Mac Catalyst app, so they never go as HTML.
+# (release-notes.sh) as plain text (plain-notes.py). In a Mac Catalyst app
+# Sparkle prints HTML and Markdown notes as raw markup (both checked in its
+# window), so plain text it is: headings in capitals, bullets, no marks.
 
 set -euo pipefail
 

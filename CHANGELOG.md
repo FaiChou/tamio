@@ -1,130 +1,121 @@
 # Changelog
 
-What changes in each version of Tamio. Each release's notes come from its
-section here: on the GitHub release, and in the update window that offers it.
+All notable changes to Tamio are documented in this file. The format is based
+on [Keep a Changelog](https://keepachangelog.com); versions follow semver.
+Each release's notes come from its section here: on the GitHub release, and in
+the update window that offers it. A tag with no section here is not built.
 
-Write new entries under **Unreleased**. To release, rename that heading to the
-version and date (`## [0.2.0] - 2026-11-02`), set `MARKETING_VERSION` to match,
-and tag `v0.2.0`. A tag with no section here is not built.
+Write new entries under **Unreleased**, as **Added**, **Changed**, **Fixed** or
+**Removed**, each item opening with a bold phrase that says what changed for
+the user. To release, rename that heading to the version and date
+(`## [0.2.0] - 2026-11-02`), set `MARKETING_VERSION` to match, and tag
+`v0.2.0`.
 
 ## [Unreleased]
 
+### Changed
+- **The changelog is organised by kind of change.** Added, Changed, Fixed and
+  Removed, as in Keep a Changelog, instead of by area of the app; the update
+  window shows the same.
+
 ## [0.1.4] - 2026-10-18
 
-### Window
-
-- The sidebar's collapse button no longer drops to a second row, and the
-  server cards no longer flicker after it did. Catalyst dropped the window's
-  toolbar whenever the window sat exactly at the content's minimum size, and
-  the app then rebuilt its pages twenty times trying to get it back; neither
-  happens now.
-- The window cannot be made smaller than 960 by 640 points, and one restored
+### Changed
+- **The group badge follows the server name** in the server list, so every
+  name starts at the same edge.
+- **The window cannot be made smaller than 960 by 640 points.** One restored
   smaller grows to that, so the sidebar's Settings row is never cut off.
-- The update window shows a version's release notes as text, not as markup.
 
-### Home
-
-- A server whose connection died while the Mac slept keeps its last readings
-  on its card instead of blanking, and is reconnected within a second.
-- In the server list the group badge follows the server name, so every name
-  starts at the same edge.
+### Fixed
+- **The sidebar's collapse button no longer drops to a second row, and the
+  server cards no longer flicker.** Catalyst dropped the window's toolbar
+  whenever the window sat exactly at the content's minimum size, and the app
+  then rebuilt its pages twenty times trying to get it back, which faded every
+  card in again each time. Neither happens now.
+- **A server whose connection died while the Mac slept keeps its readings.**
+  Its card no longer blanks; it is reconnected within a second.
+- **The update window shows release notes as text,** not as HTML markup.
 
 ## [0.1.3] - 2026-10-18
 
-- Agent activity shows a short command whole, and a longer one or a task's
-  steps behind a click, never cut off.
-- Tamio installs with Homebrew: `brew install --cask owo-network/brew/tamio`.
+### Added
+- **Tamio installs with Homebrew:** `brew install --cask owo-network/brew/tamio`.
+
+### Fixed
+- **Agent activity never cuts a command off.** A short command shows whole; a
+  longer one, or a task's steps, shows behind a click.
 
 ## [0.1.2] - 2026-10-18
 
-### Sessions
+### Added
+- **A server with several terminals lists each one in the sidebar,** under the
+  server. Right-click a session to duplicate a terminal, reconnect or close it.
+- **Hidden files can be shown or hidden,** in Settings › General › Files or a
+  pane's Actions menu. They are hidden unless you turn them on.
 
-- The Terminal · Files · Monitor switcher is on the Files page too, so Files
-  no longer leaves you there.
-- The tab bar above the terminal is gone. A server with several terminals lists
-  each one under it in the sidebar; right-click a session to duplicate a
-  terminal, reconnect or close it. The switcher goes back to the terminal used
-  last.
-- The built-in editor is removed.
+### Changed
+- **A server's Files pane opens in the home folder** of the user Tamio signs
+  in as, not at the root of the disk.
+- **Containers and processes show their last reading at once** and refresh
+  behind it; containers list before their figures arrive.
+- **Disks leave out system mounts:** container layers, snaps, memory
+  filesystems, Time Machine snapshots and the system's own volumes, and each
+  disk shows once.
+- **The panel names its server on a row of its own.**
 
-### Files
+### Fixed
+- **Files can be left again.** The Terminal · Files · Monitor switcher is on
+  the Files page too; it had gone missing there.
+- **A click on a server card shows its server at once,** and the cards no
+  longer stutter as the panel opens.
 
-- A server's pane opens in the home folder of the user Tamio signs in as.
-- Hidden files are not listed unless you turn them on, in Settings › General ›
-  Files or a pane's Actions menu.
-
-### Home
-
-- A click on a card shows its server at once; the cards no longer stutter as
-  the panel opens. The panel names its server on a row of its own.
-- Containers and processes show their last reading at once and refresh behind
-  it; containers list before their figures arrive.
-- Disks leave out container layers, snaps, memory filesystems, Time Machine
-  snapshots and the system's own mounts, and show each disk once.
+### Removed
+- **The tab bar above the terminal.** The sidebar lists the terminals instead.
+- **The built-in editor.**
 
 ## [0.1.1] - 2026-10-18
 
 The first release of Tamio, an SSH client for the Mac.
 
-### Servers
+### Added
+- **Servers.** New Server is a dialog: address, label, group, tags, username
+  and port, then a password or an SSH key. An empty username signs in as
+  `root`. The server list shows each server's group as a badge, with live CPU,
+  memory, disk and network.
+- **Identities.** Paste a key, load it from a file, or generate an Ed25519 key.
+  A private key is never shown again once saved.
+- **Home.** A card for every server with live CPU, MEM and DISK, the operating
+  system's logo, and a country flag for labels such as `JP Tokyo`. Select a
+  card for its details: overview, processes, containers and agent activity.
+  Search and New Server sit in the toolbar.
+- **Files.** Two panes, this Mac and the server, each switchable to any
+  server. Drag files between the panes or from Finder to copy them; folders go
+  whole. Drag a file from a server to Finder to download it. Transfers run in a
+  queue with progress, speed, time left, cancel and retry, and a notification
+  tells you when one ends while Tamio is in the background.
+- **Agents (MCP).** Claude Code, Codex and other MCP clients can list your
+  servers and their live status, and, once you approve, run commands and
+  manage servers, keys, snippets and port forwards. Agents never see passwords
+  or private keys. What agents do is recorded per server, under the server's
+  Activity: an agent names the task each step serves ("Install nginx"), and
+  all the steps of a task are one entry, with each step and its result under
+  it. Settings › MCP turns the server on or off, sets up Claude Code, Codex and
+  the Tamio skill, and filters the activity by server.
+- **Approvals once, for an hour, or always,** for agents that work alone while
+  you are away. Always-allowed agents are listed in Settings › MCP, where they
+  can be revoked.
+- **iCloud sync, on unless you turn it off,** so what agents did on your
+  servers is not lost with a Mac. Servers, identities, snippets, port forwards
+  and known host keys stay the same on all your Macs, end-to-end encrypted
+  under a passphrase only your devices know. Tamio makes it and keeps it in
+  iCloud Keychain; Settings shows it for a device without iCloud Keychain.
+  Agent activity from every Mac is kept together.
+- **Updates itself.** A new version shows at the bottom of the sidebar, with
+  its release notes in the update window.
+- **A new icon:** a glass terminal window, its prompt followed by an agent's
+  typing dots, in front of the servers it works on.
 
-- **New Server** is a dialog: address, label, group, tags, username and port,
-  then a password or an SSH key.
-- An empty username signs in as `root`.
-- Keys are kept in **Identities**: paste one, load it from a file, or generate an
-  Ed25519 key. A private key is never shown again once saved.
-- The server list shows each server's group as a badge, with live CPU, memory,
-  disk and network.
-
-### Home
-
-- A card for every server with live **CPU**, **MEM** and **DISK**, the operating
-  system's logo, and a country flag for labels such as `JP Tokyo`.
-- Select a card for its details: overview, processes, containers and agent
-  activity.
-- Search and New Server sit in the toolbar.
-
-### Files
-
-- Two panes, this Mac and the server, each switchable to any server.
-- Drag files between the panes or from Finder to copy them; folders go whole.
-- Drag a file from a server to Finder to download it.
-- Transfers run in a queue with progress, speed, time left, cancel and retry,
-  and a notification tells you when one ends while Tamio is in the background.
-
-### Agents (MCP)
-
-- Claude Code, Codex and other MCP clients can list your servers and their live
-  status, and, once you approve, run commands and manage servers, keys, snippets
-  and port forwards.
-- Agents never see passwords or private keys.
-- What agents do is recorded per server, under the server's Activity.
-- An agent names the task each step serves ("Install nginx"), and all the steps
-  of a task are one entry, with each step and its result under it.
-- Settings › MCP filters agent activity by server.
-- Approvals can be given once, for an hour, or always, for agents that work
-  alone while you are away. Always-allowed agents are listed in Settings › MCP,
-  where they can be revoked.
-- **Settings › MCP** turns the server on or off and sets up Claude Code, Codex
-  and the Tamio skill.
-
-### iCloud sync
-
-- On unless you turn it off, so what agents did on your servers is not lost
-  with a Mac.
-- Servers, identities, snippets, port forwards and known host keys stay the
-  same on all your Macs, end-to-end encrypted under a passphrase only your
-  devices know. Tamio makes it and keeps it in iCloud Keychain; Settings shows
-  it for a device without iCloud Keychain.
-- Agent activity from every Mac is kept together, so agents on one Mac know
-  what was done from another.
-
-### App
-
-- Updates itself: a new version shows at the bottom of the sidebar, with its
-  release notes in the update window.
-- Switching between light and dark is smooth.
-- Settings never squeeze a title into a narrow column: a wide control moves
+### Changed
+- **Switching between light and dark is smooth.**
+- **Settings never squeeze a title into a narrow column:** a wide control moves
   under its title instead.
-- A new icon: a glass terminal window, its prompt followed by an agent's typing
-  dots, in front of the servers it works on.

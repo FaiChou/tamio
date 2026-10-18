@@ -31,7 +31,8 @@ def plain(markdown: str) -> str:
             if out and out[-1] != "":
                 out.append("")
             headings.add(len(out))
-            out.append(inline(heading.group(1)))
+            # Plain text has no bold: a heading stands out in capitals.
+            out.append(inline(heading.group(1)).upper())
         elif bullet:
             depth = len(bullet.group(1).replace("\t", "    ")) // 2
             out.append("   " * depth + "• " + inline(bullet.group(2)))
