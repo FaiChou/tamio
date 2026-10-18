@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
-  <title>Tamio prompt</title>
-  <!-- The chevron 309,322 → 525,512 → 309,702, 124 wide with round caps and
-       join, as one outline, and the cursor: solid white, nothing behind. -->
-  <path fill="#FFFFFF" d="M349.95 275.44 L565.95 465.44 A62 62 0 0 1 565.95 558.56 L349.95 748.56 A62 62 0 0 1 268.05 655.44 L431.12 512 L268.05 368.56 A62 62 0 0 1 349.95 275.44 Z"/>
-  <rect x="581" y="640" width="196" height="76" rx="38" fill="#FFFFFF"/>
-</svg>

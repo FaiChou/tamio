@@ -9,7 +9,7 @@ and tag `v0.2.0`. A tag with no section here is not built.
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-10-17
+## [0.1.1] - 2026-10-18
 
 The first release of Tamio, an SSH client for the Mac.
 
@@ -62,4 +62,6 @@ The first release of Tamio, an SSH client for the Mac.
 - Updates itself: a new version shows at the bottom of the sidebar, with its
   release notes in the update window.
 - Switching between light and dark is smooth.
-- A new icon.
+- Settings never squeeze a title into a narrow column: a wide control moves
+  under its title instead.
+- A new icon: an AI spark in an orbit of connected servers.

@@ -1,29 +1,34 @@
 {
-  "fill": {
-    "automatic-gradient": "display-p3:0.16863,0.53725,0.99216,1.00000"
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.07059,0.08627,0.30196,1.00000",
+      "display-p3:0.27843,0.34902,0.85098,1.00000"
+    ],
+    "orientation" : {
+      "start" : { "x" : 0.5, "y" : 0 },
+      "stop" : { "x" : 0.5, "y" : 1 }
+    }
   },
-  "groups": [
+  "groups" : [
     {
-      "layers": [
-        {
-          "image-name": "prompt.svg",
-          "name": "prompt"
-        }
+      "layers" : [
+        { "image-name" : "spark-light.svg", "name" : "spark-light" },
+        { "image-name" : "spark-shade.svg", "name" : "spark-shade" }
       ],
-      "shadow": {
-        "kind": "neutral",
-        "opacity": 0.25
-      },
-      "translucency": {
-        "enabled": false,
-        "value": 0
-      }
+      "shadow" : { "kind" : "neutral", "opacity" : 0.45 },
+      "translucency" : { "enabled" : false, "value" : 0 }
+    },
+    {
+      "layers" : [
+        { "image-name" : "nodes.svg", "name" : "nodes" },
+        { "image-name" : "orbit.svg", "name" : "orbit" }
+      ],
+      "shadow" : { "kind" : "neutral", "opacity" : 0.3 },
+      "translucency" : { "enabled" : false, "value" : 0 }
     }
   ],
-  "supported-platforms": {
-    "circles": [
-      "watchOS"
-    ],
-    "squares": "shared"
+  "supported-platforms" : {
+    "circles" : [ "watchOS" ],
+    "squares" : "shared"
   }
 }
