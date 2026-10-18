@@ -2,7 +2,7 @@
 //  ServersView.swift
 //  Tamio (macOS)
 //
-//  All servers in one list, each group a badge before the name, with search,
+//  All servers in one list, each group a badge after the name, with search,
 //  redaction, Open Terminals and New Server.
 //
 
@@ -24,7 +24,7 @@ struct ServersView: View {
         return machines.filter { $0.isQualifiedForSearch(text: searchText) }
     }
 
-    /// By name; a server's group is its badge, not a section.
+    /// By name; a server's group is a badge after it, not a section.
     var sorted: [RDMachine] {
         filtered.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
@@ -211,16 +211,18 @@ private struct ServerRow: View {
         ServerLiveReader(machine: machine) { state in
             HStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 1) {
-                    HStack(spacing: 5) {
-                        if !read.group.isEmpty {
-                            RXTag(read.group)
-                                .fixedSize()
-                        }
+                    // The group follows the name, so every name starts at the
+                    // same edge.
+                    HStack(spacing: 6) {
                         if let flag = read.countryFlag { Text(flag).font(.system(size: 13)) }
                         RedactableText(read.name, redacted: store.machineRedacted == .all)
                             .font(.rxBody)
                             .foregroundStyle(.rxInk)
                             .lineLimit(1)
+                        if !read.group.isEmpty {
+                            RXTag(read.group)
+                                .fixedSize()
+                        }
                     }
                     if !read.comment.isEmpty, store.machineRedacted == .none {
                         Text(read.comment)
