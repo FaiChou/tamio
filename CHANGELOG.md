@@ -11,6 +11,17 @@ the user. To release, rename that heading to the version and date
 (`## [0.2.0] - 2026-11-02`), set `MARKETING_VERSION` to match, and tag
 `v0.2.0`.
 
+## [Unreleased]
+
+### Changed
+- **Session rows in the sidebar start with the server's name.** The server
+  symbol before it is gone, so a long name has the room; the whole name is in
+  the row's tooltip.
+
+### Fixed
+- **Home's first card spans the page.** With no server saved yet, the card
+  stopped at 640 points and left the rest of the page empty.
+
 ## [0.2.0] - 2026-10-18
 
 ### Added

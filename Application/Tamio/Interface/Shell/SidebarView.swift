@@ -142,6 +142,8 @@ struct SidebarMetrics: Equatable {
     var iconCenter: CGFloat
     /// From the leading edge of the row to its title.
     var titleLeading: CGFloat
+    /// Where a row without an icon starts its text: the icons' leading edge.
+    var nameLeading: CGFloat { iconCenter - iconSize / 2 }
 
     /// Rows stop this far from the edges of the sidebar.
     static let inset: CGFloat = 10
@@ -270,14 +272,17 @@ private struct SidebarHeader: View {
     }
 }
 
-/// A server with open sessions (or a Quick Connect terminal): its name, then
-/// small symbols for the tools that are open.
+/// A server with open sessions (or a Quick Connect terminal): its name, with
+/// no symbol before it so a long name has the room, then small symbols for
+/// the tools that are open.
 private struct OwnerSidebarRow: View {
     let owner: SessionOwner
     @EnvironmentObject var store: TamioStore
     @ObservedObject var terminals = TerminalManager.shared
     @ObservedObject var transfers = FileTransferManager.shared
     @ObservedObject var monitors = MonitorCenter.shared
+    @Environment(\.sidebarMetrics) private var metrics
+    @Environment(\.isSidebarRowSelected) private var isSelected
 
     private var routes: [Route] { AppRouter.shared.routes(of: owner) }
 
@@ -304,10 +309,13 @@ private struct OwnerSidebarRow: View {
 
     var body: some View {
         HStack(spacing: RX.Space.s2) {
-            SidebarLabel(systemImage: { if case .command = owner { return "terminal" } else { return "server.rack" } }()) {
-                RedactableText(title, redacted: store.machineRedacted == .all)
-                    .truncationMode(.middle)
-            }
+            RedactableText(title, redacted: store.machineRedacted == .all)
+                .font(.system(size: metrics.fontSize, weight: isSelected ? .semibold : .regular))
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .padding(.leading, metrics.nameLeading)
+            Spacer(minLength: 4)
             if case .server = owner {
                 HStack(spacing: 3) {
                     ForEach(openTools) { tool in
@@ -320,7 +328,8 @@ private struct OwnerSidebarRow: View {
                 .accessibilityHidden(true)
             }
         }
-        .help(openTools.map(\.title).joined(separator: ", ") + " open")
+        // The whole name, for one too long for the row.
+        .help("\(title) · " + openTools.map(\.title).joined(separator: ", ") + " open")
         .contextMenu { menu }
     }
 
@@ -379,7 +388,8 @@ private struct TerminalSidebarRow: View {
                 .help(context.navigationSubtitle.isEmpty ? context.sidebarTitle : context.navigationSubtitle)
             Spacer(minLength: 4)
         }
-        .padding(.leading, metrics.titleLeading)
+        // Under the server's name, a step in.
+        .padding(.leading, metrics.nameLeading + RX.Space.s3)
         .contextMenu {
             Button("Duplicate Terminal") { context.duplicate() }
             if context.closed { Button("Reconnect") { context.reconnect() } }

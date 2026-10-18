@@ -95,7 +95,7 @@ private struct HomeContent: View {
             ) {
                 AppRouter.shared.presentNewServer = true
             }
-            .frame(maxWidth: 640)
+            .frame(maxWidth: .infinity)
             .rxCard()
         } else if machines.isEmpty {
             EmptyStateView("No servers match “\(search)”", systemImage: "magnifyingglass")
