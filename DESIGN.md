@@ -340,7 +340,10 @@ removed (confirmed, Q1). Home opens straight onto the server cards.
 >   an ellipsis; what does not fit is in the inspector), and three rings:
 >   **CPU · MEM · DISK**. Terminal and ⋯ on the right.
 > - Home has **no title row**: the toolbar holds search and New Server at the top
->   right, and the grid starts right under it.
+>   right, and the grid starts right under it. Once a server has a group, a
+>   segmented switcher at the toolbar's leading end (All · each group · No
+>   Group, drawn like Terminal · Files · Monitor) shows one group's cards; the
+>   choice is kept across launches.
 > - A click on a card opens the **inspector beside the grid, below the toolbar**,
 >   never under it, so search and New Server keep their own row. Overview /
 >   Processes / Containers as in §5.7; it gives up width before the cards do.

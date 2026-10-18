@@ -3,8 +3,9 @@
 //  Tamio (macOS)
 //
 //  Start page: every server's live status card in a dense grid, straight
-//  under the toolbar (search and New Server at the top right, no title row),
-//  and beside them the inspector of the card that is selected.
+//  under the toolbar (a group switcher at the top left, search and New Server
+//  at the top right, no title row), and beside them the inspector of the card
+//  that is selected.
 //
 
 import MachineStatusView
@@ -12,14 +13,69 @@ import SwiftUI
 import TamioDesign
 import TamioModule
 
+/// Which servers Home shows: every one, one group's, or those in no group.
+/// Kept across launches as a string.
+enum HomeGroupFilter: Hashable, RawRepresentable {
+    case all
+    case group(String)
+    case ungrouped
+
+    init?(rawValue: String) {
+        switch rawValue {
+        case "all": self = .all
+        case "ungrouped": self = .ungrouped
+        default:
+            guard rawValue.hasPrefix("group:") else { return nil }
+            self = .group(String(rawValue.dropFirst("group:".count)))
+        }
+    }
+
+    var rawValue: String {
+        switch self {
+        case .all: return "all"
+        case .ungrouped: return "ungrouped"
+        case let .group(name): return "group:" + name
+        }
+    }
+
+    func includes(_ machine: RDMachine) -> Bool {
+        switch self {
+        case .all: return true
+        case .ungrouped: return machine.group.isEmpty
+        case let .group(name): return machine.group == name
+        }
+    }
+}
+
 struct HomeView: View {
+    @EnvironmentObject var store: TamioStore
     @State private var search = ""
+    @AppStorage("sb.moe.tamio.home.group") private var storedFilter: HomeGroupFilter = .all
+
+    /// Every group a server is in, by name.
+    var groups: [String] {
+        Set(store.machineGroup.machines.map(\.group)).filter { !$0.isEmpty }
+            .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+    }
+
+    var hasUngrouped: Bool {
+        store.machineGroup.machines.contains { $0.group.isEmpty }
+    }
+
+    /// The chosen filter, or All once no server is left in what it named.
+    var filter: HomeGroupFilter {
+        switch storedFilter {
+        case let .group(name) where !groups.contains(name): return .all
+        case .ungrouped where !hasUngrouped: return .all
+        default: return storedFilter
+        }
+    }
 
     var body: some View {
         // The toolbar is set here, on a view that redraws only when the
-        // search changes: rebuilding toolbar items on every resize makes
-        // AppKit lay the title bar out as two rows.
-        HomeContent(search: search)
+        // search or the servers change: rebuilding toolbar items on every
+        // resize makes AppKit lay the title bar out as two rows.
+        HomeContent(search: search, filter: filter)
             .pageChrome()
             .pageToolbar(
                 primary: ToolbarAction("New Server", systemImage: "plus", primary: true) {
@@ -27,12 +83,58 @@ struct HomeView: View {
                 },
                 trailingMetrics: .group,
                 search: ($search, "Search servers")
-            ) {} trailing: {}
+            ) {
+                // Only once a server has a group: with none, there is nothing
+                // to choose between.
+                if !groups.isEmpty {
+                    HomeGroupSwitcher(
+                        filter: Binding(get: { filter }, set: { storedFilter = $0 }),
+                        groups: groups,
+                        hasUngrouped: hasUngrouped,
+                        count: { value in store.machineGroup.machines.filter { value.includes($0) }.count }
+                    )
+                }
+            } trailing: {}
+    }
+}
+
+/// All · each group · No Group at the leading end of Home's toolbar, drawn
+/// like the Terminal · Files · Monitor switcher of a session page: one click
+/// shows only that group's cards.
+private struct HomeGroupSwitcher: View {
+    @Binding var filter: HomeGroupFilter
+    let groups: [String]
+    let hasUngrouped: Bool
+    let count: (HomeGroupFilter) -> Int
+
+    var body: some View {
+        Picker("Group", selection: $filter) {
+            segment(.all, "All")
+            ForEach(groups, id: \.self) { name in
+                segment(.group(name), name)
+            }
+            if hasUngrouped {
+                segment(.ungrouped, "No Group")
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+        .help("Show every server, or one group's")
+    }
+
+    private func segment(_ value: HomeGroupFilter, _ title: String) -> some View {
+        let servers = count(value)
+        return Text(title)
+            .help(servers == 1 ? "1 server" : "\(servers) servers")
+            .accessibilityLabel("\(title), \(servers)")
+            .tag(value)
     }
 }
 
 private struct HomeContent: View {
     let search: String
+    let filter: HomeGroupFilter
 
     @EnvironmentObject var store: TamioStore
     @State private var selection: RDMachine.ID?
@@ -45,9 +147,9 @@ private struct HomeContent: View {
     }
 
     var machines: [RDMachine] {
-        let all = store.machineGroup.machines
+        let shown = store.machineGroup.machines.filter { filter.includes($0) }
         let needle = search.trimmingCharacters(in: .whitespaces)
-        return needle.isEmpty ? all : all.filter { $0.isQualifiedForSearch(text: needle) }
+        return needle.isEmpty ? shown : shown.filter { $0.isQualifiedForSearch(text: needle) }
     }
 
     var body: some View {
@@ -98,7 +200,7 @@ private struct HomeContent: View {
             .frame(maxWidth: .infinity)
             .rxCard()
         } else if machines.isEmpty {
-            EmptyStateView("No servers match “\(search)”", systemImage: "magnifyingglass")
+            EmptyStateView(noMatchTitle, systemImage: "magnifyingglass")
                 .rxCard()
         } else {
             LazyVGrid(
@@ -116,6 +218,14 @@ private struct HomeContent: View {
                     .transition(.scale(scale: 0.97).combined(with: .opacity))
                 }
             }
+        }
+    }
+
+    var noMatchTitle: String {
+        switch filter {
+        case .all: return "No servers match “\(search)”"
+        case .ungrouped: return "No servers in no group match “\(search)”"
+        case let .group(name): return "No servers in \(name) match “\(search)”"
         }
     }
 }

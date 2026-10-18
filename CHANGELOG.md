@@ -11,6 +11,15 @@ the user. To release, rename that heading to the version and date
 (`## [0.2.0] - 2026-11-02`), set `MARKETING_VERSION` to match, and tag
 `v0.2.0`.
 
+## [Unreleased]
+
+### Added
+- **Home shows one group at a time.** A switcher at the top left of the
+  toolbar, beside search and New Server, lists All, every group a server is
+  in, and No Group for the servers in none; a click shows only that group's
+  cards, and the choice is kept for the next launch. It appears once a
+  server has a group.
+
 ## [0.2.2] - 2026-10-18
 
 ### Changed
