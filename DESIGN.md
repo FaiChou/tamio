@@ -26,7 +26,7 @@ servers**, and a **Termius-style dual-pane SFTP**.
 | Ghostty | https://ghostty.org | — |
 | Termius (UX reference) | https://termius.com | — |
 | ServerCat (UX reference for status cards, closed source, bundle `tech.baye.servercat`) | — | `/Applications/ServerCat.app` |
-| Sparkle 2 (auto-update) | https://sparkle-project.org · https://github.com/sparkle-project/Sparkle | SwiftPM, linked into `MacBridge` |
+| Sparkle 2 (auto-update) | https://sparkle-project.org · https://github.com/sparkle-project/Sparkle | Fetched into `External/Sparkle` by `Workflow/Scripts/sparkle.sh`, linked into the app |
 | Tamio (this project) | — | `~/Projects/tamio` |
 
 Rayon state at the time of writing: `02b313a chore: version 2.5.2 (49)`, MIT license.
@@ -48,11 +48,11 @@ Rayon state at the time of writing: `02b313a chore: version 2.5.2 (49)`, MIT lic
 | Area | Path | Notes |
 |---|---|---|
 | Workspace | `App.xcworkspace` | Open this, scheme **catussh** |
-| macOS app target (XcodeGen) | `Application/catussh/project.yml` | Mac Catalyst app + AppKit `MacBridge` bundle |
+| macOS app target (XcodeGen) | `Application/catussh/project.yml` | Native macOS app (SwiftUI on AppKit); Mac Catalyst until 0.2.0 |
 | Generated project | `Application/catussh/catussh.xcodeproj` | Regenerate with `xcodegen generate` |
 | Info.plist / entitlements | `Application/catussh/macOS/Info.plist`, `macOS/macOS.entitlements` | Rayon is sandboxed; Tamio drops the sandbox (§3.4) |
 | App entry | `Application/catussh/Application/CatusshApp.swift` | |
-| AppKit bridge | `Application/catussh/Bridge/*`, `Shared/MacBridging.swift` | Window material, status items, dialogs, legacy keychain |
+| AppKit | `Application/Tamio/Mac/*` | Window material, status items, dialogs, legacy keychain, Sparkle |
 | Navigation | `Application/catussh/Interface/Shell/AppRouter.swift` | `Route` enum, session owners |
 | Sidebar | `Application/catussh/Interface/Shell/SidebarView.swift` | Home · Manage (Servers, Identities, Snippets, Port Forward) · Sessions · Settings |
 | Page chrome | `Application/catussh/Interface/Shell/PageScaffold.swift`, `MainView.swift` | |
@@ -170,14 +170,14 @@ grep -rnI -i "catussh\|mizorewww\|me\.mizore" --exclude-dir=.git . \
 find . -iname '*catussh*' -not -path './.git/*'
 ```
 
-Also check the keychain service names (`Bridge/Bridge+Keychain.swift`,
+Also check the keychain service names (`Mac/Mac.swift`,
 `Foundation/Keychain`) and any iCloud key-value container in `Sync/`. These are
 tied to the bundle ID, so Tamio starts with an empty store and does not read
 Rayon's data. Importing from Rayon is out of scope for v1.
 
 ### 3.3 Build
 
-- Mac Catalyst ("Optimize for Mac"), universal arm64 + x86_64, as Rayon does.
+- Native macOS (AppKit) since 0.2.0; Mac Catalyst before that. Universal arm64 + x86_64.
 - Minimum macOS **14.0** (Sonoma), needed for `CKSyncEngine` (§7.5). Xcode 26+ / Swift 6.2.
   `project.yml` `deploymentTarget.macOS` and `MACOSX_DEPLOYMENT_TARGET` change from 13.0.
 - `project.yml` stays the source of truth; run `xcodegen generate` after edits.
@@ -208,11 +208,10 @@ Rayon's data. Importing from Rayon is out of scope for v1.
   `Workflow/Scripts/provisioning-profile.sh` already finds and embeds a profile;
   point it at the Developer ID one.
 - **Sparkle 2** for updates:
-  - Sparkle is an AppKit framework and Tamio's main target is Mac Catalyst, so it
-    is linked into the **`MacBridge` AppKit bundle** (`Application/Tamio/Bridge`),
-    which already exists for AppKit-only features. The Catalyst side calls it
-    through `Shared/MacBridging.swift` ("Check for Updates…" in the app menu and in
-    Settings → About, plus an "Automatically check" toggle).
+  - Sparkle is linked into the app and driven by `Application/Tamio/Mac/MacUpdates.swift`
+    ("Check for Updates…" in the app menu and in Settings → About, plus the
+    automatic check and download switches). Until 0.2.0, when the app was Mac
+    Catalyst, it lived in a separate AppKit bundle.
   - EdDSA (ed25519) signed updates. The public key goes in `Info.plist`
     (`SUPublicEDKey`), and the private key stays in the release machine's keychain
     / a CI secret (`release-secrets.sh`).

@@ -2,9 +2,9 @@
 """Turns one version's notes (Markdown, from release-notes.sh) into the plain
 text Sparkle's update window shows.
 
-Sparkle does not render HTML release notes in a Mac Catalyst app; it prints
-the markup instead. So the notes go as plain text: "### Files" becomes a line
-of its own, "- " a bullet, and links, code and emphasis lose their marks.
+The notes go as plain text: "### Files" becomes a line of its own, "- " a
+bullet, and links, code and emphasis lose their marks. Chosen when the app
+was Mac Catalyst, where Sparkle printed HTML and Markdown as raw markup.
 
 Usage: bash release-notes.sh 0.2.0 | python3 plain-notes.py
 """

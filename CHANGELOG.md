@@ -11,7 +11,7 @@ the user. To release, rename that heading to the version and date
 (`## [0.2.0] - 2026-11-02`), set `MARKETING_VERSION` to match, and tag
 `v0.2.0`.
 
-## [Unreleased]
+## [0.2.0] - 2026-10-18
 
 ### Added
 - **A snippets panel beside every terminal.** The toolbar's Snippets button
@@ -22,8 +22,15 @@ the user. To release, rename that heading to the version and date
   Mouse & Clipboard), pasting text with line breaks or control characters
   into a terminal shows the text and asks before pasting it; before, it was
   pasted at once.
+- **VoiceOver reads the sidebar and the server cards.** Every sidebar row and
+  every card on Home has a name and can be pressed.
 
 ### Changed
+- **Tamio is a native Mac app.** It is built on AppKit instead of Mac
+  Catalyst: the toolbar, sheets, alerts, open panels, menus and the menu bar
+  item are the Mac's own, the update window is Sparkle's, and the app is one
+  bundle without a plugin. Servers, identities, snippets, settings and the
+  master key carry over.
 - **The changelog is organised by kind of change.** Added, Changed, Fixed and
   Removed, as in Keep a Changelog, instead of by area of the app; the update
   window shows the same.

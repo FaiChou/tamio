@@ -8,15 +8,15 @@ repository. Read it before changing anything; `DESIGN.md` has the product plan.
 Tamio is a native SSH client for macOS: a Ghostty terminal, dual-pane SFTP,
 live status for every server, end-to-end encrypted iCloud sync, and an MCP
 server that lets AI agents work on the user's servers with their approval.
-It is a Mac Catalyst app (SwiftUI, Swift 6) with an AppKit plugin, macOS 14 or
-later, bundle id `sb.moe.tamio`. An iOS app is planned but not started; leave
+It is a native macOS app (SwiftUI on AppKit, Swift 6), macOS 14 or later,
+bundle id `sb.moe.tamio`. An iOS app is planned but not started; leave
 `Application/TamioMobile` alone unless asked.
 
 ## Layout
 
 | Path | What is there |
 |---|---|
-| `Application/Tamio` | The Mac app. `Interface/` holds the pages (Home, Servers, Files, Settings…), `Bridge/` the AppKit plugin (`MacBridge.bundle`: windows, dialogs, Sparkle), `project.yml` the XcodeGen spec |
+| `Application/Tamio` | The Mac app. `Interface/` holds the pages (Home, Servers, Files, Settings…), `Mac/` the AppKit side (windows and their material, alerts and panels, the menu bar item, Sparkle), `project.yml` the XcodeGen spec |
 | `Foundation/TamioModule` | The app's core: store, sync, SFTP browsing and transfers, the MCP server (`Agent/`) |
 | `Foundation/TamioDesign` | Design tokens and shared controls (colours, rows, `RXRowLayout`) |
 | `Foundation/TamioTerminal` | The Ghostty terminal and its settings catalog |
