@@ -11,7 +11,7 @@ the user. To release, rename that heading to the version and date
 (`## [0.2.0] - 2026-11-02`), set `MARKETING_VERSION` to match, and tag
 `v0.2.0`.
 
-## [Unreleased]
+## [0.2.3] - 2026-10-18
 
 ### Added
 - **Home shows one group at a time.** A switcher at the top left of the
