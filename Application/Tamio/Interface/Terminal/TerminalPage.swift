@@ -3,9 +3,9 @@
 //  Tamio (macOS)
 //
 //  A terminal inside the main window: the Terminal · Files · Monitor switcher,
-//  text size and Reconnect. The sidebar lists a server's terminals, and its
-//  menu duplicates and closes them. Status bar: the endpoint, then live
-//  figures while monitored.
+//  text size, the snippets panel and Reconnect. The sidebar lists a server's
+//  terminals, and its menu duplicates and closes them. Status bar: the
+//  endpoint, then live figures while monitored.
 //
 
 import MachineStatusView
@@ -19,24 +19,39 @@ struct TerminalPage: View {
 
     @State private var interfaceToken = UUID()
     @Environment(\.isActivePage) private var isActive
+    /// The snippets panel beside the terminal, shown or hidden for every terminal.
+    @AppStorage(TerminalSnippetPanel.shownKey) private var snippetsShown = false
 
     var body: some View {
-        VStack(spacing: 0) {
+        HStack(alignment: .top, spacing: RX.Space.s3) {
             VStack(spacing: 0) {
-                if context.closed {
-                    disconnectedBanner
+                VStack(spacing: 0) {
+                    if context.closed {
+                        disconnectedBanner
+                    }
+                    surface
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                surface
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // No backdrop of our own: Ghostty paints its background with
+                // `background-opacity`, so a translucent terminal shows the window
+                // material underneath instead of an opaque fill.
+                .clipShape(RoundedRectangle(cornerRadius: RX.Radius.lg, style: .continuous))
+                // The terminal ends level with the sidebar's Settings row; the
+                // status line takes the margin under it.
+                TerminalStatusBar(context: context)
+                    .frame(height: RX.Space.s6)
             }
-            // No backdrop of our own: Ghostty paints its background with
-            // `background-opacity`, so a translucent terminal shows the window
-            // material underneath instead of an opaque fill.
-            .clipShape(RoundedRectangle(cornerRadius: RX.Radius.lg, style: .continuous))
-            .padding(.horizontal, RX.Space.s6)
-            TerminalStatusBar(context: context)
-                .padding(.horizontal, RX.Space.s6)
+            if snippetsShown {
+                TerminalSnippetPanel(context: context) { snippetsShown = false }
+                    .frame(width: TerminalSnippetPanel.width)
+                    .padding(.bottom, RX.Space.s6)
+                    // Only the panel moves: the terminal takes its new width at
+                    // once, not frame by frame, so its text never stutters.
+                    .transition(.move(edge: .trailing).combined(with: .opacity)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.9)))
+            }
         }
+        .padding(.horizontal, RX.Space.s6)
         .padding(.top, RX.Space.s3)
         .pageChrome()
         // Closing and duplicating are in the sidebar's menu.
@@ -65,6 +80,11 @@ struct TerminalPage: View {
                 .keyboardShortcut("+", modifiers: .command)
             }
             .help("Text Size")
+            Toggle(isOn: $snippetsShown) {
+                Label("Snippets", systemImage: "sidebar.trailing")
+            }
+            .keyboardShortcut("s", modifiers: [.command, .option])
+            .help("Show or hide the snippets panel (⌥⌘S)")
         }
         .serverToolSwitcher(
             machine: context.remoteType == .machine && context.machine.isNotPlaceholder() ? context.machine.id : nil,
@@ -132,7 +152,6 @@ private struct TerminalStatusBar: View {
         .font(.system(size: 11).monospacedDigit())
         .foregroundStyle(.rxInkSecondary)
         .padding(.horizontal, RX.Space.s1)
-        .frame(height: 32)
     }
 
     var endpoint: String {

@@ -151,7 +151,7 @@ enum TamioTerminalConfiguration {
     static let didApply = Notification.Name("TamioTerminalConfigurationDidApply")
     static var appliedFontSize: Double? = ConfigEditorModel.storedDocument().overrides["font-size"]?.first.flatMap(Double.init)
     static let controller: TerminalController = {
-        let result = TerminalController(configuration: TerminalConfiguration.default
+        let result = TerminalController(configuration: baseConfiguration
             .custom("clipboard-read", "ask").custom("clipboard-write", "ask"))
         let document = ConfigEditorModel.storedDocument()
         if !document.overrides.isEmpty { try? apply(document, to: result) }
@@ -161,9 +161,16 @@ enum TamioTerminalConfiguration {
     /// Values Tamio's terminal starts from where they differ from Ghostty's own
     /// defaults (font size 14, thickened text, blinking block cursor). The editor
     /// shows these as the defaults, because they are what the terminal uses.
+    /// What every terminal starts from: the renderer's defaults, and room
+    /// between the text and the edges of the rounded box the terminal sits
+    /// in, which Ghostty's two points leave too tight to read.
+    nonisolated static let baseConfiguration = TerminalConfiguration.default
+        .windowPaddingX(12)
+        .windowPaddingY(10)
+
     nonisolated static let runtimeDefaults: [String: [String]] = {
         var result: [String: [String]] = [:]
-        for line in TerminalConfiguration.default.rendered.components(separatedBy: "\n") {
+        for line in baseConfiguration.rendered.components(separatedBy: "\n") {
             guard let eq = line.firstIndex(of: "=") else { continue }
             let key = line[..<eq].trimmingCharacters(in: .whitespaces)
             let value = line[line.index(after: eq)...].trimmingCharacters(in: .whitespaces)
@@ -197,7 +204,7 @@ enum TamioTerminalConfiguration {
         "adjust_selection", "jump_to_prompt", "toggle_readonly", "toggle_mouse_reporting", "end_key_sequence"
     ]
     static func runtimeContents(_ document: ConfigDocument, dark: Bool) -> String {
-        var lines = [TerminalConfiguration.default.rendered]
+        var lines = [baseConfiguration.rendered]
         if let theme = document.effectiveTheme(dark: dark) {
             lines += theme.entries.map { "\($0.0) = \($0.1)" }
         }

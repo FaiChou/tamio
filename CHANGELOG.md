@@ -13,10 +13,41 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Added
+- **A snippets panel beside every terminal.** The toolbar's Snippets button
+  (⌥⌘S) opens a panel of the saved snippets: a click types one at the prompt
+  and runs it, and its menu inserts it without running, copies it or edits
+  it. New snippets can be made there too.
+- **Paste protection asks first.** With Paste protection on (Settings ›
+  Mouse & Clipboard), pasting text with line breaks or control characters
+  into a terminal shows the text and asks before pasting it; before, it was
+  pasted at once.
+
 ### Changed
 - **The changelog is organised by kind of change.** Added, Changed, Fixed and
   Removed, as in Keep a Changelog, instead of by area of the app; the update
   window shows the same.
+- **Terminal pages end level with the sidebar's Settings row,** with the
+  connection line in a slim strip under the terminal; Home's inspector ends
+  on the same line.
+- **Terminal text keeps its distance from the edges.** Every terminal, the
+  batch run sheet's included, starts with 12 points of padding at the sides
+  and 10 above and below, instead of Ghostty's 2; Settings › Window › Padding
+  still sets it.
+
+### Fixed
+- **The batch run sheet shows a server as done the moment it finishes.** It
+  stopped redrawing once the last server finished, so the count and the
+  states stayed stale until something else redrew it.
+- **The batch run sheet's output no longer sits in a dark frame** in light
+  mode; the terminal draws its own background.
+
+### Removed
+- **The Recent settings** (remember recent servers, number to keep, Quick
+  Connect commands): nothing on the Mac showed recent servers, so the
+  switches changed nothing.
+- **Hide the mouse while typing**, from Terminal › Mouse & Clipboard: the
+  embedded terminal never hid it.
 
 ## [0.1.4] - 2026-10-18
 

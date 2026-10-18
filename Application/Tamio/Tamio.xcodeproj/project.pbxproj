@@ -41,6 +41,7 @@
 		B2DEED12A1C4505ABEED8FF8 /* BatchSnippetExecContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 615A9FAD4A0F752FBD542810 /* BatchSnippetExecContext.swift */; };
 		B347AFC662FEA41D342D2394 /* MonitorPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC9ACCCD82006879E4BFB703 /* MonitorPage.swift */; };
 		B407B4973269B8D2FF62A6CF /* AgentBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9D95A164114CD21CB58BAC1 /* AgentBridge.swift */; };
+		B7855385DAEB2E20982F2AB8 /* TerminalSnippetPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4556288987001E1EA703A8E5 /* TerminalSnippetPanel.swift */; };
 		B7E46F6E3621804D80A5BE16 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB9E4DDA19C6E86B44842578 /* HomeView.swift */; };
 		BD3114CB7B4AEB7FD75D9F78 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F41A429DA891AEEB06DA914 /* SettingsView.swift */; };
 		BEB4DE2C2050BCC4316E8C40 /* MacUpdates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 655C0A15AF2F03284F556BC5 /* MacUpdates.swift */; };
@@ -92,6 +93,7 @@
 		2FECAE3A90867AFF08FC69C1 /* MacStatusItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacStatusItem.swift; sourceTree = "<group>"; };
 		3D77332CA29BD257A4BA5AD0 /* AgentSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSettings.swift; sourceTree = "<group>"; };
 		42B043231E7AF65887A269C2 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		4556288987001E1EA703A8E5 /* TerminalSnippetPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalSnippetPanel.swift; sourceTree = "<group>"; };
 		478253D7DC3B55196BDD73C9 /* ServerEditorDialog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerEditorDialog.swift; sourceTree = "<group>"; };
 		4C56344885B90F40F06D9F4A /* Dialogs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dialogs.swift; sourceTree = "<group>"; };
 		5AE055DD91FA890DB5DDB079 /* EULA */ = {isa = PBXFileReference; path = EULA; sourceTree = "<group>"; };
@@ -354,6 +356,7 @@
 				C465A43736C58AD6B51CEC59 /* TerminalManager.swift */,
 				F42B19215937CD8331FA07FC /* TerminalManager+Context.swift */,
 				DEAB5056B28A3AFF05957C93 /* TerminalPage.swift */,
+				4556288987001E1EA703A8E5 /* TerminalSnippetPanel.swift */,
 			);
 			path = Terminal;
 			sourceTree = "<group>";
@@ -556,6 +559,7 @@
 				75E3C140B9C2A211EA3C9842 /* TerminalManager+Context.swift in Sources */,
 				71658A0D61BE1808D86BAA58 /* TerminalManager.swift in Sources */,
 				70204E86A5AF22D8ED6C79E8 /* TerminalPage.swift in Sources */,
+				B7855385DAEB2E20982F2AB8 /* TerminalSnippetPanel.swift in Sources */,
 				4C93A467D097E649F9C04073 /* UpdateCenter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

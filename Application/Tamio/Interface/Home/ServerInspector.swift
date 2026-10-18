@@ -78,7 +78,8 @@ struct ServerInspector: View {
                 .fill(Color.rxSurface.opacity(0.6))
         )
         .padding(.trailing, RX.Space.s3)
-        .padding(.bottom, RX.Space.s3)
+        // Level with the sidebar's Settings row.
+        .padding(.bottom, RX.Space.s6)
     }
 }
 
