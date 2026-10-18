@@ -290,10 +290,12 @@ private struct AboutSettings: View {
     var version: String {
         let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "Unknown"
+        // The build number is the version itself unless a build sets its own.
+        let version = build == short || build.isEmpty ? short : "\(short) (\(build))"
         #if DEBUG
-            return "\(short) (\(build)) · Debug"
+            return "\(version) · Debug"
         #else
-            return "\(short) (\(build))"
+            return version
         #endif
     }
 
