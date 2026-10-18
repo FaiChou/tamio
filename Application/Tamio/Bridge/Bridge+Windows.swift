@@ -5,6 +5,17 @@
 
 import AppKit
 
+/// Debug builds started with TAMIO_TRACE=<file> append what the window
+/// watch sees to that file.
+func trace(_ message: @autoclosure () -> String) {
+    #if DEBUG
+        guard let path = ProcessInfo.processInfo.environment["TAMIO_TRACE"], let handle = FileHandle(forWritingAtPath: path) else { return }
+        handle.seekToEndOfFile()
+        handle.write(Data("\(Date().timeIntervalSince1970) \(message())\n".utf8))
+        handle.closeFile()
+    #endif
+}
+
 extension Bridge {
     /// The AppKit window UIKit made for a UIWindow.
     func nsWindow(for uiWindow: AnyObject) -> NSWindow? {
@@ -70,6 +81,23 @@ extension Bridge {
         }
     }
 
+    func enforceMinimumContentSize(_ size: CGSize, of uiWindow: AnyObject) {
+        guard let window = nsWindow(for: uiWindow) else {
+            DispatchQueue.main.async { [weak self, weak uiWindow] in
+                if let uiWindow { self?.enforceMinimumContentSize(size, of: uiWindow) }
+            }
+            return
+        }
+        window.contentMinSize = size
+        let content = window.contentRect(forFrameRect: window.frame).size
+        if content.width < size.width || content.height < size.height {
+            window.setContentSize(NSSize(width: max(content.width, size.width), height: max(content.height, size.height)))
+            // Grown upward from the bottom edge, it may now reach past the
+            // top of the screen.
+            if let screen = window.screen { window.constrainFrameRect(window.frame, to: screen) }
+        }
+    }
+
     /// One surface from the top edge down: the title bar draws nothing of its
     /// own, so the traffic lights and toolbar sit on the window colour like
     /// the sidebar and the page, not on a white band. Its background views are
@@ -80,7 +108,10 @@ extension Bridge {
     /// resized, so this is applied again at once (not on the next turn of the
     /// run loop, which shows as a flicker) whenever either happens.
     func unifyTitlebar(of window: NSWindow) {
+        var seen = ""
         func apply(_ window: NSWindow) {
+            let state = "style \(window.toolbarStyle.rawValue) title \(window.titleVisibility.rawValue) toolbar \(window.toolbar == nil ? "none" : "present") items \(window.toolbar?.items.count ?? 0) key \(window.isKeyWindow)"
+            if state != seen { seen = state; trace(state) }
             if !window.styleMask.contains(.fullSizeContentView) { window.styleMask.insert(.fullSizeContentView) }
             if window.titlebarSeparatorStyle != .none { window.titlebarSeparatorStyle = .none }
             // The title bar's own fill, a white layer in light mode.
@@ -133,56 +164,46 @@ extension Bridge {
     }
 
     /// Catalyst builds the window's AppKit toolbar out of the pages'
-    /// navigation bar, and drops it, at random, when a page rebuilds early
-    /// on. Without it the sidebar keeps a navigation bar of its own: the
-    /// collapse button goes on a second row and everything moves down. The
-    /// pages are rebuilt until the toolbar is there; the window is shown
-    /// once it is (or after two seconds, whatever happens).
-    func watchToolbar(of uiWindow: AnyObject, rebuild: @escaping () -> Void) {
+    /// navigation bar. Without it the sidebar keeps a navigation bar of its
+    /// own: the collapse button goes on a second row and everything moves
+    /// down. A new window is kept transparent until its toolbar is there (or
+    /// for two seconds, whatever happens), so that layout is never seen.
+    ///
+    /// Catalyst dropped the toolbar whenever the window sat exactly at the
+    /// content's minimum frame; the content no longer has one (see
+    /// MainView). Nothing short of the app being hidden and reopened brings
+    /// a dropped toolbar back, and rebuilding the pages only made them
+    /// flicker, so the watch does not try.
+    func watchToolbar(of uiWindow: AnyObject) {
         guard let window = nsWindow(for: uiWindow) else {
             DispatchQueue.main.async { [weak self, weak uiWindow] in
-                if let uiWindow { self?.watchToolbar(of: uiWindow, rebuild: rebuild) }
+                if let uiWindow { self?.watchToolbar(of: uiWindow) }
             }
             return
         }
-        var attempts = 0
-        var pending = false
         var revealing = false
         let launched = Date()
         func check() {
-            // While the app is starting, a window without its toolbar is not
-            // shown at all; later it is only rebuilt.
-            if window.toolbar == nil, Date().timeIntervalSince(launched) < 3, window.alphaValue > 0 {
+            if window.toolbar == nil, Date().timeIntervalSince(launched) < 2, window.alphaValue > 0 {
                 window.alphaValue = 0
             }
-            if window.toolbar != nil {
-                // Shown once on screen with its toolbar kept a moment: it can
-                // still go as the window is ordered front.
-                guard window.alphaValue < 1, !revealing else { return }
-                revealing = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                    revealing = false
-                    guard window.toolbar != nil, window.isVisible else { return check() }
-                    NSAnimationContext.runAnimationGroup { $0.duration = 0.12; window.animator().alphaValue = 1 }
-                }
-                return
-            }
-            guard !pending, attempts < 20 else { return }
-            pending = true
-            attempts += 1
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                pending = false
-                guard window.toolbar == nil else { return check() }
-                rebuild()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { check() }
+            guard window.toolbar != nil, window.alphaValue < 1, !revealing else { return }
+            // Shown once on screen with its toolbar kept a moment: it can
+            // still go as the window is ordered front.
+            revealing = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                revealing = false
+                guard window.toolbar != nil, window.isVisible else { return check() }
+                NSAnimationContext.runAnimationGroup { $0.duration = 0.12; window.animator().alphaValue = 1 }
             }
         }
         if window.toolbar == nil { window.alphaValue = 0 }
-        appearanceObservers.append(window.observe(\.toolbar) { _, _ in
+        appearanceObservers.append(window.observe(\.toolbar) { window, _ in
+            trace("toolbar \(window.toolbar == nil ? "gone" : "present") size \(Int(window.frame.width))x\(Int(window.frame.height)) t+\(String(format: "%.1f", Date().timeIntervalSince(launched)))s")
             DispatchQueue.main.async { check() }
         })
-        // Shown after three seconds whatever happens.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+        // Shown after two seconds whatever happens.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             if window.alphaValue < 1 { window.alphaValue = 1 }
         }
         check()

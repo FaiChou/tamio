@@ -48,11 +48,14 @@ import Foundation
 
     /// Puts the translucent window material under a UIKit window's content.
     func installBackdrop(for uiWindow: AnyObject)
-    /// Keeps the main window's AppKit toolbar: whenever the window has none,
-    /// `rebuild` is called to have the pages rebuild their toolbar items,
-    /// until it has one again. The window stays transparent at first, until
-    /// it has its toolbar, so its layout without one is never seen.
-    func watchToolbar(of uiWindow: AnyObject, rebuild: @escaping () -> Void)
+    /// Keeps a window's content at least this big: dragging stops there, and
+    /// a window that comes up smaller (restored from an earlier version) is
+    /// grown at once, so nothing is laid out past its edges.
+    func enforceMinimumContentSize(_ size: CGSize, of uiWindow: AnyObject)
+    /// Keeps a new main window transparent until it has its AppKit toolbar,
+    /// so its layout without one (the sidebar with a navigation bar of its
+    /// own) is never seen.
+    func watchToolbar(of uiWindow: AnyObject)
     /// From launch: a new app window starts transparent until it has its
     /// toolbar, so its first frame on screen is its finished layout.
     /// `watchToolbar` shows it; call once, before any window exists.

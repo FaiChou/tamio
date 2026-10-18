@@ -23,10 +23,6 @@ struct MainView: View {
     /// Settings is built when it is first opened and kept from then on: its
     /// categories are many rows each, and coming back shows what is there.
     @State private var settingsOpened = false
-    /// Bumped when the window has lost its AppKit toolbar (see
-    /// `MacBridging.watchToolbar`): rebuilding the page has Catalyst build it
-    /// again from the page's navigation bar.
-    @State private var toolbarEpoch = 0
 
     var body: some View {
         // Built at once, before the probe answers: swapping a placeholder
@@ -57,7 +53,7 @@ struct MainView: View {
                 // so the eye follows the change of place.
                 if !router.route.isSession, router.route != .settings {
                     content
-                        .id([AnyHashable(router.route), AnyHashable(toolbarEpoch)])
+                        .id(router.route)
                         .transition(.asymmetric(
                             insertion: .opacity.combined(with: .offset(y: 6)),
                             removal: .opacity
@@ -89,7 +85,10 @@ struct MainView: View {
             // back to its opaque background while one page fades into another.
             .rxClearToolbar()
         }
-        .frame(minWidth: 940, minHeight: 600)
+        // No minimum frame of its own: the window cannot be smaller than
+        // MainWindow.minimumSize (the scene's restriction, and AppKit's), and
+        // content held to a minimum the window sits exactly at makes Catalyst
+        // drop the toolbar for the in-window navigation bars.
         .modifier(HiddenWindowTitle())
         .overlay {
             if store.globalProgressInPresent {
@@ -116,7 +115,6 @@ struct MainView: View {
             }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.86), value: router.serverEditor)
-        .onReceive(NotificationCenter.default.publisher(for: .rebuildPageToolbar)) { _ in toolbarEpoch += 1 }
         .sheet(isPresented: $openLicenseAgreement) {
             AgreementSheet()
         }
@@ -226,7 +224,3 @@ private struct HiddenWindowTitle: ViewModifier {
     }
 }
 
-extension Notification.Name {
-    /// The window has no AppKit toolbar; the page is rebuilt to get it back.
-    static let rebuildPageToolbar = Notification.Name("sb.moe.tamio.rebuildPageToolbar")
-}

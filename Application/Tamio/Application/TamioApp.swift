@@ -100,7 +100,11 @@ struct TamioCommands: Commands {
 /// What a main window needs from UIKit and AppKit that SwiftUI does not offer
 /// on Mac Catalyst.
 enum MainWindow {
-    static let minimumSize = CGSize(width: 940, height: 600)
+    /// The smallest the window may be: Home's cards beside the inspector,
+    /// Settings' three columns, and the whole sidebar with Settings clear of
+    /// the bottom edge. SwiftUI's frame alone does not stop a Catalyst window
+    /// from being dragged smaller; the scene's size restrictions do.
+    static let minimumSize = CGSize(width: 960, height: 640)
 
     @MainActor static func prepare(_ window: UIWindow) {
         if let scene = window.windowScene, !(scene.delegate is TraySceneDelegate) {
@@ -109,16 +113,24 @@ enum MainWindow {
             // after SwiftUI built the toolbar makes Catalyst drop it, and the
             // window comes up with its toolbar as a second row.
             if let titlebar = scene.titlebar {
+                #if DEBUG
+                    if let path = ProcessInfo.processInfo.environment["TAMIO_TRACE"], let handle = FileHandle(forWritingAtPath: path) {
+                        handle.seekToEndOfFile()
+                        handle.write(Data("\(Date().timeIntervalSince1970) prepare titlebar style \(titlebar.toolbarStyle.rawValue) title \(titlebar.titleVisibility.rawValue)\n".utf8))
+                        handle.closeFile()
+                    }
+                #endif
                 if titlebar.titleVisibility != .hidden { titlebar.titleVisibility = .hidden }
                 if titlebar.toolbarStyle != .unified { titlebar.toolbarStyle = .unified }
             }
             if scene.sizeRestrictions?.minimumSize != minimumSize { scene.sizeRestrictions?.minimumSize = minimumSize }
         }
         Mac.bridge?.installBackdrop(for: window)
+        if !(window.windowScene?.delegate is TraySceneDelegate) {
+            Mac.bridge?.enforceMinimumContentSize(minimumSize, of: window)
+        }
         if let scene = window.windowScene, !(scene.delegate is TraySceneDelegate) {
-            Mac.bridge?.watchToolbar(of: window) {
-                NotificationCenter.default.post(name: .rebuildPageToolbar, object: nil)
-            }
+            Mac.bridge?.watchToolbar(of: window)
         }
     }
 
