@@ -113,7 +113,7 @@ final class AppRouter: ObservableObject {
     func openTerminal(machine: RDMachine.ID, force: Bool = false) {
         let machineObject = TamioStore.shared.machineGroup[machine]
         guard machineObject.isNotPlaceholder() else {
-            UIBridge.presentError(with: "This server's details could not be read.")
+            Dialogs.presentError(with: "This server's details could not be read.")
             return
         }
         TerminalManager.shared.createSession(withMachineObject: machineObject, force: force) { [weak self] context in
@@ -143,7 +143,7 @@ final class AppRouter: ObservableObject {
             let session = try MonitorCenter.shared.begin(for: machine)
             route = .monitor(session.id)
         } catch {
-            UIBridge.presentError(with: error.localizedDescription)
+            Dialogs.presentError(with: error.localizedDescription)
         }
     }
 

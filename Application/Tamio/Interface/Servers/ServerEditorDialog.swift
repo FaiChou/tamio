@@ -133,7 +133,6 @@ struct ServerEditorDialog: View {
                     .textFieldStyle(.plain)
                     .font(.system(size: 14, design: .monospaced))
                     .disableAutocorrection(true)
-                    .textInputAutocapitalization(.never)
                     .focused($addressFocused)
                     .onSubmit(connect)
                     .accessibilityLabel("Address")
@@ -187,7 +186,6 @@ struct ServerEditorDialog: View {
                 TextField(RDMachine.defaultUsername, text: $draft.username)
                     .textFieldStyle(.rxMono)
                     .disableAutocorrection(true)
-                    .textInputAutocapitalization(.never)
             }
             row("Port") {
                 HStack(spacing: RX.Space.s2) {
@@ -241,7 +239,7 @@ struct ServerEditorDialog: View {
                         HelpText("Signs in as \(trimmedUsername). The key is kept in Identities, for other servers too.")
                         Spacer(minLength: 0)
                         if !key.publicKey.isEmpty {
-                            Button("Copy Public Key") { UIBridge.sendPasteboard(str: key.publicKey) }
+                            Button("Copy Public Key") { Dialogs.sendPasteboard(str: key.publicKey) }
                                 .buttonStyle(.rx(size: .small))
                                 .help("For the server's ~/.ssh/authorized_keys")
                         }
@@ -482,7 +480,7 @@ struct ServerEditorDialog: View {
 
     func requestClose() {
         guard isDirty else { return close() }
-        UIBridge.requiresConfirmation(
+        Dialogs.requiresConfirmation(
             message: isNew ? "Discard this new server?" : "Discard your changes?",
             confirmTitle: "Discard",
             destructive: true,

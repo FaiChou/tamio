@@ -5,27 +5,22 @@
 //  Created by Lakr Aream on 2022/2/9.
 //
 
+import AppKit
 import Foundation
 import TamioModule
-import UIKit
 
-enum UIBridge {
+enum Dialogs {
     static func sendPasteboard(str: String) {
-        UIPasteboard.general.string = str
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(str, forType: .string)
     }
 
     @MainActor static func open(url: URL) {
-        UIApplication.shared.open(url)
+        NSWorkspace.shared.open(url)
     }
 
     @MainActor static func askForInput(title: String, message: String, defaultValue: String, complete: @escaping (String) -> Void) {
-        Mac.bridge?.alert(
-            message: title,
-            informative: message,
-            buttons: ["OK", "Cancel"],
-            destructiveFirstButton: false,
-            textField: defaultValue
-        ) { button, text in
+        Mac.alert(message: title, informative: message, buttons: ["OK", "Cancel"], textField: defaultValue) { button, text in
             if button == 0, let text { complete(text) }
         }
     }

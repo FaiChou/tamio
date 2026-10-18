@@ -61,18 +61,15 @@ final class AgentBridge: ObservableObject, AgentEnvironment {
     // MARK: - AgentEnvironment
 
     func approve(_ request: AgentRequest) async -> Bool {
-        Mac.bridge?.activate(window: nil)
+        Mac.activate()
         let hosts = request.hosts.isEmpty ? "" : "\n\nServers: " + request.hosts.prefix(12).joined(separator: ", ")
             + (request.hosts.count > 12 ? " and \(request.hosts.count - 12) more" : "")
         let detail = request.detail.count > 1200 ? String(request.detail.prefix(1200)) + "…" : request.detail
         return await withCheckedContinuation { continuation in
-            guard let bridge = Mac.bridge else { return continuation.resume(returning: false) }
-            bridge.alert(
+            Mac.alert(
                 message: "\(request.client) wants to: \(request.title)",
                 informative: (request.task.map { "For: \($0)\n\n" } ?? "") + detail + hosts,
-                buttons: ["Allow", "Allow for 1 Hour", "Always Allow", "Deny"],
-                destructiveFirstButton: false,
-                textField: nil
+                buttons: ["Allow", "Allow for 1 Hour", "Always Allow", "Deny"]
             ) { index, _ in
                 switch index {
                 case 0: continuation.resume(returning: true)

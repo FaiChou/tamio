@@ -71,7 +71,7 @@ class MenubarTool {
     /// - Parameter quiet: restoring at launch; problems are skipped, not shown.
     @MainActor func createRuncat(for machineId: RDMachine.ID, quiet: Bool = false) {
         func fail(_ message: String) {
-            if !quiet { UIBridge.presentError(with: message, delay: 0) }
+            if !quiet { Dialogs.presentError(with: message, delay: 0) }
         }
         bootstrapLock.lock()
         let copy = statusItem

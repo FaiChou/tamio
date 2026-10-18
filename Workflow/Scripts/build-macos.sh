@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Build the Mac app (Mac Catalyst, universal arm64/x86_64).
+# Build the Mac app (native macOS, universal arm64/x86_64).
 #
 # Signed ad hoc, so a local build never asks for the keychain. The Release
 # workflow passes its Developer ID through CODE_SIGN_IDENTITY (and
@@ -30,15 +30,15 @@ if [[ "$CODE_SIGN_IDENTITY" != "-" && -z "${DEVELOPMENT_TEAM:-}" ]]; then
 fi
 DEVELOPMENT_TEAM="${DEVELOPMENT_TEAM:-}"
 
-# The MacBridge bundle links Sparkle; its build phase fetches it too, this
-# only spares the build the wait.
+# The app links Sparkle; its build phase fetches it too, this only spares
+# the build the wait.
 bash "$ROOT_DIR/Workflow/Scripts/sparkle.sh"
 
 xcodebuild \
     -workspace "$ROOT_DIR/App.xcworkspace" \
     -scheme Tamio \
     -configuration "$CONFIGURATION" \
-    -destination 'generic/platform=macOS,variant=Mac Catalyst' \
+    -destination 'generic/platform=macOS' \
     -derivedDataPath "$DERIVED_DATA_PATH" \
     ARCHS='arm64 x86_64' \
     ONLY_ACTIVE_ARCH=NO \
@@ -49,7 +49,7 @@ xcodebuild \
     PROVISIONING_PROFILE_SPECIFIER= \
     build
 
-APP_PATH="$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION-maccatalyst/Tamio.app"
+APP_PATH="$DERIVED_DATA_PATH/Build/Products/$CONFIGURATION/Tamio.app"
 
 # The profile goes into the app, and what it grants into the signature: the
 # app asks its own signature whether it may sync.

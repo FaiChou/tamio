@@ -140,7 +140,7 @@ private struct IdentityRow: View {
         .onHover { hovered = $0 }
         .contextMenu {
             Button("Duplicate") { IdentityActions.duplicate(identity.id) }
-            Button("Copy Public Key") { UIBridge.sendPasteboard(str: identity.publicKey) }
+            Button("Copy Public Key") { Dialogs.sendPasteboard(str: identity.publicKey) }
                 .disabled(identity.publicKey.isEmpty)
             Divider()
             Button("Delete…", role: .destructive) { IdentityActions.delete(identity.id) }
@@ -161,7 +161,7 @@ enum IdentityActions {
         let store = TamioStore.shared
         let identity = store.identityGroup[id]
         let users = store.machineGroup.machines.filter { $0.associatedIdentity == id.uuidString }.count
-        UIBridge.requiresConfirmation(
+        Dialogs.requiresConfirmation(
             message: "Delete identity \(identity.displayName)?",
             informative: users > 0
                 ? "\(users) server\(users == 1 ? "" : "s") use it and will try automatic identities instead."
@@ -397,7 +397,7 @@ struct IdentityForm: View {
                         height: 54
                     ) {
                         if !draft.publicKey.isEmpty {
-                            Button("Copy") { UIBridge.sendPasteboard(str: draft.publicKey) }
+                            Button("Copy") { Dialogs.sendPasteboard(str: draft.publicKey) }
                                 .buttonStyle(.rx(size: .small))
                         }
                     }
@@ -435,7 +435,7 @@ struct IdentityForm: View {
             draft.password = ""
         }
         guard savedPrivateKey else { return clear() }
-        UIBridge.requiresConfirmation(
+        Dialogs.requiresConfirmation(
             message: "Replace this private key?",
             informative: "The saved key is discarded when you save. Servers that trust it will not accept a new key until its public key is added.",
             confirmTitle: "Replace",
@@ -449,7 +449,7 @@ struct IdentityForm: View {
         let replace = {
             // A text view being edited keeps its own text and writes it back
             // over a new value, so editing ends before the keys are filled in.
-            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            NSApp.keyWindow?.makeFirstResponder(nil)
             DispatchQueue.main.async {
                 let comment = draft.name.isEmpty ? "tamio" : draft.name.replacingOccurrences(of: " ", with: "-")
                 let pair = SSHKeyGenerator.ed25519(comment: comment)
@@ -543,7 +543,6 @@ struct KeyEditor<Extra: View>: View {
                     .font(.rxCode)
                     .scrollContentBackground(.hidden)
                     .disableAutocorrection(true)
-                    .textInputAutocapitalization(.never)
                     .padding(.horizontal, 4)
                     .padding(.vertical, 2)
             }
@@ -562,7 +561,7 @@ struct KeyEditor<Extra: View>: View {
     }
 
     func load() {
-        Mac.bridge?.openPanel(
+        Mac.openPanel(
             message: nil,
             prompt: nil,
             directory: URL(fileURLWithPath: "\(NSHomeDirectory())/.ssh/"),
@@ -574,7 +573,7 @@ struct KeyEditor<Extra: View>: View {
         ) { urls in
             guard let url = urls.first else { return }
             guard let data = try? Data(contentsOf: url), let string = String(data: data, encoding: .utf8) else {
-                UIBridge.presentError(with: "The file could not be read as text.")
+                Dialogs.presentError(with: "The file could not be read as text.")
                 return
             }
             text = string.trimmingCharacters(in: .whitespacesAndNewlines)

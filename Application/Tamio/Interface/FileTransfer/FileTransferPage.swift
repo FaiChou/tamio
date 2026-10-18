@@ -299,9 +299,9 @@ private struct BrowserPane: View {
             Button("Go to Folder…") { ask("Go to folder", value: browser.path) { browser.open($0) } }
             Button("Refresh") { browser.reload() }
             Toggle("Show Hidden Files", isOn: $showsHidden)
-            Button("Copy Path") { UIBridge.sendPasteboard(str: browser.path) }
+            Button("Copy Path") { Dialogs.sendPasteboard(str: browser.path) }
             if isLocal {
-                Button("Show in Finder") { UIApplication.shared.open(URL(fileURLWithPath: browser.path)) }
+                Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: browser.path)]) }
             } else if let machine = browser.machine {
                 Button("Open Terminal Here") {
                     AppRouter.shared.openTerminal(machine: machine.id, initialCommand: "cd \(shellQuote(browser.path))")
@@ -522,7 +522,7 @@ private struct BrowserPane: View {
         if entry.isDirectory {
             Button("Open") { browser.open(entry.path) }
         } else if isLocal {
-            Button("Open") { UIApplication.shared.open(URL(fileURLWithPath: entry.path)) }
+            Button("Open") { NSWorkspace.shared.open(URL(fileURLWithPath: entry.path)) }
         }
         if let target = peer.browser {
             Button("Copy to \(target.title)") { copy(targets, to: peer, folder: target.path) }
@@ -531,10 +531,10 @@ private struct BrowserPane: View {
         Button("Rename…") {
             ask("Rename", value: entry.name) { name in Task { report(await browser.rename(entry, to: name)) } }
         }
-        Button("Copy Path") { UIBridge.sendPasteboard(str: entry.path) }
+        Button("Copy Path") { Dialogs.sendPasteboard(str: entry.path) }
         Divider()
         Button("Delete…", role: .destructive) {
-            UIBridge.requiresConfirmation(
+            Dialogs.requiresConfirmation(
                 message: targets.count == 1 ? "Delete \(entry.name)?" : "Delete \(targets.count) items?",
                 informative: isLocal ? "They go to the Trash." : "Deleting on \(browser.title) cannot be undone.",
                 confirmTitle: "Delete",
@@ -554,9 +554,9 @@ private struct BrowserPane: View {
     /// Shift it selects up to it.
     func select(_ entry: FileEntry?) {
         guard let entry else { return model.selection = [] }
-        if Mac.bridge?.commandHeld == true {
+        if Mac.commandHeld {
             if model.selection.contains(entry.path) { model.selection.remove(entry.path) } else { model.selection.insert(entry.path) }
-        } else if Mac.bridge?.shiftHeld == true {
+        } else if Mac.shiftHeld {
             extendSelection(to: entry)
         } else {
             model.selection = [entry.path]
@@ -575,7 +575,7 @@ private struct BrowserPane: View {
         if parent || entry?.isDirectory == true { return browser.open(path) }
         guard let entry else { return }
         if isLocal {
-            UIApplication.shared.open(URL(fileURLWithPath: entry.path))
+            NSWorkspace.shared.open(URL(fileURLWithPath: entry.path))
         }
     }
 
@@ -584,14 +584,14 @@ private struct BrowserPane: View {
     }
 
     func ask(_ title: String, value: String, completion: @escaping (String) -> Void) {
-        Mac.bridge?.alert(message: title, informative: nil, buttons: ["OK", "Cancel"], destructiveFirstButton: false, textField: value) { index, text in
+        Mac.alert(message: title, informative: nil, buttons: ["OK", "Cancel"], destructiveFirstButton: false, textField: value) { index, text in
             guard index == 0, let text = text?.trimmingCharacters(in: .whitespaces), !text.isEmpty else { return }
             completion(text)
         }
     }
 
     func uploadFromPanel() {
-        Mac.bridge?.openPanel(
+        Mac.openPanel(
             message: "Choose files or folders to upload to \(browser.path)",
             prompt: "Upload",
             directory: nil,
@@ -949,7 +949,7 @@ enum FileTransferSessionActions {
     @MainActor
     static func close(_ context: FileTransferContext) {
         if context.isProgressRunning || !TransferQueue.shared.active.isEmpty {
-            UIBridge.requiresConfirmation(
+            Dialogs.requiresConfirmation(
                 message: "Close the file transfer on \(context.machine.name)?",
                 informative: "A transfer is still running and will be interrupted.",
                 confirmTitle: "Close",
@@ -970,7 +970,7 @@ enum TransferNotifier {
     private static var asked = false
 
     static func finished(_ job: TransferJob) {
-        let inFront = Mac.bridge?.isFrontmost ?? (UIApplication.shared.applicationState == .active)
+        let inFront = Mac.isFrontmost
         guard !inFront, job.state != .cancelled else { return log("in front: no notification") }
         let center = UNUserNotificationCenter.current()
         let content = UNMutableNotificationContent()

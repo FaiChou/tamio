@@ -10,8 +10,8 @@
 import TamioModule
 import TamioTerminal
 import MachineStatusView
+import AppKit
 import SwiftUI
-import UIKit
 
 struct SettingsView: View {
     @EnvironmentObject var store: TamioStore
@@ -89,26 +89,32 @@ enum AppearancePreference: String, CaseIterable {
         // Every window draws itself again in the new appearance, which takes
         // a moment; meanwhile each shows a picture of what it was, which then
         // fades into the new one, so nothing is seen half done.
-        var covers: [UIView] = []
+        var covers: [NSView] = []
         if crossFade {
-            for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
-                for window in scene.windows where !window.isHidden {
-                    guard let cover = window.snapshotView(afterScreenUpdates: false) else { continue }
-                    cover.isUserInteractionEnabled = false
-                    cover.frame = window.bounds
-                    window.addSubview(cover)
-                    covers.append(cover)
-                }
+            for window in Mac.ordinaryWindows where window.isVisible {
+                guard let content = window.contentView,
+                      let picture = content.bitmapImageRepForCachingDisplay(in: content.bounds)
+                else { continue }
+                content.cacheDisplay(in: content.bounds, to: picture)
+                let image = NSImage(size: content.bounds.size)
+                image.addRepresentation(picture)
+                let cover = NSImageView(frame: content.bounds)
+                cover.image = image
+                cover.imageScaling = .scaleAxesIndependently
+                cover.autoresizingMask = [.width, .height]
+                content.addSubview(cover, positioned: .above, relativeTo: nil)
+                covers.append(cover)
             }
         }
-        // The app's appearance is AppKit's to set; UIKit follows it.
-        Mac.bridge?.setAppearance(self == .system ? nil : rawValue)
+        Mac.setAppearance(self == .system ? nil : rawValue)
         guard !covers.isEmpty else { return }
         // On the next turn, once the windows have drawn themselves again.
         DispatchQueue.main.async {
-            UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
-                covers.forEach { $0.alpha = 0 }
-            } completion: { _ in
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.22
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                covers.forEach { $0.animator().alphaValue = 0 }
+            } completionHandler: {
                 covers.forEach { $0.removeFromSuperview() }
             }
         }
@@ -232,7 +238,7 @@ private struct HostKeysRow: View {
             description: "A server's key is saved the first time you connect; a server that later presents another key is refused. \(count) saved."
         ) {
             Button("Forget All…") {
-                UIBridge.requiresConfirmation(
+                Dialogs.requiresConfirmation(
                     message: "Forget all saved host keys?",
                     informative: "The key each server presents on its next connection is saved as its key.",
                     confirmTitle: "Forget All"
@@ -336,20 +342,20 @@ private struct AboutSettings: View {
 /// Sparkle's switches, read from and written to the updater itself.
 private struct UpdateSettings: View {
     @ObservedObject private var center = UpdateCenter.shared
-    @State private var checks = Mac.bridge?.automaticallyChecksForUpdates ?? false
-    @State private var downloads = Mac.bridge?.automaticallyDownloadsUpdates ?? false
-    @State private var lastCheck = Mac.bridge?.lastUpdateCheck
+    @State private var checks = Mac.automaticallyChecksForUpdates ?? false
+    @State private var downloads = Mac.automaticallyDownloadsUpdates ?? false
+    @State private var lastCheck = Mac.lastUpdateCheck
 
     var body: some View {
         RXDividedStack {
             if center.isSupported {
                 SwitchRow("Check for updates automatically", description: "Once a day. A new version shows at the bottom of the sidebar.", isOn: Binding(
                     get: { checks },
-                    set: { checks = $0; Mac.bridge?.automaticallyChecksForUpdates = $0 }
+                    set: { checks = $0; Mac.automaticallyChecksForUpdates = $0 }
                 ))
                 SwitchRow("Download updates automatically", description: "Ready to install when you quit Tamio.", isOn: Binding(
                     get: { downloads },
-                    set: { downloads = $0; Mac.bridge?.automaticallyDownloadsUpdates = $0 }
+                    set: { downloads = $0; Mac.automaticallyDownloadsUpdates = $0 }
                 ))
                 .disabled(!checks)
                 RXFormRow("Check now", description: lastCheck.map { "Last checked \(RXFormat.relative($0))." } ?? "Not checked yet.") {
@@ -466,7 +472,7 @@ struct AgreementSheet: View {
                     .font(.rxBody)
             }
         } footer: {
-            Button("Quit") { Mac.bridge?.terminate() }
+            Button("Quit") { Mac.terminate() }
                 .buttonStyle(.rx)
             Spacer()
             Button("Continue") {

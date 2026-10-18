@@ -76,6 +76,7 @@ struct SidebarView: View {
                         } label: {
                             OwnerSidebarRow(owner: owner)
                         }
+                        .accessibilityLabel(ownerTitle(owner))
                         .transition(.opacity)
                         // Several terminals: one row each, under the server.
                         let terminals = router.terminals(of: owner)
@@ -86,6 +87,7 @@ struct SidebarView: View {
                                 } label: {
                                     TerminalSidebarRow(context: context)
                                 }
+                                .accessibilityLabel(context.sidebarTitle)
                                 .transition(.opacity)
                             }
                         }
@@ -109,12 +111,21 @@ struct SidebarView: View {
         .environment(\.sidebarMetrics, metrics)
     }
 
+    /// A session row's name: the server's, or the Quick Connect command's.
+    private func ownerTitle(_ owner: SessionOwner) -> String {
+        switch owner {
+        case let .server(id): return store.machineGroup[id].name
+        case let .command(id): return terminals.sessionContexts.first { $0.id == id }?.displayName ?? "Terminal"
+        }
+    }
+
     private func place(_ route: Route, _ title: String, systemImage: String, badge: Int = 0) -> some View {
         SidebarRow(isSelected: selection.wrappedValue == .place(route)) {
             selection.wrappedValue = .place(route)
         } label: {
             SidebarLabel(title, systemImage: systemImage, badge: badge)
         }
+        .accessibilityLabel(badge > 0 ? "\(title), \(badge)" : title)
     }
 }
 
@@ -193,6 +204,8 @@ private struct SidebarRow<Label: View>: View {
             .onTapGesture(perform: select)
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+            // VoiceOver's press, which a tap gesture alone does not answer.
+            .accessibilityAction { select() }
     }
 }
 
@@ -336,7 +349,7 @@ private struct OwnerSidebarRow: View {
         if routes.count > 1 {
             Divider()
             Button("Close All") {
-                UIBridge.requiresConfirmation(
+                Dialogs.requiresConfirmation(
                     message: "Close everything open on \(title)?",
                     confirmTitle: "Close All",
                     destructive: true

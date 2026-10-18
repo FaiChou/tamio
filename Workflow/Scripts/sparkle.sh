@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Puts Sparkle (the Mac app's updater) in External/Sparkle: Sparkle.framework,
-# which the MacBridge bundle links and carries, and the tools in bin/ that
+# which the app links and carries, and the tools in bin/ that
 # sign updates (sign_update). Fetched once, checked against its checksum, and
 # kept until SPARKLE_VERSION changes. The build runs this; so can you.
 

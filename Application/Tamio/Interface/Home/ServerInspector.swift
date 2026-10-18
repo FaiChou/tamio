@@ -524,7 +524,7 @@ private struct ProcessList: View {
                             .padding(.horizontal, RX.Space.s4)
                             .frame(height: 26)
                             .contextMenu {
-                                Button("Copy PID") { UIBridge.sendPasteboard(str: "\(row.pid)") }
+                                Button("Copy PID") { Dialogs.sendPasteboard(str: "\(row.pid)") }
                                 Divider()
                                 Button("Kill…", role: .destructive) { kill(row, signal: "TERM") }
                                 Button("Kill -9…", role: .destructive) { kill(row, signal: "KILL") }
@@ -558,7 +558,7 @@ private struct ProcessList: View {
     }
 
     func kill(_ row: Row, signal: String) {
-        UIBridge.requiresConfirmation(
+        Dialogs.requiresConfirmation(
             message: "Send SIG\(signal) to \(row.pid)?",
             informative: row.command,
             confirmTitle: signal == "KILL" ? "Kill -9" : "Kill",
@@ -739,7 +739,7 @@ private struct ContainerList: View {
                     Button("Logs") { openTerminal(running: "docker logs -f --tail 200 \(container.name)") }
                     Button("Shell") { openTerminal(running: "docker exec -it \(container.name) sh -c 'command -v bash >/dev/null && exec bash || exec sh'") }
                         .disabled(!container.running)
-                    Button("Copy ID") { UIBridge.sendPasteboard(str: container.id) }
+                    Button("Copy ID") { Dialogs.sendPasteboard(str: container.id) }
                 } label: {
                     Label("Actions", systemImage: "ellipsis")
                 }

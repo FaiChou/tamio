@@ -1,28 +1,26 @@
 //
 //  TamioApp.swift
-//  Shared
+//  Tamio (macOS)
 //
 //  Created by Lakr Aream on 2022/2/8.
 //
 
-import TamioModule
-import TamioTerminal
+import AppKit
 import MachineStatusView
 import SwiftUI
-import UIKit
+import TamioModule
+import TamioTerminal
 
 @main
 struct TamioApp: App {
     @StateObject private var store = TamioStore.shared
 
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     init() {
         #if DEBUG
             NSLog(CommandLine.arguments.joined(separator: "\n"))
         #endif
-        // Before any window: its first frame on screen is its finished layout.
-        Mac.bridge?.holdNewWindowsUntilToolbar()
         // Before the store: it reads the master key as it loads.
         Mac.installLegacyKeyStore()
         _ = TamioStore.shared
@@ -38,18 +36,21 @@ struct TamioApp: App {
         // platform UI handler it delegates to.
         FileTransferInterface.uiHandler = MacFileTransferUIHandler()
 
-        // The window material is AppKit's; the backdrop view reports the
-        // windows it is in.
-        RXWindowBackground.install = { window in MainWindow.prepare(window) }
-
         NSLog("static main completed")
     }
 
     var body: some Scene {
-        WindowGroup {
+        // One window: its title bar carries the toolbar, with no title, over
+        // the window material the pages draw on.
+        Window("Tamio", id: MainWindow.id) {
             MainView()
                 .environmentObject(store)
+                .frame(minWidth: MainWindow.minimumSize.width, minHeight: MainWindow.minimumSize.height)
         }
+        .windowStyle(.hiddenTitleBar)
+        .windowToolbarStyle(.unified(showsTitle: false))
+        .defaultSize(width: 1280, height: 800)
+        .windowResizability(.contentMinSize)
         .commands {
             SidebarCommands()
             TamioCommands()
@@ -75,12 +76,6 @@ struct TamioCommands: Commands {
             Button("Open Terminals…") { AppRouter.shared.openTerminals() }
                 .keyboardShortcut("t", modifiers: [.command, .shift])
         }
-        #if targetEnvironment(macCatalyst)
-            CommandGroup(after: .textEditing) {
-                Button("Find") { NotificationCenter.default.post(name: .rxFocusToolbarSearch, object: nil) }
-                    .keyboardShortcut("f", modifiers: .command)
-            }
-        #endif
         CommandGroup(after: .sidebar) {
             Button("Home") { AppRouter.shared.route = .home }
                 .keyboardShortcut("1", modifiers: .command)
@@ -97,62 +92,32 @@ struct TamioCommands: Commands {
     }
 }
 
-/// What a main window needs from UIKit and AppKit that SwiftUI does not offer
-/// on Mac Catalyst.
+/// The main window: its size, and how it is brought back.
 enum MainWindow {
+    static let id = "main"
+
     /// The smallest the window may be: Home's cards beside the inspector,
     /// Settings' three columns, and the whole sidebar with Settings clear of
-    /// the bottom edge. SwiftUI's frame alone does not stop a Catalyst window
-    /// from being dragged smaller; the scene's size restrictions do.
+    /// the bottom edge.
     static let minimumSize = CGSize(width: 960, height: 640)
 
-    @MainActor static func prepare(_ window: UIWindow) {
-        if let scene = window.windowScene, !(scene.delegate is TraySceneDelegate) {
-            // The toolbar holds page controls only; the page title is in the
-            // content. Set only what differs: setting the title bar again
-            // after SwiftUI built the toolbar makes Catalyst drop it, and the
-            // window comes up with its toolbar as a second row.
-            if let titlebar = scene.titlebar {
-                #if DEBUG
-                    if let path = ProcessInfo.processInfo.environment["TAMIO_TRACE"], let handle = FileHandle(forWritingAtPath: path) {
-                        handle.seekToEndOfFile()
-                        handle.write(Data("\(Date().timeIntervalSince1970) prepare titlebar style \(titlebar.toolbarStyle.rawValue) title \(titlebar.titleVisibility.rawValue)\n".utf8))
-                        handle.closeFile()
-                    }
-                #endif
-                if titlebar.titleVisibility != .hidden { titlebar.titleVisibility = .hidden }
-                if titlebar.toolbarStyle != .unified { titlebar.toolbarStyle = .unified }
-            }
-            if scene.sizeRestrictions?.minimumSize != minimumSize { scene.sizeRestrictions?.minimumSize = minimumSize }
-        }
-        Mac.bridge?.installBackdrop(for: window)
-        if !(window.windowScene?.delegate is TraySceneDelegate) {
-            Mac.bridge?.enforceMinimumContentSize(minimumSize, of: window)
-        }
-        if let scene = window.windowScene, !(scene.delegate is TraySceneDelegate) {
-            Mac.bridge?.watchToolbar(of: window)
-        }
-    }
+    /// SwiftUI's way of opening the window, kept by the view that lives in
+    /// it, for the times it has been closed.
+    @MainActor static var openWindow: OpenWindowAction?
 
     /// Brings the main window forward, reopening it if it was closed.
     @MainActor static func show() {
-        if let scene = TamioUtil.mainScene() {
-            Mac.bridge?.activate(window: scene.windows.first)
+        if let window = Mac.mainWindow, window.isVisible {
+            Mac.activate(window: window)
             return
         }
-        Mac.bridge?.activate(window: nil)
-        let closed = UIApplication.shared.openSessions.first { $0.scene == nil && !TraySceneDelegate.owns($0) }
-        if #available(iOS 17.0, *) {
-            let request = closed.map { UISceneSessionActivationRequest(session: $0) }
-                ?? UISceneSessionActivationRequest(role: .windowApplication)
-            UIApplication.shared.activateSceneSession(for: request)
-        } else {
-            UIApplication.shared.requestSceneSessionActivation(closed, userActivity: nil, options: nil)
-        }
+        Mac.activate()
+        openWindow?(id: id)
     }
 }
 
-class AppDelegate: NSObject, UIApplicationDelegate {
+@MainActor
+class AppDelegate: NSObject, NSApplicationDelegate {
     /// Set once at launch on the main thread; read there ever after.
     @MainActor private(set) static var shared: AppDelegate!
 
@@ -172,12 +137,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         CFRunLoopAddTimer(CFRunLoopGetMain(), timer, .commonModes)
     }
 
-    func application(_: UIApplication, didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+    func applicationDidFinishLaunching(_: Notification) {
         AppearancePreference.applyStored()
-        UITextField.drawPlaceholdersAsAppKit()
-        Mac.bridge?.setTerminationGuard { AppDelegate.shared.mayTerminate() }
-        Mac.bridge?.setOpenAppHandler { MainActor.assumeIsolated { MainWindow.show() } }
-        TraySceneDelegate.discardLeftovers()
+        Mac.mayTerminate = { AppDelegate.shared.mayTerminate() }
+        Mac.openApp = { MainWindow.show() }
         MenubarTool.shared.restore()
         #if DEBUG
             if ProcessInfo.processInfo.environment["TAMIO_PREVIEW_TERMINAL"] != nil,
@@ -212,26 +175,28 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             }
             Bench.runIfRequested()
         #endif
-        return true
     }
 
-    func application(
-        _: UIApplication,
-        configurationForConnecting session: UISceneSession,
-        options: UIScene.ConnectionOptions
-    ) -> UISceneConfiguration {
-        let configuration = UISceneConfiguration(name: nil, sessionRole: session.role)
-        if TraySceneDelegate.claims(session, options: options) {
-            configuration.delegateClass = TraySceneDelegate.self
-        }
-        return configuration
+    func applicationSupportsSecureRestorableState(_: NSApplication) -> Bool { true }
+
+    /// Open Tamio from the menu bar, or a click on the Dock icon, brings the
+    /// window back when it was closed.
+    func applicationShouldHandleReopen(_: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        if !hasVisibleWindows { MainWindow.show() }
+        return false
     }
+
+    func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
+        if let mayTerminate = Mac.mayTerminate, !mayTerminate() { return .terminateCancel }
+        return .terminateNow
+    }
+
 
     /// Set once the user agreed to quit, so the quit that follows goes through.
     @MainActor private var quitConfirmed = false
 
-    /// Asked when the app is about to quit. With terminals open or unsaved
-    /// text, the answer is no for now, and the question goes to the user.
+    /// Asked when the app is about to quit. With terminals open, the answer
+    /// is no for now, and the question goes to the user.
     @MainActor func mayTerminate() -> Bool {
         // The question was answered; this is the quit that follows it.
         if quitConfirmed { return true }
@@ -240,16 +205,18 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             TerminalManager.shared.closeAll()
             return true
         }
-        UIBridge.requiresConfirmation(
+        Dialogs.requiresConfirmation(
             message: "Quit Tamio?",
             informative: "Open terminal sessions will be closed.",
             confirmTitle: "Quit",
             destructive: true
         ) { confirmed in
             guard confirmed else { return }
-            MainActor.assumeIsolated { self.quitConfirmed = true }
-            TerminalManager.shared.closeAll()
-            Mac.bridge?.terminate()
+            MainActor.assumeIsolated {
+                self.quitConfirmed = true
+                TerminalManager.shared.closeAll()
+                Mac.terminate()
+            }
         }
         return false
     }
@@ -258,7 +225,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     /// Dock and stays in the menu bar.
     @objc
     func windowStatusWatcher() {
-        guard let bridge = Mac.bridge else { return }
-        bridge.setAccessory(!bridge.hasVisibleWindow() && MenubarTool.shared.hasCat)
+        Mac.setAccessory(!Mac.hasVisibleWindow && MenubarTool.shared.hasCat)
     }
 }

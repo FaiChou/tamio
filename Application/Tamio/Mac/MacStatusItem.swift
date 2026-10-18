@@ -1,14 +1,19 @@
 //
-//  StatusItem.swift
-//  MacBridge
+//  MacStatusItem.swift
+//  Tamio (macOS)
 //
-//  One menu bar item: an animated image, a two-line title, and a popover whose
-//  content is a UIKit window's, moved here from the window UIKit made for it.
+//  One menu bar item: an animated image, a two-line title, and a popover
+//  whose content is SwiftUI's, on the window material.
 //
 
 import AppKit
+import SwiftUI
 
-final class StatusItem: NSObject, NSPopoverDelegate {
+@MainActor
+final class MacStatusItem: NSObject, NSPopoverDelegate {
+    /// Every item there is, for the appearance to reach their popovers.
+    static let live = NSHashTable<MacStatusItem>.weakObjects()
+
     let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     let frames: [NSImage]
     let idleFrame: NSImage?
@@ -17,21 +22,16 @@ final class StatusItem: NSObject, NSPopoverDelegate {
     /// Tamio that lives only in the menu bar has nowhere else.
     var onOpenApp: (() -> Void)?
 
-    var popover: NSPopover?
-    /// The window UIKit made for the popover's content. It stays open, unseen:
-    /// UIKit stops drawing the content of a window that is ordered out.
-    var donor: NSWindow?
-    var didClose: (() -> Void)?
-    private var holder: NSView?
+    private(set) var popover: NSPopover?
     private var outsideClicks: Any?
 
     private var frameIndex = 0
     private var interval: Double = 0
     private var timer: Timer?
 
-    init(toolTip: String, frames: [AnyObject], idleFrame: AnyObject?, onClick: @escaping () -> Void) {
-        self.frames = frames.compactMap(Self.templateImage)
-        self.idleFrame = idleFrame.flatMap(Self.templateImage)
+    init(toolTip: String, frames: [NSImage], idleFrame: NSImage?, onClick: @escaping () -> Void) {
+        self.frames = frames.map(Self.template)
+        self.idleFrame = idleFrame.map(Self.template)
         self.onClick = onClick
         super.init()
         item.button?.target = self
@@ -40,14 +40,18 @@ final class StatusItem: NSObject, NSPopoverDelegate {
         item.button?.imagePosition = .imageLeading
         item.button?.toolTip = toolTip
         item.button?.image = self.idleFrame
+        Self.live.add(self)
     }
 
-    private static func templateImage(_ object: AnyObject) -> NSImage? {
-        guard CFGetTypeID(object) == CGImage.typeID else { return nil }
-        let cgImage = object as! CGImage
-        let image = NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width / 2, height: cgImage.height / 2))
-        image.isTemplate = true
-        return image
+    /// Drawn in the menu bar's colour, 18 points tall.
+    private static func template(_ image: NSImage) -> NSImage {
+        let copy = image.copy() as! NSImage
+        copy.isTemplate = true
+        if copy.size.height > 0 {
+            let height: CGFloat = 18
+            copy.size = NSSize(width: copy.size.width * height / copy.size.height, height: height)
+        }
+        return copy
     }
 
     @objc private func clicked() {
@@ -84,8 +88,8 @@ final class StatusItem: NSObject, NSPopoverDelegate {
         timer?.invalidate()
         stopWatchingOutsideClicks()
         popover?.close()
-        donor?.close()
         NSStatusBar.system.removeStatusItem(item)
+        Self.live.remove(self)
     }
 
     // MARK: Image and title
@@ -116,7 +120,9 @@ final class StatusItem: NSObject, NSPopoverDelegate {
             button.image = idleFrame
             return
         }
-        let timer = Timer(timeInterval: frameInterval, repeats: true) { [weak self] _ in self?.nextFrame() }
+        let timer = Timer(timeInterval: frameInterval, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.nextFrame() }
+        }
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
         nextFrame()
@@ -129,44 +135,31 @@ final class StatusItem: NSObject, NSPopoverDelegate {
 
     // MARK: Popover
 
-    func attach(donor window: NSWindow, size: NSSize) {
-        guard let content = window.contentView else { return }
-        donor = window
-        window.alphaValue = 0
-        window.ignoresMouseEvents = true
-        window.hasShadow = false
-        window.collectionBehavior = [.transient, .ignoresCycle, .fullScreenNone]
-        window.isExcludedFromWindowsMenu = true
+    /// Gives the popover its content, `width` wide and as tall as it needs.
+    func setContent(_ content: some View, width: CGFloat) {
+        let hosting = NSHostingController(rootView: content)
+        let size = hosting.sizeThatFits(in: NSSize(width: width, height: CGFloat.greatestFiniteMagnitude))
+        let contentSize = NSSize(width: width, height: min(size.height, 900))
+        hosting.view.frame = NSRect(origin: .zero, size: contentSize)
+        hosting.view.autoresizingMask = [.width, .height]
 
-        let holder = NSView(frame: NSRect(origin: .zero, size: size))
-        window.contentView = NSView()
-        content.frame = holder.bounds
-        content.autoresizingMask = [.width, .height]
-        // The backdrop put in while this was an ordinary window draws the
-        // window material; the popover's own goes below the content instead.
-        content.subviews.filter { $0 is NSVisualEffectView }.forEach { $0.removeFromSuperview() }
-        holder.addSubview(content)
-        self.holder = holder
-        installBackdrop()
+        let holder = NSView(frame: NSRect(origin: .zero, size: contentSize))
+        // As in an AppKit popover, whose window is never the main one: the
+        // material at rest, whichever app is in front.
+        let backdrop = Mac.makeBackdrop(frame: holder.bounds)
+        backdrop.state = .inactive
+        holder.addSubview(backdrop)
+        holder.addSubview(hosting.view)
 
         let controller = NSViewController()
         controller.view = holder
+        controller.addChild(hosting)
         let popover = NSPopover()
         popover.behavior = .transient
-        popover.contentSize = size
+        popover.contentSize = contentSize
         popover.contentViewController = controller
         popover.delegate = self
         self.popover = popover
-    }
-
-    /// The window material behind the popover's content, as in Tamio's windows.
-    func installBackdrop() {
-        guard let holder, !holder.subviews.contains(where: { $0 is NSVisualEffectView }) else { return }
-        let backdrop = Bridge.makeBackdrop(frame: holder.bounds)
-        // As in an AppKit popover, whose window is never the main one: the
-        // material at rest, whichever app is in front.
-        backdrop.state = .inactive
-        holder.addSubview(backdrop, positioned: .below, relativeTo: nil)
     }
 
     func toggle() {
@@ -182,7 +175,7 @@ final class StatusItem: NSObject, NSPopoverDelegate {
         popover.appearance = NSApp.appearance ?? NSApp.effectiveAppearance
         popover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
         outsideClicks = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
-            self?.close()
+            MainActor.assumeIsolated { self?.close() }
         }
     }
 
@@ -191,9 +184,12 @@ final class StatusItem: NSObject, NSPopoverDelegate {
         stopWatchingOutsideClicks()
     }
 
-    func popoverDidClose(_: Notification) {
-        stopWatchingOutsideClicks()
-        didClose?()
+    nonisolated func popoverDidClose(_: Notification) {
+        MainActor.assumeIsolated {
+            stopWatchingOutsideClicks()
+            // The popover must not keep the keyboard once it closes.
+            if NSApp.isActive, NSApp.keyWindow == nil { Mac.mainWindow?.makeKey() }
+        }
     }
 
     private func stopWatchingOutsideClicks() {

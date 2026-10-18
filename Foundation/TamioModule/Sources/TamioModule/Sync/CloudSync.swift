@@ -14,6 +14,8 @@ import Combine
 import Foundation
 #if canImport(UIKit)
     import UIKit
+#elseif canImport(AppKit)
+    import AppKit
 #endif
 
 @MainActor
@@ -190,12 +192,15 @@ public final class CloudSync: ObservableObject {
             }
             .store(in: &observers)
         #if canImport(UIKit)
-            NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
-                .sink { [weak self] _ in
-                    MainActor.assumeIsolated { self?.sync() }
-                }
-                .store(in: &observers)
+            let becameActive = UIApplication.didBecomeActiveNotification
+        #else
+            let becameActive = NSApplication.didBecomeActiveNotification
         #endif
+        NotificationCenter.default.publisher(for: becameActive)
+            .sink { [weak self] _ in
+                MainActor.assumeIsolated { self?.sync() }
+            }
+            .store(in: &observers)
         #if DEBUG
             // TAMIO_SYNC_LOCAL=<passphrase> also turns sync on.
             if let passphrase = ProcessInfo.processInfo.environment["TAMIO_SYNC_LOCAL"],

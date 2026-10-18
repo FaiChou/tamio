@@ -73,12 +73,7 @@ struct PageScaffold<Leading: View, Trailing: View, Header: View, Content: View>:
             }
         }
         .pageChrome()
-        #if targetEnvironment(macCatalyst)
-            .pageToolbar(primary: primary, trailingMetrics: trailingMetrics, search: search.map { ($0, searchPrompt) }) { leading } trailing: { trailing }
-        #else
-            .pageToolbar(primary: primary, trailingMetrics: trailingMetrics) { leading } trailing: { trailing }
-            .modifier(OptionalSearch(text: search, prompt: searchPrompt))
-        #endif
+        .pageToolbar(primary: primary, trailingMetrics: trailingMetrics, search: search.map { ($0, searchPrompt) }) { leading } trailing: { trailing }
     }
 }
 
@@ -139,105 +134,46 @@ private struct PageToolbar<Leading: View, Trailing: View>: ViewModifier {
     let trailing: Trailing
     let primary: ToolbarAction?
     let trailingMetrics: ToolbarCapsuleMetrics
-    /// Search after the trailing actions; only Mac Catalyst passes it here.
+    /// Search at the trailing end of the toolbar.
     let search: (text: Binding<String>, prompt: String)?
     @Environment(\.isActivePage) private var isActive
     @Environment(\.serverToolSwitch) private var toolSwitch
-    @State private var pageWidth: CGFloat = 0
-    @State private var switcherWidth: CGFloat = 0
-    @State private var trailingWidth: CGFloat = 0
 
     private var hasLeading: Bool { Leading.self != EmptyView.self }
     private var hasTrailing: Bool { Trailing.self != EmptyView.self || primary != nil }
 
     // The condition sits inside the toolbar builder: switching the page's own
     // identity would rebuild it (and its terminal view) on every switch.
-    //
-    // Every control is a toolbar item of its own with the shared background
-    // hidden, drawn by TamioDesign to AppKit's measurements (see Toolbar.swift).
     func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content
-                                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { pageWidth = $0 }
-                                .toolbar {
+        content
+            .toolbar {
                 if isActive {
                     if hasLeading {
-                        ToolbarItem(placement: .navigation) {
-                            RXToolbarCapsule { leading }
-                                .padding(.leading, 4)
-                        }
-                        .sharedBackgroundVisibility(.hidden)
+                        ToolbarItemGroup(placement: .navigation) { leading }
                     }
-                    ToolbarSpacer(.flexible)
-                    if let toolSwitch {
-                        // The toolbar packs this against the trailing items, its
-                        // spacers notwithstanding; the padding moves it back to the
-                        // middle of the page, as AppKit's centred item sits.
-                        ToolbarItem(placement: .automatic) {
-                            ServerToolSwitcher(machine: toolSwitch.machine, current: toolSwitch.current)
-                                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { switcherWidth = $0 }
-                                .padding(.trailing, switcherOffset)
-                        }
-                        .sharedBackgroundVisibility(.hidden)
+                    // Without a title the toolbar lays its items out from the
+                    // leading edge; the spacer keeps the actions at the trailing
+                    // one, with the switcher in the middle.
+                    if #available(macOS 26.0, *) {
                         ToolbarSpacer(.flexible)
                     }
-                    if hasTrailing {
-                        ToolbarItem(placement: .automatic) {
-                            RXToolbarActions(
-                                spacing: trailingMetrics.spacing,
-                                minSlot: trailingMetrics.minSlot,
-                                primary: primary.map { action in
-                                    RXToolbarPrimary(action.title, systemImage: action.systemImage, isEnabled: action.isEnabled, action: action.action)
-                                }
-                            ) { trailing }
-                                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { trailingWidth = $0 }
-                                .padding(.trailing, search == nil ? trailingMetrics.inset : 0)
-                        }
-                        .sharedBackgroundVisibility(.hidden)
-                    }
-                    #if targetEnvironment(macCatalyst)
-                        if let search {
-                            ToolbarItem(placement: .automatic) {
-                                RXToolbarSearchField(text: search.text, prompt: search.prompt)
-                            }
-                            .sharedBackgroundVisibility(.hidden)
-                        }
-                    #endif
-                }
-            }
-        } else {
-            content.toolbar {
-                if isActive {
-                    ToolbarItemGroup(placement: .navigation) { leading }
                     if let toolSwitch {
                         ToolbarItem(placement: .principal) {
                             ServerToolSwitcher(machine: toolSwitch.machine, current: toolSwitch.current)
                         }
-                    }
-                    ToolbarItemGroup(placement: .automatic) {
-                        trailing
-                        if let primary { primary }
-                    }
-                    #if targetEnvironment(macCatalyst)
-                        // Kept with the page's toolbar, which orders it last.
-                        if let search {
-                            ToolbarItem(placement: .automatic) {
-                                TextField(search.prompt, text: search.text)
-                                    .textFieldStyle(.roundedBorder)
-                                    .frame(width: 240)
-                            }
+                        if #available(macOS 26.0, *) {
+                            ToolbarSpacer(.flexible)
                         }
-                    #endif
+                    }
+                    if hasTrailing {
+                        ToolbarItemGroup(placement: .primaryAction) {
+                            trailing
+                            if let primary { primary }
+                        }
+                    }
                 }
             }
-        }
-    }
-
-    /// What lies between the switcher and the trailing edge of the page: the
-    /// trailing items, the gap before them and what the toolbar keeps, measured.
-    private var switcherOffset: CGFloat {
-        let trailingEnd = (hasTrailing ? trailingWidth + trailingMetrics.inset + 7 : 0) + 0.75
-        return max(0, (pageWidth - switcherWidth) / 2 - trailingEnd)
+            .modifier(OptionalSearch(text: isActive ? search?.text : nil, prompt: search?.prompt ?? "Search"))
     }
 }
 

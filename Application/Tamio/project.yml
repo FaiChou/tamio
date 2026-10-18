@@ -1,12 +1,8 @@
-# The Mac app is a Mac Catalyst app ("Optimize for Mac" idiom) with an AppKit
-# bundle (MacBridge) for what UIKit cannot reach: window material, menu bar
-# items, activation policy, the legacy keychain, and Sparkle (updates), which
-# MacBridge links and carries in its own Frameworks folder.
-# Regenerate the project with: xcodegen generate
+# The Mac app: native macOS, SwiftUI on AppKit. Sparkle (updates) is linked
+# and embedded here. Regenerate the project with: xcodegen generate
 name: Tamio
 options:
   deploymentTarget:
-    iOS: "17.0"
     macOS: "14.0"
   createIntermediateGroups: true
   groupSortPosition: top
@@ -24,39 +20,14 @@ settings:
     CURRENT_PROJECT_VERSION: $(MARKETING_VERSION)
     DEVELOPMENT_TEAM: NCFNX3LJ83
 targets:
-  MacBridge:
-    type: bundle
-    platform: macOS
-    sources: [Bridge, Shared]
-    settings:
-      base:
-        PRODUCT_NAME: MacBridge
-        CODE_SIGN_IDENTITY: "-"
-        PRODUCT_BUNDLE_IDENTIFIER: sb.moe.tamio.bridge
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_NSPrincipalClass: Bridge
-        SKIP_INSTALL: YES
-        SWIFT_VERSION: "5.0"
-        FRAMEWORK_SEARCH_PATHS: $(SRCROOT)/../../External/Sparkle
-        LD_RUNPATH_SEARCH_PATHS: "@loader_path/../Frameworks"
-        # The script below fetches Sparkle, outside the sandbox.
-        ENABLE_USER_SCRIPT_SANDBOXING: NO
-    preBuildScripts:
-      - name: Fetch Sparkle
-        script: bash "$SRCROOT/../../Workflow/Scripts/sparkle.sh"
-        basedOnDependencyAnalysis: false
-    dependencies:
-      - framework: ../../External/Sparkle/Sparkle.framework
-        embed: true
-        codeSign: true
   Tamio:
     type: application
-    platform: iOS
+    platform: macOS
     sources:
       - Application
       - Extension
       - Interface
-      - Shared
+      - Mac
       - path: ../../Resources/EULA
         buildPhase: resources
       - path: ../../Resources/LICENSE
@@ -76,11 +47,6 @@ targets:
         # Signed to run locally. Workflow/Scripts/build-macos.sh signs release
         # builds with a development certificate when there is one.
         CODE_SIGN_IDENTITY: "-"
-        SUPPORTS_MACCATALYST: YES
-        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
-        SUPPORTED_PLATFORMS: "iphoneos iphonesimulator"
-        TARGETED_DEVICE_FAMILY: "2,6"
-        DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: Tamio
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         CODE_SIGN_ENTITLEMENTS: macOS/macOS.entitlements
@@ -90,26 +56,30 @@ targets:
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.developer-tools
         INFOPLIST_KEY_CFBundleDisplayName: Tamio
         INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 MOE AI LLC. Based on Rayon: © 2022 Lakr Aream, © 2026 mizorewww and catussh contributors."
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
         SWIFT_EMIT_LOC_STRINGS: YES
+        FRAMEWORK_SEARCH_PATHS: $(SRCROOT)/../../External/Sparkle
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
+        # The script below fetches Sparkle, outside the sandbox.
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
       configs:
         Debug:
           PRODUCT_BUNDLE_IDENTIFIER: sb.moe.tamio.debug
         Release:
           PRODUCT_BUNDLE_IDENTIFIER: sb.moe.tamio
+    preBuildScripts:
+      - name: Fetch Sparkle
+        script: bash "$SRCROOT/../../Workflow/Scripts/sparkle.sh"
+        basedOnDependencyAnalysis: false
     dependencies:
       - package: TamioModule
       - package: TamioTerminal
       - package: MachineStatus
       - package: MachineStatusView
       - package: SymbolPicker
-      - target: MacBridge
+      - framework: ../../External/Sparkle/Sparkle.framework
         embed: true
-        copy:
-          destination: plugins
-        platformFilter: macOS
+        codeSign: true
 schemes:
   Tamio:
     build:

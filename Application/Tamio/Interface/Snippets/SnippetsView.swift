@@ -134,7 +134,7 @@ private struct SnippetTile: View {
             Button("Run…") { SnippetActions.run(snippet.id) }
             Button("Edit…", action: edit)
             Button("Duplicate") { SnippetActions.duplicate(snippet.id) }
-            Button("Copy Command") { UIBridge.sendPasteboard(str: snippet.code) }
+            Button("Copy Command") { Dialogs.sendPasteboard(str: snippet.code) }
             Divider()
             Button("Delete…", role: .destructive) { SnippetActions.delete(snippet.id) }
         }
@@ -146,7 +146,7 @@ enum SnippetActions {
     static func run(_ id: RDSnippet.ID) {
         let snippet = TamioStore.shared.snippetGroup[id]
         guard !snippet.code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            UIBridge.presentError(with: "This snippet has no command to run.")
+            Dialogs.presentError(with: "This snippet has no command to run.")
             return
         }
         ServerPickerPanel.present(
@@ -172,7 +172,7 @@ enum SnippetActions {
 
     static func delete(_ id: RDSnippet.ID) {
         let snippet = TamioStore.shared.snippetGroup[id]
-        UIBridge.requiresConfirmation(
+        Dialogs.requiresConfirmation(
             message: "Delete \(snippet.name.isEmpty ? "this snippet" : snippet.name)?",
             confirmTitle: "Delete",
             destructive: true

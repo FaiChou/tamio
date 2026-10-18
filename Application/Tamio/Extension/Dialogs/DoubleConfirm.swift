@@ -8,7 +8,7 @@
 import TamioModule
 import SwiftUI
 
-extension UIBridge {
+extension Dialogs {
     /// ConfirmDialog: the title names the thing, one sentence of consequence,
     /// a verb on the confirming button and Cancel. Skipped when
     /// Settings › General › Ask before closing is off, unless `always`: losing
@@ -29,18 +29,17 @@ extension UIBridge {
             confirmation(true)
             return
         }
-        guard let bridge = Mac.bridge else {
-            confirmation(false)
-            return
-        }
-        bridge.alert(
-            message: message,
-            informative: informative,
-            buttons: [confirmTitle, "Cancel"],
-            destructiveFirstButton: destructive,
-            textField: nil
-        ) { button, _ in
-            confirmation(button == 0)
+        onMainThread {
+            MainActor.assumeIsolated {
+                Mac.alert(
+                    message: message,
+                    informative: informative,
+                    buttons: [confirmTitle, "Cancel"],
+                    destructiveFirstButton: destructive
+                ) { button, _ in
+                    confirmation(button == 0)
+                }
+            }
         }
     }
 }
@@ -48,11 +47,11 @@ extension UIBridge {
 /// Bridges TamioModule's shared file-transfer core to the Mac app's UI.
 final class MacFileTransferUIHandler: FileTransferUIHandler {
     func presentError(_ message: String) {
-        UIBridge.presentError(with: message)
+        Dialogs.presentError(with: message)
     }
 
     func requiresConfirmation(_ message: String, completion: @escaping (Bool) -> Void) {
-        UIBridge.requiresConfirmation(message: message, confirmation: completion)
+        Dialogs.requiresConfirmation(message: message, confirmation: completion)
     }
 
     func autoOpenInterface(_ context: FileTransferContext) {

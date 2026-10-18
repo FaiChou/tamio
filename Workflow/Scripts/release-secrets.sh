@@ -17,7 +17,7 @@
 #     account.apple.com → Sign-In and Security → App-Specific Passwords.
 #
 # The .provisionprofile lets the released Mac app sync with iCloud: at
-# developer.apple.com → Profiles, a Developer ID profile (Mac Catalyst) for the
+# developer.apple.com → Profiles, a Developer ID profile (macOS) for the
 # app's id, which has the iCloud capability, and that certificate.
 #
 # Needs the GitHub CLI, signed in (`gh auth login`), in a clone of the repository.

@@ -53,7 +53,7 @@ struct AgentSetupSettings: View {
             copyRow("Codex", description: "Add to ~/.codex/config.toml.", text: bridge.codexConfig)
             RXFormRow("Tamio skill", description: installed ?? "Teaches an agent the rules: read a server's activity first, run through Tamio, report what it does by other means.") {
                 HStack(spacing: RX.Space.s2) {
-                    Button("Copy Command") { UIBridge.sendPasteboard(str: bridge.skillInstallCommand) }
+                    Button("Copy Command") { Dialogs.sendPasteboard(str: bridge.skillInstallCommand) }
                         .buttonStyle(.rx)
                         .help(bridge.skillInstallCommand)
                     Button("Install Skill") {
@@ -77,7 +77,7 @@ struct AgentSetupSettings: View {
                     .frame(maxWidth: 380, alignment: .leading)
                     .padding(RX.Space.s2)
                     .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.rxSurfaceSunken))
-                Button("Copy") { UIBridge.sendPasteboard(str: text) }
+                Button("Copy") { Dialogs.sendPasteboard(str: text) }
                     .buttonStyle(.rx(size: .small))
             }
         }
@@ -134,7 +134,7 @@ struct AgentActivitySettings: View {
                 HStack {
                     Spacer()
                     Button("Clear Activity…") {
-                        UIBridge.requiresConfirmation(
+                        Dialogs.requiresConfirmation(
                             message: "Clear all agent activity?",
                             informative: "It is cleared on this Mac only; with iCloud sync, other Macs keep theirs.",
                             confirmTitle: "Clear",

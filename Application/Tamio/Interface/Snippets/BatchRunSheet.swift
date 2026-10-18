@@ -58,7 +58,7 @@ struct BatchRunSheet: View {
                 if finished {
                     close()
                 } else {
-                    UIBridge.requiresConfirmation(
+                    Dialogs.requiresConfirmation(
                         message: "Stop running \(snippet.name)?",
                         confirmTitle: "Stop and Close",
                         destructive: true

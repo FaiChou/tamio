@@ -37,9 +37,9 @@ final class UpdateCenter: ObservableObject {
             // `-TamioPreviewUpdate 1.2.3` shows the notice, to look at it.
             available = UserDefaults.standard.string(forKey: "TamioPreviewUpdate")
         #endif
-        guard isSupported, let bridge = Mac.bridge else { return }
-        bridge.startUpdater()
-        bridge.setUpdateNotice { [weak self] version in
+        guard isSupported else { return }
+        Mac.startUpdater()
+        Mac.setUpdateNotice { [weak self] version in
             Task { @MainActor in
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) { self?.available = version }
             }
@@ -53,7 +53,7 @@ final class UpdateCenter: ObservableObject {
     }
 
     func checkNow() {
-        Mac.bridge?.checkForUpdates()
+        Mac.checkForUpdates()
     }
 }
 

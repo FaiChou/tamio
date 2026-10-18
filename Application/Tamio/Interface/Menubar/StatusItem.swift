@@ -9,47 +9,42 @@
 //  Disks, then Terminal, Monitor and Open Tamio.
 //
 
+import AppKit
 import Combine
 import MachineStatus
 import MachineStatusView
-import TamioModule
 import SwiftUI
-import UIKit
+import TamioModule
 
-/// The menu bar item itself is AppKit's, kept by the bridge under `key`; this
-/// is its model, and the owner of the popover's content.
+/// One server's menu bar item: its model, and the owner of the popover's content.
+@MainActor
 class MenubarStatusItem: NSObject, Identifiable {
-    let id: UUID = .init()
-    var key: String { id.uuidString }
+    nonisolated let id: UUID = .init()
+    nonisolated var key: String { id.uuidString }
 
     let machine: RDMachine
     let identity: RDIdentity
     let session: MonitorSession
+    let item: MacStatusItem
 
     var cancellables = Set<AnyCancellable>()
-    /// The scene whose window holds the popover's content.
-    weak var trayScene: UIWindowScene?
-    private var waitingForPopover = false
 
     static let frames = (0 ... 4).map { "cat_frame_\($0)" }
     static let crashFrame = "cat_frame_crash"
 
-    @MainActor init(machine: RDMachine, identity: RDIdentity, session: MonitorSession? = nil) {
+    init(machine: RDMachine, identity: RDIdentity, session: MonitorSession? = nil) {
         self.machine = machine
         self.identity = identity
         self.session = session ?? MonitorSession(machine: machine, identity: identity)
-
-        super.init()
-
-        Mac.bridge?.addStatusItem(
-            key,
+        var toggle: (() -> Void)?
+        item = MacStatusItem(
             toolTip: machine.name,
-            frames: Self.frames.compactMap { UIImage(named: $0)?.cgImage },
-            idleFrame: UIImage(named: Self.crashFrame)?.cgImage
-        ) { [weak self] in
-            MainActor.assumeIsolated { self?.togglePopover() }
-        }
-
+            frames: Self.frames.compactMap { NSImage(named: $0) },
+            idleFrame: NSImage(named: Self.crashFrame)
+        ) { toggle?() }
+        super.init()
+        toggle = { [weak self] in self?.togglePopover() }
+        item.onOpenApp = { Mac.openApp?() }
         observeSession()
     }
 
@@ -67,135 +62,30 @@ class MenubarStatusItem: NSObject, Identifiable {
         case broken = -1
     }
 
-    /// The popover's content is made on the first click: it lives in a window
-    /// scene of its own, which the bridge turns into the popover.
-    @MainActor func togglePopover() {
-        guard let bridge = Mac.bridge else { return }
-        if bridge.hasPopover(key) {
-            bridge.togglePopover(key)
-            return
+    /// The popover's content is made on the first click.
+    func togglePopover() {
+        if item.popover == nil {
+            item.setContent(popoverContent, width: MenubarPopoverView.width)
         }
-        guard !waitingForPopover else { return }
-        waitingForPopover = true
-        bridge.prepareForPopoverWindow()
-        TraySceneDelegate.open(for: self)
+        item.toggle()
     }
 
-    @MainActor var popoverContent: some View {
+    var popoverContent: some View {
         MenubarPopoverView(session: session) { [weak self] in
             self?.closeThisItem()
         } dismiss: { [weak self] in
-            guard let self else { return }
-            Mac.bridge?.closePopover(self.key)
+            self?.item.close()
         }
         .environmentObject(TamioStore.shared)
         .environment(\.rxControlsAtRest, true)
     }
 
-    /// Called by the popover's scene once its window is up.
-    @MainActor func attachPopover(window: UIWindow, size: CGSize, attempt: Int = 0) {
-        guard let bridge = Mac.bridge else { return }
-        if bridge.attachPopover(key, window: window, width: size.width, height: size.height) {
-            waitingForPopover = false
-            bridge.togglePopover(key)
-        } else if attempt < 200 {
-            // UIKit makes the AppKit window a moment after the UIWindow.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) { [weak self] in
-                self?.attachPopover(window: window, size: size, attempt: attempt + 1)
-            }
-        } else {
-            waitingForPopover = false
-        }
-    }
-
-    @MainActor func closeThisItem() {
-        Mac.bridge?.removeStatusItem(key)
-        if let session = trayScene?.session {
-            UIApplication.shared.requestSceneSessionDestruction(session, options: nil)
-        }
+    func closeThisItem() {
+        item.remove()
         session.shutdown()
         cancellables.removeAll()
         MenubarTool.shared.remove(menubarItem: id)
     }
-}
-
-/// The window scene behind a menu bar popover. UIKit gives the scene a window
-/// of its own; the bridge moves that window's content into the popover and
-/// keeps the window out of sight.
-final class TraySceneDelegate: NSObject, UIWindowSceneDelegate {
-    static let activityType = "sb.moe.tamio.menubar-popover"
-    private static let itemKey = "item"
-    private static let marker = "sb.moe.tamio.menubar-popover"
-
-    var window: UIWindow?
-
-    @MainActor static func open(for item: MenubarStatusItem) {
-        let activity = NSUserActivity(activityType: activityType)
-        activity.userInfo = [itemKey: item.key]
-        if #available(iOS 17.0, *) {
-            let request = UISceneSessionActivationRequest(role: .windowApplication, userActivity: activity)
-            UIApplication.shared.activateSceneSession(for: request)
-        } else {
-            UIApplication.shared.requestSceneSessionActivation(nil, userActivity: activity, options: nil)
-        }
-    }
-
-    static func owns(_ session: UISceneSession) -> Bool {
-        session.userInfo?[marker] != nil
-    }
-
-    /// Whether a connecting session is a popover's: one just asked for, or one
-    /// the system kept from an earlier run.
-    static func claims(_ session: UISceneSession, options: UIScene.ConnectionOptions) -> Bool {
-        owns(session) || options.userActivities.contains { $0.activityType == activityType }
-    }
-
-    /// A popover's scene does not outlive the run it was made in.
-    @MainActor static func discardLeftovers() {
-        for session in UIApplication.shared.openSessions where owns(session) {
-            UIApplication.shared.requestSceneSessionDestruction(session, options: nil)
-        }
-    }
-
-    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options: UIScene.ConnectionOptions) {
-        let key = options.userActivities
-            .first { $0.activityType == Self.activityType }?
-            .userInfo?[Self.itemKey] as? String
-        guard let scene = scene as? UIWindowScene,
-              let key, let item = MenubarTool.shared.item(withKey: key)
-        else {
-            UIApplication.shared.requestSceneSessionDestruction(session, options: nil)
-            return
-        }
-        session.userInfo = [Self.marker: key]
-        item.trayScene = scene
-
-        let host = UIHostingController(rootView: item.popoverContent
-            .environmentObject(TamioStore.shared))
-        host.view.backgroundColor = .clear
-        let size = host.sizeThatFits(in: CGSize(width: MenubarPopoverView.width, height: .greatestFiniteMagnitude))
-        scene.sizeRestrictions?.minimumSize = size
-        scene.sizeRestrictions?.maximumSize = size
-        scene.titlebar?.titleVisibility = .hidden
-        scene.titlebar?.toolbar = nil
-
-        let window = UIWindow(windowScene: scene)
-        window.backgroundColor = .clear
-        window.rootViewController = host
-        window.isHidden = false
-        self.window = window
-        item.attachPopover(window: window, size: size)
-        // SwiftUI's WindowGroup puts a main window in every scene, this one
-        // too; it would draw behind the cards.
-        DispatchQueue.main.async {
-            for other in scene.windows where other !== window && !(other.rootViewController is UIInputViewController) {
-                if String(describing: type(of: other)) == "UIWindow" { other.isHidden = true }
-            }
-        }
-    }
-
-    /// Nothing to bring back: the scene is made again from its menu bar item.
-    func stateRestorationActivity(for _: UIScene) -> NSUserActivity? { nil }
 }
 
 /// The popover for one server: the same cards as its Monitor page, in one column.
@@ -237,7 +127,7 @@ struct MenubarPopoverView: View {
         .frame(width: Self.width)
         // The window's material, not the popover's, so the cards sit on the same
         // backdrop as in the main window.
-        .background(RXWindowBackground(material: true).ignoresSafeArea())
+        .background(RXWindowBackground().ignoresSafeArea())
     }
 
     /// Name and system facts on the left; the server's tools as symbols on the right.

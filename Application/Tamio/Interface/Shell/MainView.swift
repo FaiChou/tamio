@@ -9,34 +9,21 @@
 import MachineStatusView
 import TamioModule
 import SwiftUI
-import UIKit
 
 struct MainView: View {
     @EnvironmentObject var store: TamioStore
     @ObservedObject var router = AppRouter.shared
 
     @State private var openLicenseAgreement = false
-    /// Unknown until the view is in a window. SwiftUI's WindowGroup puts a main
-    /// window in a menu bar popover's scene too, hidden; it must stay empty, or
-    /// its terminal pages take the terminals from the real window.
-    @State private var inPopoverScene: Bool?
+    @Environment(\.openWindow) private var openWindow
     /// Settings is built when it is first opened and kept from then on: its
     /// categories are many rows each, and coming back shows what is there.
     @State private var settingsOpened = false
 
     var body: some View {
-        // Built at once, before the probe answers: swapping a placeholder
-        // for the split view as the window comes up races Catalyst building
-        // the window's toolbar, which then goes missing. A popover's scene
-        // drops it as soon as it knows.
-        Group {
-            if inPopoverScene != true {
-                window
-            } else {
-                Color.clear
-            }
-        }
-        .background(SceneProbe { inPopoverScene = $0 })
+        window
+            // Open Tamio from the menu bar, with the window closed, opens it again.
+            .onAppear { MainWindow.openWindow = openWindow }
     }
 
     private var window: some View {
@@ -68,16 +55,12 @@ struct MainView: View {
                         .allowsHitTesting(router.route == .settings)
                         .accessibilityHidden(router.route != .settings)
                 }
-                // Only in the real window: a popover's scene would take the
-                // terminals from it.
-                if inPopoverScene == false {
-                    SessionPages(route: router.route)
-                }
+                SessionPages(route: router.route)
             }
             .onChange(of: router.route == .settings) { shown in
                 // Before macOS 26 its toolbar and search field cannot be taken
                 // out of the window while it is kept, so there it is not kept.
-                if shown, #available(iOS 26.0, *) { settingsOpened = true }
+                if shown, #available(macOS 26.0, *) { settingsOpened = true }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .animation(.easeOut(duration: 0.2), value: router.route.isSession ? nil : router.route)
@@ -89,7 +72,6 @@ struct MainView: View {
         // MainWindow.minimumSize (the scene's restriction, and AppKit's), and
         // content held to a minimum the window sits exactly at makes Catalyst
         // drop the toolbar for the in-window navigation bars.
-        .modifier(HiddenWindowTitle())
         .overlay {
             if store.globalProgressInPresent {
                 ProgressHUD()
@@ -183,44 +165,3 @@ private extension View {
             .environment(\.isActivePage, active)
     }
 }
-
-/// Reports, once in a window, whether that window belongs to a menu bar
-/// popover's scene.
-private struct SceneProbe: UIViewRepresentable {
-    let report: (Bool) -> Void
-
-    final class Probe: UIView {
-        var report: ((Bool) -> Void)?
-
-        override func didMoveToWindow() {
-            super.didMoveToWindow()
-            guard let scene = window?.windowScene else { return }
-            // SwiftUI's delegate stands in front of the one the scene was
-            // configured with; the configuration says whose scene it is.
-            let inPopover = scene.session.configuration.delegateClass == TraySceneDelegate.self
-                || TraySceneDelegate.owns(scene.session)
-            DispatchQueue.main.async { [report] in report?(inPopover) }
-        }
-    }
-
-    func makeUIView(context _: Context) -> Probe {
-        let probe = Probe()
-        probe.isUserInteractionEnabled = false
-        probe.report = report
-        return probe
-    }
-
-    func updateUIView(_: Probe, context _: Context) {}
-}
-
-/// The window toolbar holds page controls only; the page title is in the content.
-private struct HiddenWindowTitle: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 18.0, *) {
-            content.toolbar(removing: .title)
-        } else {
-            content.navigationTitle("")
-        }
-    }
-}
-

@@ -110,7 +110,7 @@ release_mac() {
         exit 1
     }
 
-    local built="$DERIVED_DATA_PATH/Build/Products/Release-maccatalyst/Tamio.app"
+    local built="$DERIVED_DATA_PATH/Build/Products/Release/Tamio.app"
     local version stage app
     version="$(version_of "$built/Contents/Info.plist")"
     stage="$OUTPUT_DIR/mac"
@@ -128,7 +128,7 @@ release_mac() {
     /usr/libexec/PlistBuddy -c 'Delete :com.apple.security.get-task-allow' "$entitlements" 2>/dev/null || true
     local timestamp=(--timestamp)
     [[ "$identity" == "-" ]] && timestamp=(--timestamp=none)
-    # Sparkle, in MacBridge's Frameworks, carries helpers of its own
+    # Sparkle, in the app's Frameworks, carries helpers of its own
     # (Autoupdate, Updater.app, XPC services); -depth signs them before the
     # framework that holds them, keeping the entitlements they come with.
     find "$app/Contents" -depth \( -name '*.framework' -o -name '*.dylib' -o -name '*.appex' -o -name '*.xpc' \

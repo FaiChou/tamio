@@ -182,7 +182,7 @@ private struct PortForwardRow: View {
         .contextMenu {
             Button("Edit…", action: edit).disabled(running)
             Button("Duplicate") { PortForwardActions.duplicate(forward.id) }
-            Button("Copy SSH Command") { UIBridge.sendPasteboard(str: forward.getCommand() ?? "") }
+            Button("Copy SSH Command") { Dialogs.sendPasteboard(str: forward.getCommand() ?? "") }
                 .disabled(forward.getCommand() == nil)
             Divider()
             Button("Delete…", role: .destructive) { PortForwardActions.delete(forward.id) }
@@ -200,7 +200,7 @@ enum PortForwardActions {
     @MainActor
     static func delete(_ id: RDPortForward.ID) {
         let forward = TamioStore.shared.portForwardGroup[id]
-        UIBridge.requiresConfirmation(
+        Dialogs.requiresConfirmation(
             message: "Delete the forward on port \(forward.bindPort)?",
             confirmTitle: "Delete",
             destructive: true

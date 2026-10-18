@@ -86,21 +86,25 @@ struct RedactionMenu: View {
     @EnvironmentObject var store: TamioStore
 
     var body: some View {
-        RXToolbarMenu(
-            "Privacy",
-            systemImage: store.machineRedacted == .none ? "eye" : "eye.slash",
-            items: [
-                item("Show Everything", systemImage: "eye", level: .none),
-                item("Hide Addresses", systemImage: "eye.slash", level: .sensitive),
-                item("Hide Names and Addresses", systemImage: "eye.slash.fill", level: .all),
-            ]
-        )
+        Menu {
+            item("Show Everything", systemImage: "eye", level: .none)
+            item("Hide Addresses", systemImage: "eye.slash", level: .sensitive)
+            item("Hide Names and Addresses", systemImage: "eye.slash.fill", level: .all)
+        } label: {
+            Label("Privacy", systemImage: store.machineRedacted == .none ? "eye" : "eye.slash")
+        }
         .help(store.machineRedacted.tooltip)
     }
 
-    private func item(_ title: String, systemImage: String, level: RDMachine.RedactedLevel) -> RXToolbarMenuItem {
-        RXToolbarMenuItem(title, systemImage: systemImage, isOn: store.machineRedacted == level) {
+    private func item(_ title: String, systemImage: String, level: RDMachine.RedactedLevel) -> some View {
+        Button {
             store.machineRedacted = level
+        } label: {
+            if store.machineRedacted == level {
+                Label(title, systemImage: "checkmark")
+            } else {
+                Text(title)
+            }
         }
     }
 }

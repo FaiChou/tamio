@@ -20,7 +20,7 @@ enum ServerActions {
         let store = TamioStore.shared
         let original = store.machineGroup[machine]
         guard original.isNotPlaceholder() else { return }
-        UIBridge.requiresConfirmation(
+        Dialogs.requiresConfirmation(
             message: "Duplicate \(original.name)?",
             confirmTitle: "Duplicate"
         ) { confirmed in
@@ -48,7 +48,7 @@ enum ServerActions {
         let message = machines.count == 1
             ? "Delete \(store.machineGroup[machines[0]].name)?"
             : "Delete \(machines.count) servers?"
-        UIBridge.requiresConfirmation(
+        Dialogs.requiresConfirmation(
             message: message,
             informative: "Port forwards through it stop working.",
             confirmTitle: "Delete",
@@ -74,7 +74,7 @@ enum ServerActions {
     static func forgetHostKey(_ machine: RDMachine.ID) {
         let read = TamioStore.shared.machineGroup[machine]
         guard read.isNotPlaceholder() else { return }
-        UIBridge.requiresConfirmation(
+        Dialogs.requiresConfirmation(
             message: "Forget the host key of \(read.name)?",
             informative: "The key the server presents on the next connection is saved as its key. Do this only when you know its keys were replaced.",
             confirmTitle: "Forget"
@@ -86,11 +86,11 @@ enum ServerActions {
 
     static func copyAddress(_ machine: RDMachine.ID) {
         let read = TamioStore.shared.machineGroup[machine]
-        UIBridge.sendPasteboard(str: "\(read.remoteAddress):\(read.remotePort)")
+        Dialogs.sendPasteboard(str: "\(read.remoteAddress):\(read.remotePort)")
     }
 
     static func copyCommand(_ machine: RDMachine.ID) {
-        UIBridge.sendPasteboard(str: TamioStore.shared.machineGroup[machine].getCommand())
+        Dialogs.sendPasteboard(str: TamioStore.shared.machineGroup[machine].getCommand())
     }
 }
 
@@ -277,24 +277,17 @@ struct ServerToolSwitcher: View {
     let current: ServerTool
 
     var body: some View {
-        if #available(iOS 26.0, *) {
-            RXToolbarSegmented(
-                selection: current,
-                options: ServerTool.allCases.map { .init($0, $0.title, help: $0.help) }
-            ) { $0.show(machine) }
-        } else {
-            Picker("View", selection: Binding(get: { current }, set: { $0.show(machine) })) {
-                ForEach(ServerTool.allCases) { tool in
-                    Text(tool.title)
-                        .help(tool.help)
-                        .tag(tool)
-                }
+        Picker("View", selection: Binding(get: { current }, set: { $0.show(machine) })) {
+            ForEach(ServerTool.allCases) { tool in
+                Text(tool.title)
+                    .help(tool.help)
+                    .tag(tool)
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .fixedSize()
-            .help("Switch between this server's terminal, files and monitor")
         }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
+        .help("Switch between this server's terminal, files and monitor")
     }
 }
 

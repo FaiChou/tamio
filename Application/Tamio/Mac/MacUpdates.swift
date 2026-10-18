@@ -1,12 +1,11 @@
 //
-//  Bridge+Updates.swift
-//  MacBridge
+//  MacUpdates.swift
+//  Tamio (macOS)
 //
 //  Sparkle, Tamio's updater. It reads the appcast that each release puts on
 //  GitHub (SUFeedURL in the app's Info.plist), checks that the disk image is
 //  signed with the release key (SUPublicEDKey), and installs it with its own
-//  AppKit windows, which work in the Catalyst process like the bridge's other
-//  AppKit.
+//  windows.
 //
 //  What a check in the background finds is not put up in a window of its
 //  own: the app shows a small notice in the corner of its window ("gentle
@@ -16,43 +15,42 @@
 import AppKit
 import Sparkle
 
-extension Bridge {
-    private var controller: SPUStandardUpdaterController? {
-        updaterController as? SPUStandardUpdaterController
-    }
+extension Mac {
+    @MainActor private static var updaterController: SPUStandardUpdaterController?
+    @MainActor private static let reminders = UpdateReminders()
 
-    func startUpdater() {
+    @MainActor static func startUpdater() {
         guard updaterController == nil else { return }
-        let reminders = UpdateReminders()
-        updateReminders = reminders
         updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: reminders, userDriverDelegate: reminders)
     }
 
-    func checkForUpdates() {
+    @MainActor static func checkForUpdates() {
         startUpdater()
-        controller?.checkForUpdates(nil)
+        updaterController?.checkForUpdates(nil)
     }
 
-    var canCheckForUpdates: Bool {
-        controller?.updater.canCheckForUpdates ?? false
+    @MainActor static var canCheckForUpdates: Bool {
+        updaterController?.updater.canCheckForUpdates ?? false
     }
 
-    var automaticallyChecksForUpdates: Bool {
-        get { controller?.updater.automaticallyChecksForUpdates ?? false }
-        set { controller?.updater.automaticallyChecksForUpdates = newValue }
+    @MainActor static var automaticallyChecksForUpdates: Bool {
+        get { updaterController?.updater.automaticallyChecksForUpdates ?? false }
+        set { updaterController?.updater.automaticallyChecksForUpdates = newValue }
     }
 
-    var automaticallyDownloadsUpdates: Bool {
-        get { controller?.updater.automaticallyDownloadsUpdates ?? false }
-        set { controller?.updater.automaticallyDownloadsUpdates = newValue }
+    @MainActor static var automaticallyDownloadsUpdates: Bool {
+        get { updaterController?.updater.automaticallyDownloadsUpdates ?? false }
+        set { updaterController?.updater.automaticallyDownloadsUpdates = newValue }
     }
 
-    var lastUpdateCheck: Date? {
-        controller?.updater.lastUpdateCheckDate
+    @MainActor static var lastUpdateCheck: Date? {
+        updaterController?.updater.lastUpdateCheckDate
     }
 
-    func setUpdateNotice(_ handler: @escaping (String?) -> Void) {
-        (updateReminders as? UpdateReminders)?.notice = handler
+    /// Called with the version a scheduled check found, and with nil once it
+    /// is dealt with.
+    @MainActor static func setUpdateNotice(_ handler: @escaping (String?) -> Void) {
+        reminders.notice = handler
     }
 }
 

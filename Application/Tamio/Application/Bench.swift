@@ -13,7 +13,7 @@
     import TamioModule
     import TamioTerminal
 import SwiftUI
-    import UIKit
+    import AppKit
 
     extension Notification.Name {
         /// userInfo: "select" (Int, an index into the sorted list) or "filter" (String).
@@ -248,19 +248,20 @@ import SwiftUI
         /// Scrolls the file list from top to bottom and back at a steady pace
         /// and reports how long frames took.
         static func scroll() async {
-            guard let window = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
-                .flatMap(\.windows).first(where: { $0.bounds.width > 900 }),
-                let scroller = largestScrollView(in: window)
+            guard let window = Mac.mainWindow, let content = window.contentView,
+                  let scroller = largestScrollView(in: content)
             else { return NSLog("BENCH scroll: no scroll view") }
-            NSLog("BENCH scroll view %@ content %.0f", String(describing: type(of: scroller)), scroller.contentSize.height)
+            let height = scroller.documentView?.frame.height ?? 0
+            NSLog("BENCH scroll view %@ content %.0f", String(describing: type(of: scroller)), height)
             let recorder = FrameRecorder()
             // A fast flick, about 6000 pt a second, rather than the whole list.
-            let distance = min(12000, max(0, scroller.contentSize.height - scroller.bounds.height))
+            let distance = min(12000, max(0, height - scroller.contentView.bounds.height))
             let duration = 4.0
-            recorder.start { progress in
+            recorder.start(in: content) { progress in
                 // There and back.
                 let phase = progress < 0.5 ? progress * 2 : (1 - progress) * 2
-                scroller.contentOffset.y = distance * phase
+                scroller.contentView.scroll(to: NSPoint(x: 0, y: distance * phase))
+                scroller.reflectScrolledClipView(scroller.contentView)
             }
             try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
             let frames = recorder.stop()
@@ -273,11 +274,15 @@ import SwiftUI
             )
         }
 
-        private static func largestScrollView(in view: UIView) -> UIScrollView? {
-            var best: UIScrollView?
+        private static func largestScrollView(in view: NSView) -> NSScrollView? {
+            var best: NSScrollView?
             var stack = [view]
             while let next = stack.popLast() {
-                if let scroll = next as? UIScrollView, scroll.contentSize.height > (best?.contentSize.height ?? 0) { best = scroll }
+                if let scroll = next as? NSScrollView,
+                   (scroll.documentView?.frame.height ?? 0) > (best?.documentView?.frame.height ?? 0)
+                {
+                    best = scroll
+                }
                 stack.append(contentsOf: next.subviews)
             }
             return best
@@ -291,15 +296,14 @@ import SwiftUI
         private var begin = 0.0
         private var last = 0.0
         private var frames: [Double] = []
+        private var duration = 4.0
 
-        func start(duration: Double = 4, step: @escaping (Double) -> Void) {
+        func start(in view: NSView, duration: Double = 4, step: @escaping (Double) -> Void) {
             self.step = step
             self.duration = duration
-            link = CADisplayLink(target: self, selector: #selector(tick))
+            link = view.displayLink(target: self, selector: #selector(tick))
             link?.add(to: .main, forMode: .common)
         }
-
-        private var duration = 4.0
 
         @objc private func tick(_: CADisplayLink) {
             // Wall time between callbacks: a stalled main thread shows as a long frame.

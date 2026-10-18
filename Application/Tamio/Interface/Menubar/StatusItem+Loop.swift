@@ -54,6 +54,6 @@ extension MenubarStatusItem {
             let down = RXFormat.rateString(Double(session.status.totalReceivePerSecond))
             title = "↑ \(up)\n↓ \(down)"
         }
-        Mac.bridge?.updateStatusItem(key, title: title, frameInterval: speed.rawValue)
+        item.update(title: title, frameInterval: speed.rawValue)
     }
 }

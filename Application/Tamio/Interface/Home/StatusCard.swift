@@ -56,6 +56,10 @@ struct StatusCard: View {
         .animation(.easeOut(duration: 0.15), value: hovered)
         .animation(.easeOut(duration: 0.15), value: selected)
         .contextMenu { ServerContextMenu(machine: machine) }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(read.name)
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityAction { select() }
     }
 
     func header(_ read: RDMachine) -> some View {

@@ -22,8 +22,8 @@ guard arguments.count == 6 else {
     exit(2)
 }
 let (keyPath, keyID, issuerID, bundleID, output) = (arguments[1], arguments[2], arguments[3], arguments[4], arguments[5])
-let profileName = "\(bundleID) Mac Catalyst Developer ID"
-let profileType = "MAC_CATALYST_APP_DIRECT"
+let profileName = "\(bundleID) Mac Developer ID"
+let profileType = "MAC_APP_DIRECT"
 
 struct Failure: Error, CustomStringConvertible {
     let description: String

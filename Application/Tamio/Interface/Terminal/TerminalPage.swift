@@ -157,7 +157,7 @@ enum TerminalSessionActions {
     static func close(_ context: TerminalManager.Context) {
         let manager = TerminalManager.shared
         if manager.sessionAlive(forContext: context.id) {
-            UIBridge.requiresConfirmation(
+            Dialogs.requiresConfirmation(
                 message: "Close the session on \(context.displayName)?",
                 confirmTitle: "Close Session",
                 destructive: true
