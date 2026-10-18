@@ -73,6 +73,13 @@ sign_for_icloud() {
     done
     /usr/libexec/PlistBuddy -c 'Delete :com.apple.developer.team-identifier' "$entitlements" 2>/dev/null || true
     /usr/libexec/PlistBuddy -c "Add :com.apple.developer.team-identifier string $DEVELOPMENT_TEAM" "$entitlements"
+    # The sync passphrase is an iCloud Keychain item, kept in the app's own
+    # access group.
+    if [[ "$grants" == *keychain-access-groups* ]]; then
+        /usr/libexec/PlistBuddy -c 'Delete :keychain-access-groups' "$entitlements" 2>/dev/null || true
+        /usr/libexec/PlistBuddy -c 'Add :keychain-access-groups array' \
+            -c "Add :keychain-access-groups:0 string $DEVELOPMENT_TEAM.$bundle_id" "$entitlements"
+    fi
 
     cp "$profile" "$APP_PATH/Contents/embedded.provisionprofile"
     signature="$(/usr/bin/codesign -d --verbose=2 "$APP_PATH" 2>&1 || true)"
