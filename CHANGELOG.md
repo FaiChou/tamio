@@ -9,6 +9,26 @@ and tag `v0.2.0`. A tag with no section here is not built.
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-10-18
+
+### Window
+
+- The sidebar's collapse button no longer drops to a second row, and the
+  server cards no longer flicker after it did. Catalyst dropped the window's
+  toolbar whenever the window sat exactly at the content's minimum size, and
+  the app then rebuilt its pages twenty times trying to get it back; neither
+  happens now.
+- The window cannot be made smaller than 960 by 640 points, and one restored
+  smaller grows to that, so the sidebar's Settings row is never cut off.
+- The update window shows a version's release notes as text, not as markup.
+
+### Home
+
+- A server whose connection died while the Mac slept keeps its last readings
+  on its card instead of blanking, and is reconnected within a second.
+- In the server list the group badge follows the server name, so every name
+  starts at the same edge.
+
 ## [0.1.3] - 2026-10-18
 
 - Agent activity shows a short command whole, and a longer one or a task's
