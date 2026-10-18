@@ -1,34 +1,87 @@
 {
-  "fill" : {
-    "linear-gradient" : [
-      "display-p3:0.07059,0.08627,0.30196,1.00000",
-      "display-p3:0.27843,0.34902,0.85098,1.00000"
-    ],
-    "orientation" : {
-      "start" : { "x" : 0.5, "y" : 0 },
-      "stop" : { "x" : 0.5, "y" : 1 }
-    }
+  "fill": {
+    "automatic-gradient": "display-p3:0.16863,0.53725,0.99216,1.00000"
   },
-  "groups" : [
+  "groups": [
     {
-      "layers" : [
-        { "image-name" : "spark-light.svg", "name" : "spark-light" },
-        { "image-name" : "spark-shade.svg", "name" : "spark-shade" }
+      "layers": [
+        {
+          "image-name": "prompt.svg",
+          "name": "prompt"
+        },
+        {
+          "image-name": "dots.svg",
+          "name": "dots"
+        },
+        {
+          "image-name": "lights.svg",
+          "name": "lights"
+        }
       ],
-      "shadow" : { "kind" : "neutral", "opacity" : 0.45 },
-      "translucency" : { "enabled" : false, "value" : 0 }
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.2
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0
+      }
     },
     {
-      "layers" : [
-        { "image-name" : "nodes.svg", "name" : "nodes" },
-        { "image-name" : "orbit.svg", "name" : "orbit" }
+      "layers": [
+        {
+          "image-name": "window.svg",
+          "name": "window"
+        }
       ],
-      "shadow" : { "kind" : "neutral", "opacity" : 0.3 },
-      "translucency" : { "enabled" : false, "value" : 0 }
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.3
+      }
+    },
+    {
+      "layers": [
+        {
+          "image-name": "back1.svg",
+          "name": "back1",
+          "opacity": 0.7
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.3
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
+      }
+    },
+    {
+      "layers": [
+        {
+          "image-name": "back2.svg",
+          "name": "back2",
+          "opacity": 0.45
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.2
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.6
+      }
     }
   ],
-  "supported-platforms" : {
-    "circles" : [ "watchOS" ],
-    "squares" : "shared"
+  "supported-platforms": {
+    "circles": [
+      "watchOS"
+    ],
+    "squares": "shared"
   }
 }

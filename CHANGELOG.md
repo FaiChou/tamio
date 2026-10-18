@@ -73,4 +73,5 @@ The first release of Tamio, an SSH client for the Mac.
 - Switching between light and dark is smooth.
 - Settings never squeeze a title into a narrow column: a wide control moves
   under its title instead.
-- A new icon: an AI spark in an orbit of connected servers.
+- A new icon: a glass terminal window, its prompt followed by an agent's typing
+  dots, in front of the servers it works on.
