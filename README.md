@@ -4,11 +4,84 @@ A native SSH client for macOS: a Ghostty terminal, a dual-pane SFTP browser,
 live status for every server, end-to-end encrypted iCloud sync, and an MCP
 server so AI agents can work across your hosts with your approval.
 
-Tamio is in early development. The plan is in [DESIGN.md](./DESIGN.md).
+Tamio is in early development. The plan is in [DESIGN.md](./DESIGN.md). An
+iOS version is planned, but work on it has not started yet.
 
 ![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-lightgrey)
 ![Swift](https://img.shields.io/badge/Swift-6.2-orange)
 [![License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+
+## Features
+
+### Agents (MCP)
+
+- **A built-in MCP server.** Claude Code, Codex and any other MCP client can
+  work on your servers through Tamio. Settings › MCP sets up Claude Code, Codex
+  and the Tamio skill in one click.
+- **What agents can do:**
+  - see your servers and their live CPU, memory, disk, load and traffic;
+  - run commands or saved snippets on one server or many at once;
+  - add or change servers, SSH keys, snippets and port forwards;
+  - start and stop port forwards.
+- **Every server operation leaves a history.** Each command an agent runs and
+  each change it makes is recorded on that server's Activity: which agent, on
+  which Mac, what it ran, and what came back. Agents also log what they did
+  outside Tamio (their own `ssh`, `scp`, a deploy).
+- **The history outlives the session.** An agent's session may be lost when you
+  switch agents, swap devices or change computers. The record stays with the
+  server, and syncs across your Macs, so the next agent knows what the last one
+  did there.
+
+### Security
+
+- **Agents never see a secret.** No tool returns a password, a private key or a
+  passphrase. An agent can add a key, or have Tamio generate one, and gets back
+  only the public half.
+- **You approve first.** Every command, change and port forward an agent asks
+  for waits for you, showing exactly what will run and where.
+- **Only you can reach it.** The MCP server listens on a Unix socket that only
+  your own user account can open. It doesn't use a network port.
+- **Encrypted on disk.** Servers and identities are stored encrypted, under a key
+  kept in your Keychain.
+- **End-to-end encrypted sync.** Data is encrypted on your Mac, under a
+  passphrase only your devices know, before it goes to iCloud. Apple cannot read
+  it.
+- **Host keys are checked.** A server's key is trusted once, and a changed key
+  is refused.
+
+### Servers and terminal
+
+- A fast terminal, built on [Ghostty](https://ghostty.org).
+- Servers with labels, groups and tags; a password or an SSH key to sign in.
+- Identities: paste a key, load one from a file, or generate an Ed25519 key. A
+  private key is never shown again once saved.
+- Snippets for the commands you run often, and local and remote port forwards.
+
+### Live status
+
+- A Home card for every server with live CPU, memory and disk, its operating
+  system's logo, and a flag for labels such as `JP Tokyo`.
+- Details for each server: overview, processes, containers and agent activity.
+
+### Files (SFTP)
+
+- Two panes, this Mac and a server, each switchable to any server.
+- Drag files between the panes, from Finder, or out to Finder. Folders go whole.
+- A transfer queue with progress, speed, time left, cancel and retry, and a
+  notification when a transfer ends while Tamio is in the background.
+
+### iCloud sync
+
+- Servers, identities, snippets, port forwards, known host keys and agent
+  activity stay the same on all your Macs, each kind with its own switch.
+- iCloud Keychain carries the passphrase, so your other Macs turn sync on by
+  themselves.
+
+### App
+
+- Updates itself with Sparkle: a new version shows at the bottom of the
+  sidebar, with its release notes.
+- Light and dark appearance.
 
 ## Build from source
 
@@ -36,11 +109,8 @@ pushed (`.github/workflows/release.yml`).
 
 ## Credits
 
-Tamio is based on [catussh](https://github.com/mizorewww/catussh) by mizorewww
-(via [missuo/Rayon](https://github.com/missuo/Rayon)), itself a fork of
-[Rayon](https://github.com/Lakr233/Rayon) by Lakr Aream. It is not affiliated with
-or endorsed by them. Upstream fixes are ported with
-`Workflow/Scripts/tamio-rename.py`.
+- [mizorewww/catussh](https://github.com/mizorewww/catussh)
+- [Lakr233/Rayon](https://github.com/Lakr233/Rayon)
 
 ## License
 
