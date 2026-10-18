@@ -176,14 +176,25 @@ struct AgentActivityRow: View {
                 .font(.rxHelp)
                 .foregroundStyle(entry.outcome.hasPrefix("declined") ? Color.rxWarning : Color.rxInkSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            // Expanded, a task lists its steps instead.
+            // Whole or not at all: a short detail shows; a long one, or a
+            // task's steps, waits for a click. Expanded, a task lists its
+            // steps instead.
+            let lines = entry.detail.split(separator: "\n").count
             if !entry.detail.isEmpty, !(expanded && (entry.steps?.count ?? 0) > 1) {
-                Text(entry.detail)
-                    .font(.rxCode)
-                    .foregroundStyle(.rxInk)
-                    .lineLimit(expanded ? nil : 2)
-                    .textSelection(.enabled)
-                    .onTapGesture { expanded.toggle() }
+                if expanded || lines <= 3 {
+                    Text(entry.detail)
+                        .font(.rxCode)
+                        .foregroundStyle(.rxInk)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .textSelection(.enabled)
+                } else {
+                    Label(
+                        (entry.steps?.count ?? 0) > 1 ? "Show \(entry.steps?.count ?? 0) steps" : "Show \(lines) lines",
+                        systemImage: "chevron.right"
+                    )
+                    .font(.rxHelp)
+                    .foregroundStyle(.rxAccent)
+                }
             }
             if expanded, let steps = entry.steps, steps.count > 1 {
                 ForEach(Array(steps.enumerated()), id: \.offset) { index, step in

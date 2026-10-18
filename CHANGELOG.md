@@ -9,6 +9,9 @@ and tag `v0.2.0`. A tag with no section here is not built.
 
 ## [Unreleased]
 
+- Agent activity shows a short command whole, and a longer one or a task's
+  steps behind a click, never cut off.
+
 ## [0.1.2] - 2026-10-18
 
 ### Sessions
