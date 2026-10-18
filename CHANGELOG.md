@@ -9,6 +9,8 @@ and tag `v0.2.0`. A tag with no section here is not built.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-18
+
 ### Sessions
 
 - The Terminal · Files · Monitor switcher is on the Files page too, so Files
