@@ -11,8 +11,8 @@
 # the SPARKLE_PRIVATE_KEY secret does).
 #
 # The update window shows the version's notes: its section of CHANGELOG.md
-# (release-notes.sh), made HTML by GitHub's own Markdown renderer, so they
-# read as on the release page. That takes gh, signed in (GH_TOKEN in CI).
+# (release-notes.sh) as plain text (plain-notes.py). Sparkle prints HTML notes
+# as raw markup in a Mac Catalyst app, so they never go as HTML.
 
 set -euo pipefail
 
@@ -38,10 +38,9 @@ rmdir "$mount"
 attributes="$("$ROOT_DIR/External/Sparkle/bin/sign_update" --ed-key-file "$SPARKLE_KEY_FILE" "$IMAGE")"
 [[ "$attributes" == *edSignature=* ]] || { printf 'sign_update failed.\n' >&2; exit 1; }
 
-notes="$(bash "$ROOT_DIR/Workflow/Scripts/release-notes.sh" "$short")"
-html="$(gh api markdown -f text="$notes" -f mode=gfm -f context="$REPO")"
+notes="$(bash "$ROOT_DIR/Workflow/Scripts/release-notes.sh" "$short" | /usr/bin/python3 "$ROOT_DIR/Workflow/Scripts/plain-notes.py")"
 # Nothing in the notes may close the CDATA section they go in.
-html="${html//]]>/]]&gt;}"
+notes="${notes//]]>/]] >}"
 
 name="$(basename "$IMAGE")"
 date="$(LC_ALL=C date -u '+%a, %d %b %Y %H:%M:%S +0000')"
@@ -58,11 +57,7 @@ cat <<XML
       <sparkle:version>$build</sparkle:version>
       <sparkle:shortVersionString>$short</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>$minimum</sparkle:minimumSystemVersion>
-      <description><![CDATA[
-<meta charset="utf-8">
-<style>body { font: 13px -apple-system, sans-serif; line-height: 1.45; } h3 { font-size: 13px; margin: 1.1em 0 0.3em; } ul { padding-left: 1.3em; } code { font: 12px ui-monospace, monospace; }</style>
-$html
-]]></description>
+      <description sparkle:format="plain-text"><![CDATA[$notes]]></description>
       <sparkle:fullReleaseNotesLink>https://github.com/$REPO/releases/tag/$TAG</sparkle:fullReleaseNotesLink>
       <enclosure url="https://github.com/$REPO/releases/download/$TAG/$name" type="application/octet-stream" $attributes />
     </item>
