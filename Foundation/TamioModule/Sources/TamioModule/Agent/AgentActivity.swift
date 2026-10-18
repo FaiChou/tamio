@@ -102,6 +102,10 @@ public final class AgentActivityLog: ObservableObject {
     }
 
     public static var deviceName: String {
+        #if DEBUG
+            // Screenshots and tests name the Mac themselves.
+            if let name = ProcessInfo.processInfo.environment["TAMIO_DEVICE_NAME"] { return name }
+        #endif
         let name = ProcessInfo.processInfo.hostName
         return name.hasSuffix(".local") ? String(name.dropLast(6)) : name
     }
