@@ -20,6 +20,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/demo.css">
 </head>
 <body>
   <header class="nav">
@@ -62,13 +63,9 @@
         <p class="fine">Free · macOS 14 or later · Apple silicon and Intel</p>
       </div>
 
-      <!-- The app, as it is: a screenshot of Tamio's Home -->
+      <!-- Tamio's window, drawn by demo.js to the app's measurements: click a card, switch tabs. -->
       <div class="wrap">
-        <picture class="shot shot-hero">
-          <source srcset="/shots/home-dark.webp" media="(prefers-color-scheme: dark)">
-          <img src="/shots/home-light.webp" width="1600" height="1000"
-               alt="Tamio's Home: a card with live CPU, memory and disk for each server, and the panel of the selected server with its CPU, memory and network">
-        </picture>
+        <div class="demo-frame" data-demo="window"><div class="demo-scale"></div></div>
       </div>
     </section>
 
@@ -97,11 +94,7 @@
           </div>
           <div class="cell">
             <p class="cell-label">You approve first</p>
-            <picture class="shot shot-inset">
-              <source srcset="/shots/approve-dark.webp" media="(prefers-color-scheme: dark)">
-              <img src="/shots/approve-light.webp" width="640" height="760" loading="lazy"
-                   alt="Tamio asking: claude-code wants to run uptime on web-01 and web-02, for the task Check server health. Allow, Allow for 1 Hour, Always Allow, Deny.">
-            </picture>
+            <div class="tw-alert-stage" data-demo="alert"></div>
             <p class="cell-text">Every command and change waits for you. Allow it once, for an hour, or always — for an agent left to work while you are away. Revoke it any time.</p>
           </div>
         </div>
@@ -118,11 +111,7 @@
           which Mac, what it ran and what came back. Switch agents, swap devices, change computers — the next agent
           reads what the last one did, and picks up from there.
         </p>
-        <picture class="shot shot-wide">
-          <source srcset="/shots/activity-dark.webp" media="(prefers-color-scheme: dark)">
-          <img src="/shots/activity-light.webp" width="890" height="500" loading="lazy"
-               alt="A server's Activity in Tamio: Check server health by claude-code, three steps — uptime, df -h /, vm_stat — each with its exit code">
-        </picture>
+        <div data-demo="history"></div>
         <div class="grid grid-3">
           <div class="cell">
             <p class="cell-label">One entry per task</p>
@@ -228,5 +217,6 @@
     </div>
   </footer>
   <script src="/main.js" defer></script>
+  <script src="/demo.js" defer></script>
 </body>
 </html>

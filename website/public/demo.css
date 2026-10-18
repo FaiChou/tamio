@@ -1,0 +1,236 @@
+/* Tamio's window, drawn in HTML to the app's own measurements and colours
+   (TamioDesign's tokens), so it is sharp at any size and can be used. */
+
+.demo-frame { position: relative; margin-top: 64px; }
+.demo-scale { transform-origin: top left; }
+
+/* The app's colours, for the window, the prompt and the activity panel. */
+.tw-theme {
+  --tw-window: #eef0f5;
+  --tw-panel: #f7f8fa;
+  --tw-surface: #ffffff;
+  --tw-sunken: #f1f2f5;
+  --tw-pill: #e3e5eb;
+  --tw-hairline: #e3e5ea;
+  --tw-ink: #1d1d1f;
+  --tw-ink-2: #5f6168;
+  --tw-ink-3: #707380;
+  --tw-accent: #4b49c8;
+  --tw-on-accent: #ffffff;
+  --tw-success: #24a148;
+  --tw-warning: #a86400;
+  --tw-danger: #d93025;
+  --tw-selected: rgba(0, 0, 0, 0.155);
+  --tw-shadow: 0 40px 100px -30px rgba(20, 22, 40, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.tw {
+  width: 1180px; height: 720px;
+  display: grid; grid-template-columns: 224px 1fr;
+  background: var(--tw-window); color: var(--tw-ink);
+  border-radius: 26px; overflow: hidden;
+  box-shadow: var(--tw-shadow);
+  font: 13px/1.3 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
+  -webkit-font-smoothing: antialiased; user-select: none; text-align: left;
+}
+@media (prefers-color-scheme: dark) {
+  .tw-theme {
+    --tw-window: #1b1c1f;
+    --tw-panel: #232427;
+    --tw-surface: #26272b;
+    --tw-sunken: #1f2023;
+    --tw-pill: #2f3135;
+    --tw-hairline: #3a3b40;
+    --tw-ink: #f5f5f7;
+    --tw-ink-2: #a1a3aa;
+    --tw-ink-3: #8a8d96;
+    --tw-accent: #8583ff;
+    --tw-on-accent: #12122e;
+    --tw-success: #34d158;
+    --tw-warning: #ffb340;
+    --tw-danger: #ff6961;
+    --tw-selected: rgba(255, 255, 255, 0.12);
+    --tw-shadow: 0 40px 120px -30px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+}
+.tw-theme svg { display: block; }
+.tw-theme button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+
+/* Sidebar: a floating panel, like the app's on macOS 26. */
+.tw-side {
+  margin: 8px 0 8px 8px; padding: 0 10px 10px; border-radius: 20px;
+  background: var(--tw-panel); border: 1px solid var(--tw-hairline);
+  display: flex; flex-direction: column;
+}
+.tw-side-top { height: 44px; display: flex; align-items: center; gap: 8px; padding-left: 6px; }
+.tw-lights { display: flex; gap: 8px; }
+.tw-lights i { width: 12px; height: 12px; border-radius: 50%; background: #ff5f57; }
+.tw-lights i:nth-child(2) { background: #febc2e; }
+.tw-lights i:nth-child(3) { background: #28c840; }
+.tw-side-toggle { margin-left: auto; color: var(--tw-ink-2); }
+.tw-row {
+  height: 32px; display: flex; align-items: center; border-radius: 8px; padding-right: 10px;
+  color: var(--tw-ink); cursor: default;
+}
+.tw-row.sel { background: var(--tw-selected); font-weight: 600; }
+.tw-row .ic { width: 38px; display: flex; justify-content: center; color: var(--tw-accent); }
+.tw-row .badge { margin-left: auto; font-size: 11px; opacity: 0.45; font-weight: 400; }
+.tw-head { height: 32px; display: flex; align-items: flex-end; padding: 0 0 4px 4px; font-size: 11px; font-weight: 600; opacity: 0.32; }
+.tw-side-bottom { margin-top: auto; }
+
+/* Content: toolbar, cards, panel. */
+.tw-main { display: grid; grid-template-rows: 52px 1fr; min-width: 0; }
+.tw-toolbar { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 0 12px; }
+.tw-new {
+  width: 48px; height: 34px; border-radius: 17px; background: var(--tw-accent); color: var(--tw-on-accent);
+  display: grid; place-items: center; box-shadow: 0 2px 8px -2px rgba(75, 73, 200, 0.6);
+}
+.tw-search {
+  width: 300px; height: 34px; border-radius: 17px; background: var(--tw-surface);
+  display: flex; align-items: center; gap: 8px; padding: 0 12px; color: var(--tw-ink-3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06); border: 1px solid var(--tw-hairline);
+}
+.tw-body { display: flex; min-height: 0; padding: 0 0 12px; }
+.tw-cards {
+  flex: 1; min-width: 0; padding: 4px 16px 0; display: grid; align-content: start; gap: 12px;
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+}
+
+.tw-card {
+  height: 116px; padding: 12px 12px 8px; border-radius: 18px; background: var(--tw-surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); position: relative; cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+.tw-card::after {
+  content: ""; position: absolute; inset: 0; border-radius: 18px; pointer-events: none;
+  border: 1px solid transparent; transition: border-color 0.15s ease;
+}
+.tw-card:hover::after { border-color: color-mix(in srgb, var(--tw-accent) 30%, transparent); }
+.tw-card.sel::after { border: 1.5px solid color-mix(in srgb, var(--tw-accent) 70%, transparent); }
+.tw-card-head { display: flex; align-items: center; gap: 8px; height: 20px; }
+.tw-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--tw-success); box-shadow: 0 0 0 3px color-mix(in srgb, var(--tw-success) 20%, transparent); }
+.tw-name { font-weight: 700; letter-spacing: 0.3px; white-space: nowrap; }
+.tw-os { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--tw-ink-2); white-space: nowrap; overflow: hidden; }
+.tw-card-tools { margin-left: auto; display: flex; gap: 2px; color: var(--tw-ink-2); }
+.tw-card-tools span { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; }
+.tw-card-tools span:first-child { color: var(--tw-accent); }
+.tw-slots { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 12px; }
+.tw-slot { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.tw-slot b { font-size: 11px; font-weight: 500; color: var(--tw-ink-2); }
+
+.tw-ring { width: 40px; height: 40px; position: relative; }
+.tw-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.tw-ring .track { stroke: var(--tw-hairline); }
+.tw-ring .cache { stroke: var(--tw-ink-3); }
+.tw-ring .fill { transition: stroke-dashoffset 0.6s ease, stroke 0.3s; }
+.tw-ring span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* The panel beside the cards. */
+.tw-panel {
+  width: 440px; margin-right: 12px; border-radius: 18px; display: flex; flex-direction: column; min-height: 0;
+  background: color-mix(in srgb, var(--tw-surface) 60%, transparent);
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.3s;
+}
+.tw.closed .tw-panel { display: none; }
+.tw-panel-head { display: flex; align-items: baseline; padding: 12px 16px 0; }
+.tw-panel-head b { font-weight: 700; letter-spacing: 0.3px; }
+.tw-close { margin-left: auto; color: var(--tw-ink-2); width: 22px; height: 22px; display: grid; place-items: center; border-radius: 6px; }
+.tw-close:hover { background: var(--tw-pill); }
+.tw-tabs { display: flex; margin: 8px 16px 12px; padding: 2px; border-radius: 9px; background: var(--tw-pill); align-self: flex-start; }
+.tw-tabs button { height: 24px; padding: 0 14px; border-radius: 7px; font-size: 13px; color: var(--tw-ink); position: relative; }
+.tw-tabs button + button::before { content: ""; position: absolute; left: -1px; top: 6px; bottom: 6px; width: 1px; background: var(--tw-hairline); }
+.tw-tabs button.sel { background: var(--tw-accent); color: #fff; }
+.tw-tabs button.sel::before, .tw-tabs button.sel + button::before { opacity: 0; }
+.tw-pane { flex: 1; min-height: 0; overflow: auto; padding: 0 16px 16px; scrollbar-width: none; }
+.tw-pane::-webkit-scrollbar { display: none; }
+
+.tw-osline { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--tw-ink-2); margin-bottom: 12px; }
+.tw-box { background: var(--tw-sunken); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+.tw-box + .tw-box { margin-top: 12px; }
+.tw-facts { display: flex; align-items: center; gap: 8px; }
+.tw-fact { flex: 1; min-width: 0; }
+.tw-fact i { display: flex; align-items: center; gap: 4px; font-style: normal; font-size: 10px; font-weight: 500; letter-spacing: 0.4px; color: var(--tw-ink-2); text-transform: uppercase; }
+.tw-fact i::before { content: ""; width: 3px; height: 9px; border-radius: 1.5px; background: var(--c, transparent); display: var(--d, none); }
+.tw-fact b { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tw-fact small { font-size: 10px; font-weight: 500; color: var(--tw-ink-2); margin-left: 2px; }
+.tw-big { width: 84px; flex: none; }
+.tw-big b { font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tw-big small { font-size: 12px; color: var(--tw-ink-2); }
+.tw-pills { display: flex; align-items: flex-end; gap: 3px; height: 22px; overflow: hidden; }
+.tw-pills i { width: 4px; flex: none; border-radius: 2px; background: var(--tw-hairline); transition: height 0.3s ease; }
+.tw-pills i.on { background: var(--tw-success); }
+.tw-pills i.warm { background: var(--tw-warning); }
+.tw-hair { height: 1px; background: var(--tw-hairline); }
+.tw-bar { height: 6px; border-radius: 3px; background: var(--tw-hairline); overflow: hidden; width: 120px; }
+.tw-bar i { display: block; height: 100%; border-radius: 3px; background: var(--tw-success); }
+.tw-iface { display: flex; align-items: center; gap: 6px; font: 12px ui-monospace, "SF Mono", Menlo, monospace; }
+.tw-iface span:last-child { margin-left: auto; color: var(--tw-ink-2); }
+.tw-disk { display: flex; align-items: center; gap: 12px; }
+.tw-disk code { font: 700 14px ui-monospace, "SF Mono", Menlo, monospace; }
+.tw-disk div { margin-left: auto; text-align: right; }
+.tw-disk div b { display: block; font-size: 13px; font-variant-numeric: tabular-nums; }
+.tw-disk div small { font-size: 10px; color: var(--tw-ink-2); }
+.tw-fill { width: 14px; height: 34px; border-radius: 4px; background: var(--tw-hairline); display: flex; align-items: flex-end; overflow: hidden; }
+.tw-fill i { width: 100%; border-radius: 4px; background: var(--tw-success); }
+
+.tw-table-head, .tw-proc { display: grid; grid-template-columns: 1fr 60px 64px; gap: 8px; align-items: center; }
+.tw-table-head { height: 28px; font-size: 11px; font-weight: 500; color: var(--tw-ink-2); border-bottom: 1px solid var(--tw-hairline); }
+.tw-table-head span:not(:first-child), .tw-proc span:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+.tw-proc { height: 26px; font-size: 12px; }
+.tw-proc span:first-child { font: 12px ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
+
+.tw-container { background: var(--tw-sunken); border-radius: 12px; padding: 12px; }
+.tw-container + .tw-container { margin-top: 8px; }
+.tw-container-head { display: flex; align-items: center; gap: 8px; }
+.tw-container-head b { font-weight: 600; }
+.tw-container-head small { margin-left: auto; font-size: 11px; color: var(--tw-ink-2); }
+.tw-container-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.tw-container-row .tw-ring { transform: scale(0.8); }
+
+.tw-entry { background: var(--tw-sunken); border-radius: 12px; padding: 12px; cursor: pointer; }
+.tw-entry + .tw-entry { margin-top: 12px; }
+.tw-entry-head { display: flex; align-items: center; gap: 8px; }
+.tw-entry-head b { font-weight: 600; }
+.tw-entry-head small { margin-left: auto; font-size: 11px; color: var(--tw-ink-2); }
+.tw-entry-meta { margin-top: 4px; font-size: 11px; color: var(--tw-ink-2); }
+.tw-entry pre { margin: 6px 0 0; font: 12px/1.5 ui-monospace, "SF Mono", Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.tw-step { margin-top: 6px; }
+.tw-step p { margin: 0; font-size: 11px; color: var(--tw-ink-2); }
+.tw-step pre { margin-top: 2px; }
+.tw-more { margin-top: 6px; display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--tw-accent); }
+
+/* The approval prompt: macOS's alert, as Tamio raises it. */
+.tw-alert-stage {
+  margin-top: 16px; border-radius: 14px; padding: 28px 16px; display: grid; place-items: center;
+  background: radial-gradient(80% 90% at 50% 40%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%), var(--bg-sunken);
+  border: 1px solid var(--line);
+}
+.tw-alert {
+  width: 260px; padding: 20px 16px 16px; border-radius: 22px;
+  background: var(--tw-surface); color: var(--tw-ink);
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--tw-hairline);
+  font: 13px/1.35 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif; user-select: none;
+}
+@media (prefers-color-scheme: dark) { .tw-alert { background: #2a2b2f; } }
+.tw-alert img { width: 52px; height: 52px; margin: 0 auto 10px; }
+.tw-alert h4 { margin: 0; font-size: 13px; font-weight: 700; text-align: center; }
+.tw-alert p { margin: 8px 0 0; font-size: 11.5px; text-align: center; color: var(--tw-ink); }
+.tw-alert code { font: 11.5px ui-monospace, "SF Mono", Menlo, monospace; }
+.tw-alert-buttons { display: grid; gap: 6px; margin-top: 14px; }
+.tw-alert-buttons button {
+  height: 26px; border-radius: 13px; font-size: 13px; background: var(--tw-pill); color: var(--tw-ink);
+  transition: filter 0.12s, transform 0.12s;
+}
+.tw-alert-buttons button:hover { filter: brightness(0.96); }
+.tw-alert-buttons button:active { transform: scale(0.98); }
+.tw-alert-buttons button.default { background: #0a7aff; color: #fff; }
+.tw-alert-result { min-height: 18px; margin-top: 12px; font-size: 12px; text-align: center; color: var(--ink-2); font-family: var(--mono); }
+
+/* The Activity panel in the History section. */
+.tw-history {
+  margin-top: 40px; max-width: 560px; border-radius: 18px; overflow: hidden;
+  background: var(--tw-surface); border: 1px solid var(--tw-hairline);
+  font: 13px/1.3 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif; color: var(--tw-ink);
+  user-select: none; text-align: left;
+}
+.tw-history .tw-pane { padding-bottom: 16px; }
