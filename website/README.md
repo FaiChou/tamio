@@ -2,7 +2,7 @@
 
 Tamio's website: a static page in `public/`, served by Cloudflare Workers with
 static assets. `src/index.js` sends `www.tamio.sh` to `tamio.sh`, turns
-`/download` into the latest release's disk image, and serves the rest from
+`/download` to the latest release, and serves the rest from
 `public/`. Headers are in `public/_headers`.
 
 ```sh
