@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
   <title>Spark, lit facets</title>
   <path fill="#FFFFFF" d="M512.0 262.0 Q478.9 366.4 438.5 438.5 L512 512 Z"/>
-  <path fill="#FFFFFF" d="M512.0 262.0 Q545.1 366.4 585.5 438.5 L512 512 Z"/>
   <path fill="#FFFFFF" d="M762.0 512.0 Q657.6 478.9 585.5 438.5 L512 512 Z"/>
-  <path fill="#FFFFFF" d="M262.0 512.0 Q366.4 478.9 438.5 438.5 L512 512 Z"/>
+  <path fill="#FFFFFF" d="M512.0 762.0 Q545.1 657.6 585.5 585.5 L512 512 Z"/>
+  <path fill="#FFFFFF" d="M262.0 512.0 Q366.4 545.1 438.5 585.5 L512 512 Z"/>
 </svg>
