@@ -22,6 +22,17 @@ the user. To release, rename that heading to the version and date
   changing the font on one Mac and the theme on another keeps both. Whether
   the MCP server runs, the agents allowed to act without asking, and update
   checks stay with each Mac.
+- **Paste files to upload them.** Copy files or folders in Finder, then press
+  ⌘V in a server's pane in Files: they upload to the folder it shows, like a
+  drop. In the Mac's pane, ⌘V copies them there. The server's pane takes the
+  keyboard when Files opens; a click among the files gives it to a pane.
+- **Files follows the terminal's folder.** Turn on Shell integration in Edit
+  Server › Advanced, and each new terminal on that server reports its folder
+  at every prompt; switching to Files then opens the folder the terminal was
+  last in, and the pane's Actions menu has Go to Terminal's Folder. It works
+  with bash, zsh and fish, lasts only for the session and changes nothing on
+  the server. A server whose shell reports its folder by itself needs no
+  switch. Browsing elsewhere in Files stays put until the terminal moves.
 
 ### Fixed
 - **Terminals open on JumpServer bastions.** A JumpServer (Koko) bastion
