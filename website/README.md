@@ -21,6 +21,10 @@ terminal output, agent approval, and activity history illustrate
 the Mac app; they do not open SSH connections or make changes to real servers.
 The actual SSH, SFTP, sync, and MCP functionality belongs to the native app.
 
+The homepage and error page share an animated pixel garden. Animations pause
+when reduced motion is enabled, the garden is offscreen, or the page is hidden. The
+static artwork remains visible if JavaScript or the scene request fails.
+
 ## Preview and verify
 
 Use a current Node.js LTS release and npm. From the repository root:
@@ -52,6 +56,8 @@ review of mobile layout, keyboard navigation, and demo interactions.
 - `public/demo.js`, `demo.css`: the interactive app window, drawn in HTML and CSS.
   Keep its measurements and colors aligned with the app's design tokens in
   `Foundation/TamioDesign/Sources/TamioDesign/Tokens.swift`.
+- `public/server-garden.svg`, `garden.css`, `garden.js`: the shared pixel
+  artwork, CSS animation, and visibility and motion-preference controls.
 - `public/404.html`: the error page; `public/_headers`: security and cache headers.
 - `public/og.png`, app icons, `robots.txt`, `sitemap.xml`: search and sharing assets.
 - `og/card.html`: the local social-card artwork. Run `bash og/render.sh` to
