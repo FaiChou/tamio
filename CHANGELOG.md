@@ -23,6 +23,12 @@ the user. To release, rename that heading to the version and date
   why. It is kept with the server and synced. Left empty, the server connects
   directly, as before.
 
+### Fixed
+- **The group switcher no longer flashes on a click.** Choosing a group, or
+  clicking the one already chosen, showed a large glass lens and snapped the
+  selection back for a moment; the selection now slides to the new group, and
+  the server cards stay put instead of animating as the list changes.
+
 ## [0.2.3] - 2026-10-18
 
 ### Added
