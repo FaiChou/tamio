@@ -13,6 +13,16 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Added
+- **Settings sync between your Macs.** Light or dark, the terminal's whole
+  configuration (fonts, colours, cursor, keys) and font size, the session
+  switches, hidden files, the connection timeout, and live status with its
+  refresh now go through iCloud sync like your servers do, under the new
+  Settings switch in iCloud Sync. Each setting keeps its latest change, so
+  changing the font on one Mac and the theme on another keeps both. Whether
+  the MCP server runs, the agents allowed to act without asking, and update
+  checks stay with each Mac.
+
 ### Fixed
 - **Terminals open on JumpServer bastions.** A JumpServer (Koko) bastion
   closed the session right after signing in, because Tamio sent the window
