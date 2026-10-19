@@ -13,6 +13,8 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-10-18
+
 ### Added
 - **A proxy command for a server.** In Edit Server › Advanced, a Proxy command
   field carries the connection through a command instead of directly to the
