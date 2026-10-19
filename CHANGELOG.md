@@ -13,6 +13,14 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Fixed
+- **Terminals open on JumpServer bastions.** A JumpServer (Koko) bastion
+  closed the session right after signing in, because Tamio sent the window
+  size before asking for a shell and the bastion never answered. The size now
+  follows the shell, so its asset menu appears. When a server refuses the
+  terminal or the shell, the terminal now says so instead of only Connection
+  Closed.
+
 ## [0.2.4] - 2026-10-18
 
 ### Added
