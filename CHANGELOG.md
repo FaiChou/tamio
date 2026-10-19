@@ -13,7 +13,15 @@ the user. To release, rename that heading to the version and date
 
 ## [Unreleased]
 
+### Changed
+- **The website is easier to explore on every screen.** A new sky-and-garden
+  layout carries through the homepage, missing-page response and link preview.
+  The interactive app window keeps its six servers, inspector views, approvals
+  and activity history, with searchable sample hosts and keyboard controls.
+
 ### Fixed
+- **The website opens with a full-height introduction.** The next section's
+  headings stay below the first screen on taller windows.
 - **Terminals open on JumpServer bastions.** A JumpServer (Koko) bastion
   closed the session right after signing in, because Tamio sent the window
   size before asking for a shell and the bastion never answered. The size now
